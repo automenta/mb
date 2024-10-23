@@ -110,6 +110,33 @@ class GnutellaNode {
             case 'BROADCAST':
                 this.handleBroadcast(message);
                 break;
+            case 'SEARCH_REQUEST':
+                this.handleSearchRequest(message);
+                break;
+            case 'SEARCH_RESULT':
+                this.handleSearchResult(message);
+                break;
+            case 'FILE_REQUEST':
+                this.handleFileRequest(message);
+                break;
+            case 'FILE_TRANSFER':
+                this.handleFileTransfer(message);
+                break;
+            case 'NODE_INFO':
+                this.handleNodeInfo(message);
+                break;
+            case 'PING':
+                this.handlePing(message);
+                break;
+            case 'PONG':
+                this.handlePong(message);
+                break;
+            case 'KEEP_ALIVE':
+                this.handleKeepAlive(message);
+                break;
+            case 'DISCONNECT':
+                this.handleDisconnect(message);
+                break;
         }
 
         this.displayMessage(message);
@@ -149,6 +176,65 @@ class GnutellaNode {
         const message = new Message('BROADCAST', content, this.peer.id, ttl);
         this.handleMessage(this.peer.id, message);
         document.getElementById('message-content').value = '';
+    }
+
+    handleSearchRequest(message) {
+        // Implement search logic based on the query
+        // ...
+        // Send SEARCH_RESULT messages if matching content is found
+        // ...
+    }
+
+    handleSearchResult(message) {
+        // Handle search results
+        // ...
+    }
+
+    handleFileRequest(message) {
+        // Implement file retrieval logic
+        // ...
+        // Send FILE_TRANSFER message if the file is found
+        // ...
+    }
+
+    handleFileTransfer(message) {
+        // Handle file transfer
+        // ...
+    }
+
+    handleNodeInfo(message) {
+        // Process node information
+        // ...
+    }
+
+    handlePing(message) {
+        // Respond with a PONG message
+        const pongMessage = new Message('PONG', message.timestamp, this.peer.id);
+        this.connections.forEach((conn, peerId) => {
+            if (peerId === message.sender) {
+                conn.send(pongMessage);
+            }
+        });
+    }
+
+    handlePong(message) {
+        // Handle PONG response
+        // ...
+    }
+
+    handleKeepAlive(message) {
+        // Respond with a KEEP_ALIVE message
+        const keepAliveMessage = new Message('KEEP_ALIVE', message.timestamp, this.peer.id);
+        this.connections.forEach((conn, peerId) => {
+            if (peerId === message.sender) {
+                conn.send(keepAliveMessage);
+            }
+        });
+    }
+
+    handleDisconnect(message) {
+        // Handle disconnect notification
+        // ...
     }
 
     displayMessage(message) {
