@@ -23,7 +23,7 @@
 
 </head>
 <body>
-<div id="app"></div>
+<div id="todolist"></div>
 
 <div id="dashboard">
   <node-status-view></node-status-view>
@@ -34,7 +34,7 @@
 </div>
 
 <script>
-  const todo = new TodoList(document.getElementById('app'));
+  const todo = new TodoList(document.getElementById('todolist'), new Store('todos'));
 
 
   const node = new P2PNode();

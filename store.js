@@ -13,14 +13,14 @@ class Store {
         });
     }
     async getAll() {
-        return await this.db.items.orderBy('order').toArray();
+        return this.db.items.orderBy('order').toArray();
     }
 
     async add(text, source = 'local') {
         const maxOrder = await this.db.items.orderBy('order').last();
         const order = maxOrder ? maxOrder.order + 1 : 0;
         const now = new Date().toISOString();
-        return await this.db.items.add({
+        return this.db.items.add({
             text,
             order,
             source,

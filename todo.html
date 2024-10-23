@@ -9,6 +9,7 @@
 
     <script src="util.js"></script>
     <script src="store.js"></script>
+    <script src="input.js"></script>
     <script src="todo.js"></script>
 
     <link href="todo.css" rel="stylesheet"/>
@@ -18,7 +19,7 @@
 
 <script>
 
-    new TodoList(document.getElementById('app'));
+    new TodoList(document.getElementById('app'), new Store('todos'));
 </script>
 </body>
 </html>
