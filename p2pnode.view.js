@@ -198,16 +198,10 @@ class P2PNodeView extends HTMLElement {
         this.shadowRoot.getElementById('node-id').textContent = id;
     }
 
-    updatePeerCount(count) {
-        this.shadowRoot.getElementById('peer-count').textContent = count;
-    }
-
-    updateMessageCount(count) {
-        this.shadowRoot.getElementById('message-count').textContent = count;
-    }
-
-    updateUptime(seconds) {
-        this.shadowRoot.getElementById('uptime').textContent = `${seconds}s`;
+    updateNetworkStats(stats) {
+        this.shadowRoot.getElementById('peer-count').textContent = stats.peerCount;
+        this.shadowRoot.getElementById('message-count').textContent = stats.messagesRouted;
+        this.shadowRoot.getElementById('uptime').textContent = `${stats.uptime}s`;
     }
 
     setBootstrapStatus(status) {
