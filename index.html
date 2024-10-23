@@ -10,6 +10,8 @@
 
   <script src="profile.js"></script>
 
+  <script src="input.js"></script>
+
   <script src="p2pnode.js"></script>
   <script src="p2pnode.view.js"></script>
 
@@ -34,7 +36,11 @@
 </div>
 
 <script>
-  const todo = new TodoList(document.getElementById('todolist'), new Store('todos'));
+  const todo = new TodoList(document.getElementById('todolist'));
+  // const todo = new SemanticTodoList(document.getElementById('todolist'), {
+  //   systemPrompt: "Convert the todo item text into JSON with 'task' and 'priority' fields",
+  //   endpoint: 'your-llm-endpoint'
+  // });
 
 
   const node = new P2PNode();

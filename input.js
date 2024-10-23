@@ -1,12 +1,12 @@
 class SemanticInput {
-
     static defaults = {
-        endpoint: 'http://localhost:11434/api/generate',
-        retries: 3
+        author: undefined,
+        systemPrompt: undefined
     }
 
     constructor(container, options = {}) {
         this.config = { ...SemanticInput.defaults, ...options }
+        this.llmService = new LanguageModel(options)
         this.jsonData = null
         this.statusListeners = new Set()
         this.changeListeners = new Set()
@@ -62,15 +62,16 @@ class SemanticInput {
         this.updateStatus('Processing...')
 
         try {
-            this.elements.jsonOutput.textContent = '';
+            this.elements.jsonOutput.textContent = ''
 
-            await this.processText(text)
+            const llmResult = await this.llmService.process(text, this.config.systemPrompt)
             const metadata = {
                 created: new Date().toISOString(),
                 author: this.config.author,
                 id: crypto.randomUUID()
             }
-            this.jsonData = { ...metadata, ...this.jsonData }
+
+            this.jsonData = { ...metadata, ...llmResult }
             this.updateUi()
             this.notifyChange()
             this.updateStatus('Processed successfully')
@@ -79,63 +80,6 @@ class SemanticInput {
         } finally {
             this.elements.save.disabled = false
         }
-    }
-
-    async processText(text, retryCount = 0) {
-        this.updateStatus('Processing...')
-
-        try {
-            const response = await fetch(this.config.endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    model: 'llamablit',
-                    stream: false,
-                    system: this.config.systemPrompt,
-                    prompt: text
-                })
-            })
-
-            if (!response.ok) {
-                throw new Error(`Server responded with status ${response.status}`)
-            }
-
-            const data = await response.json()
-
-            if (!data.response) {
-                throw new Error('Invalid response structure from API')
-            }
-
-            const jsonStr = data.response;
-
-            try {
-                this.jsonData = JSON.parse(this.cleanJson(jsonStr))
-            } catch (e) {
-                if (retryCount < this.config.retries) {
-                    this.updateStatus(`Retrying (${retryCount + 1}/${this.config.retries})...`)
-                    await this.processText(text, retryCount + 1)
-                } else {
-                    throw new Error('Failed to parse JSON after retries')
-                }
-            }
-        } catch (error) {
-            throw new Error(`API error: ${error.message}`)
-        }
-    }
-
-    cleanJson(str) {
-        const matches = str.match(/\{[\s\S]*\}/g)
-        if (!matches) return str
-
-        // Attempt to parse each match until one succeeds
-        for (const match of matches) {
-            try {
-                return match
-            } catch (e) {
-
-            }
-        }
-        return str
     }
 
     updateUi() {
