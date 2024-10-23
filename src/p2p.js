@@ -1,279 +1,212 @@
-import {createLibp2p} from 'libp2p'
-import {gossipsub} from '@chainsafe/libp2p-gossipsub'
-import {noise} from '@chainsafe/libp2p-noise'
-import {yamux} from '@chainsafe/libp2p-yamux'
-import {webRTC} from '@libp2p/webrtc'
-import {webSockets} from '@libp2p/websockets'
-import {circuitRelayTransport} from '@libp2p/circuit-relay-v2'
-import {identify} from '@libp2p/identify'
-import {multiaddr} from '@multiformats/multiaddr'
+import { createLibp2p } from 'libp2p'
+import { gossipsub } from '@chainsafe/libp2p-gossipsub'
+import { noise } from '@chainsafe/libp2p-noise'
+import { yamux } from '@chainsafe/libp2p-yamux'
+import { bootstrap } from '@libp2p/bootstrap'
+import { webSockets } from '@libp2p/websockets'
+import { circuitRelayTransport } from '@libp2p/circuit-relay-v2'
+import { identify } from '@libp2p/identify'
+import { multiaddr } from '@multiformats/multiaddr'
 
 export default class P2PNetwork {
-
-
     constructor() {
         this.eventListeners = new Map();
         this.peers = new Set();
-        this.connectionRetryTimeout = null;
-        this.healthCheckInterval = null;
+        this.node = null;
+        this.isInitialized = false;
 
-        // Public STUN/TURN servers for WebRTC
-        this.iceServers = [
-            {urls: ['stun:stun1.l.google.com:19302']},
-            {urls: ['stun:stun2.l.google.com:19302']},
-            {
-                urls: 'turn:relay.metered.ca:80',
-                username: 'ee14adb7354e91d293e8be4e',
-                credential: 'xO/Yz6sMLO4t0Sua'
-            },
-            {
-                urls: 'turn:relay.metered.ca:443',
-                username: 'ee14adb7354e91d293e8be4e',
-                credential: 'xO/Yz6sMLO4t0Sua'
-            }
+        // Bootstrap nodes that support WebSocket connections
+        this.bootstrapNodes = [
+            '/dns4/node0.preload.ipfs.io/tcp/443/wss/p2p/QmZMxNdpMkewiVZLMRxaNxUeZpDUb34pWjZ1kZvsd16Zic',
+            '/dns4/node1.preload.ipfs.io/tcp/443/wss/p2p/Qmbut9Ywz9YEDrz8ySBSgWyJk41Uvm2QJPhwDJzJyGFsD6'
         ];
-
-        // Known public relay nodes
-        this.knownPeers = [
-            '/ip4/95.216.221.163/tcp/443/wss/p2p/12D3KooWBzp8KPZmFCpPsf1SpS8t6nRE4WNRWUNobRQZvKDFDy2M',
-            '/dns4/p2p.decentranet.xyz/tcp/443/wss/p2p/12D3KooWLDspHLiwXKeqHsDxwoN7RpGY1KiQFoZUNk8RJNaWMYbK'
-        ];
-
-        // Increase relay discovery to increase the connection paths available
-        this.relayDiscoveryCount = 3;
-
-        // Retry configuration for peer connection
-        this.retryDelays = [1000, 2000, 4000, 8000, 16000]; // Exponential backoff
-
     }
 
     async connect() {
+        if (this.isInitialized) {
+            console.log('P2P network already initialized');
+            return;
+        }
+
         try {
             this.node = await createLibp2p({
                 addresses: {
-                    listen: ['/webrtc']
+                    listen: [
+                        '/ip4/127.0.0.1/tcp/0/ws',  // Local WebSocket address
+                        '/dns4/wrtc-star1.par.dwebops.pub/tcp/443/wss/p2p-webrtc-star'  // WebRTC signaling server
+                    ],
+                    announce: [
+                        '/dns4/wrtc-star1.par.dwebops.pub/tcp/443/wss/p2p-webrtc-star'
+                    ]
                 },
                 transports: [
-                    webRTC({
-                        rtcConfiguration: {
-                            iceServers: this.iceServers,
-                            iceTransportPolicy: 'all',
-                            bundlePolicy: 'balanced',
-                            rtcpMuxPolicy: 'require',
-                            iceCandidatePoolSize: 1
+                    webSockets({
+                        filter: multiaddr => {
+                            return multiaddr.toString().indexOf('/ws') !== -1 ||
+                                multiaddr.toString().indexOf('/wss') !== -1;
                         }
                     }),
-                    webSockets(),  // Ensure all websocket options are used
                     circuitRelayTransport({
-                        discoverRelays: this.relayDiscoveryCount  // Increase relay discovery
+                        discoverRelays: 1
                     })
                 ],
                 connectionEncryption: [noise()],
                 streamMuxers: [yamux()],
                 services: {
-                    identify: identify({
-                        protocolPrefix: 'ipfs',
-                        host: {
-                            agentVersion: 'p2p-search/1.0.0'
-                        }
-                    }),
+                    identify: identify(),
                     pubsub: gossipsub({
                         allowPublishToZeroTopicPeers: true,
                         emitSelf: false,
                         gossipIncoming: true,
                         fallbackToFloodsub: true,
-                        floodPublish: true
+                        heartbeatInterval: 1000
+                    }),
+                    bootstrap: bootstrap({
+                        list: this.bootstrapNodes,
+                        timeout: 20000,
+                        minPeers: 1
                     })
                 },
                 connectionManager: {
                     minConnections: 1,
                     maxConnections: 50,
                     maxDialsPerPeer: 2,
-                    dialTimeout: 10000,
-                    autoDialInterval: 15000
+                    dialTimeout: 10000
+                },
+                relay: {
+                    enabled: true,
+                    autoRelay: {
+                        enabled: true,
+                        maxListeners: 2
+                    }
                 }
             });
 
             await this.node.start();
-            const peerId = this.node.peerId.toString();
-            console.log('P2P network started. Node ID:', peerId);
-            this.emit('network-ready', peerId);
+            this.isInitialized = true;
 
+            console.log('P2P network started successfully');
+            console.log('Listening on addresses:', this.node.getMultiaddrs());
+
+            this.emit('network-ready', this.node.peerId.toString());
             this.setupEventListeners();
-            this.startHealthCheck();
 
-            // Try to connect to known peers
-            await this.connectToKnownPeers();
+            // Initial bootstrap attempt
+            await this.bootstrapNetwork();
 
         } catch (err) {
             console.error('Failed to start P2P network:', err);
+            this.isInitialized = false;
             this.emit('network-error', err.message);
-            this.scheduleReconnect();
+            throw err;
         }
     }
 
-    async connectToKnownPeers() {
-        for (const peerAddr of this.knownPeers) {
-            await this.connectToPeerWithRetry(peerAddr);
+    async bootstrapNetwork() {
+        for (const addr of this.bootstrapNodes) {
+            try {
+                const ma = multiaddr(addr);
+                await this.node.dial(ma, { timeout: 10000 });
+                console.log('Connected to bootstrap node:', addr);
+            } catch (err) {
+                console.warn('Could not connect to bootstrap node:', addr);
+            }
         }
     }
-
 
     setupEventListeners() {
-        // Handle peer discovery and connections
-        this.node.addEventListener('peer:discovery', (evt) => {
-            const peerId = evt.detail.id.toString()
-            console.log('Discovered peer:', peerId)
+        if (!this.node) return;
 
-            // Automatically try to connect to discovered peers
-            this.node.dial(evt.detail.id).catch(err => {
-                console.warn(`Failed to connect to discovered peer ${peerId}:`, err.message)
-            })
-        })
+        this.node.addEventListener('peer:discovery', async (evt) => {
+            const peerId = evt.detail.id.toString();
+            console.log('Discovered peer:', peerId);
+
+            try {
+                await this.node.dial(evt.detail.id, { timeout: 10000 });
+                console.log('Successfully connected to discovered peer:', peerId);
+            } catch (err) {
+                console.warn('Failed to connect to discovered peer:', peerId);
+            }
+        });
 
         this.node.addEventListener('peer:connect', (evt) => {
-            const peerId = evt.detail.remotePeer.toString()
+            const peerId = evt.detail.remotePeer.toString();
             if (!this.peers.has(peerId)) {
-                this.peers.add(peerId)
-                console.log('Connected to peer:', peerId)
-                this.emit('peer-connected', peerId)
+                this.peers.add(peerId);
+                console.log('Connected to peer:', peerId);
+                this.emit('peer-connected', peerId);
             }
-        })
+        });
 
         this.node.addEventListener('peer:disconnect', (evt) => {
-            const peerId = evt.detail.remotePeer.toString()
-            if (this.peers.has(peerId)) {
-                this.peers.delete(peerId)
-                console.log('Disconnected from peer:', peerId)
-                this.emit('peer-disconnected', peerId)
-            }
-        })
+            const peerId = evt.detail.remotePeer.toString();
+            this.peers.delete(peerId);
+            console.log('Disconnected from peer:', peerId);
+            this.emit('peer-disconnected', peerId);
+        });
 
-
-// Set up pubsub topics
-        const topics = ['new-content', 'update-content', 'remove-content']
-
-        topics.forEach(async topic => {
-            try {
-                await this.node.services.pubsub.subscribe(topic)
-                console.log(`Subscribed to topic: ${topic}`)
-            } catch (err) {
-                console.error(`Failed to subscribe to topic ${topic}:`, err)
-            }
-        })
-
-// Handle pubsub messages
         this.node.services.pubsub.addEventListener('message', (evt) => {
             try {
-                const {topic, data} = evt.detail
-                const message = JSON.parse(new TextDecoder().decode(data))
-                this.emit(topic, message)
-                console.log(`Received message on topic ${topic}:`, message)
+                const message = JSON.parse(new TextDecoder().decode(evt.detail.data));
+                this.emit(evt.detail.topic, message);
             } catch (err) {
-                console.error('Error processing pubsub message:', err)
+                console.error('Error processing pubsub message:', err);
             }
-        })
+        });
     }
 
-    startHealthCheck() {
-        this.healthCheckInterval = setInterval(() => {
-            const connectedPeers = this.peers.size
-            console.log(`Health check - Connected peers: ${connectedPeers}`)
+    async publish(topic, data) {
+        if (!this.node || !this.isInitialized) {
+            throw new Error('Cannot publish: node not initialized');
+        }
 
-            if (connectedPeers === 0) {
-                console.log('No peers connected, attempting to connect to known peers...')
-                this.connectToKnownPeers()
-            }
-
-            // Log connection stats
-            console.log('Network stats:', {
-                connections: connectedPeers,
-                protocols: Array.from(this.node.getProtocols())
-            })
-        }, 30000) // Check every 30 seconds
+        try {
+            const message = JSON.stringify(data);
+            await this.node.services.pubsub.publish(topic, new TextEncoder().encode(message));
+            return true;
+        } catch (err) {
+            console.error(`Failed to publish to ${topic}:`, err);
+            return false;
+        }
     }
 
     async disconnect() {
-        if (this.healthCheckInterval) {
-            clearInterval(this.healthCheckInterval)
-        }
-        if (this.connectionRetryTimeout) {
-            clearTimeout(this.connectionRetryTimeout)
-        }
-        if (this.node) {
-            await this.node.stop()
-            console.log('P2P network stopped')
+        if (this.node && this.isInitialized) {
+            try {
+                await this.node.stop();
+                this.peers.clear();
+                this.isInitialized = false;
+                console.log('P2P network stopped');
+            } catch (err) {
+                console.error('Error stopping P2P network:', err);
+                throw err;
+            }
         }
     }
 
-// Event handling methods
     on(eventName, listener) {
         if (!this.eventListeners.has(eventName)) {
-            this.eventListeners.set(eventName, new Set())
+            this.eventListeners.set(eventName, new Set());
         }
-        this.eventListeners.get(eventName).add(listener)
+        this.eventListeners.get(eventName).add(listener);
     }
 
     off(eventName, listener) {
         if (this.eventListeners.has(eventName)) {
-            this.eventListeners.get(eventName).delete(listener)
+            this.eventListeners.get(eventName).delete(listener);
         }
     }
 
     emit(eventName, data) {
-        if (this.eventListeners.has(eventName)) {
-            this.eventListeners.get(eventName).forEach(listener => {
+        const listeners = this.eventListeners.get(eventName);
+        if (listeners) {
+            listeners.forEach(listener => {
                 try {
-                    listener(data)
+                    listener(data);
                 } catch (err) {
-                    console.error(`Error in event listener for ${eventName}:`, err)
+                    console.error(`Error in event listener for ${eventName}:`, err);
                 }
-            })
-        }
-    }
-
-// Publish method for sending messages
-    async publish(topic, data) {
-        try {
-            const message = JSON.stringify(data)
-            await this.node.services.pubsub.publish(topic, new TextEncoder().encode(message))
-            console.log(`Published message to topic ${topic}:`, data)
-        } catch (err) {
-            console.error(`Failed to publish to topic ${topic}:`, err)
-            throw err
-        }
-    }
-
-// Reconnection logic
-    scheduleReconnect() {
-        if (!this.connectionRetryTimeout) {
-            this.connectionRetryTimeout = setTimeout(async () => {
-                console.log('Attempting to reconnect...')
-                try {
-                    if (this.node) {
-                        await this.node.stop()
-                    }
-                    await this.connect()
-                    this.connectionRetryTimeout = null
-                } catch (err) {
-                    console.error('Reconnection failed:', err)
-                    this.scheduleReconnect()
-                }
-            }, 5000)
-        }
-    }
-
-    async connectToPeerWithRetry(peerAddr, retryCount = 0) {
-        try {
-            const ma = multiaddr(peerAddr);
-            console.log('Attempting to connect to peer:', peerAddr);
-            await this.node.dial(ma, {timeout: 10000});
-            console.log('Successfully connected to peer:', peerAddr);
-        } catch (err) {
-            console.warn(`Failed to connect to peer ${peerAddr} (attempt ${retryCount + 1}):`, err.message);
-            if (retryCount < this.retryDelays.length) {
-                setTimeout(() => this.connectToPeerWithRetry(peerAddr, retryCount + 1), this.retryDelays[retryCount]);
-            }
+            });
         }
     }
 }
