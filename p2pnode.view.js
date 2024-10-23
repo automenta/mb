@@ -71,11 +71,11 @@ class BootstrapDiscoveryView extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
-        this._node = null;
+        this.node = null;
     }
 
-    set node(node) {
-        this._node = node;
+    set nodeReference(node) {
+        this.node = node;
         this.bindToNode();
     }
 
@@ -151,11 +151,11 @@ class SendMessageView extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
-        this._node = null;
+        this.node = null;
     }
 
-    set node(node) {
-        this._node = node;
+    set nodeReference(node) {
+        this.node = node;
         this.bindToNode();
     }
 
@@ -225,11 +225,11 @@ class NetworkMessagesView extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
-        this._node = null;
+        this.node = null;
     }
 
-    set node(node) {
-        this._node = node;
+    set nodeReference(node) {
+        this.node = node;
         this.bindToNode();
     }
 
@@ -282,11 +282,11 @@ class NetworkLogView extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
-        this._node = null;
+        this.node = null;
     }
 
-    set node(node) {
-        this._node = node;
+    set nodeReference(node) {
+        this.node = node;
         this.bindToNode();
     }
 

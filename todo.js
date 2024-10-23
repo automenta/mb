@@ -3,11 +3,7 @@ class TodoList {
         this.el = el;
         this.store = new Store('todos');
         this.items = [];
-        this.init();
-    }
-
-    async init() {
-        await this.loadItems();
+        this.loadItems();
         this.render();
 
         // Example of how to handle incoming remote items
@@ -18,6 +14,7 @@ class TodoList {
         };
     }
 
+    // Data management methods
     async loadItems() {
         try {
             this.items = await this.store.getAll();
@@ -35,6 +32,16 @@ class TodoList {
             return id;
         } catch (e) {
             toast('Failed to add item', 'error');
+        }
+    }
+
+    async updateItem(id, text) {
+        try {
+            await this.store.update(id, text);
+            await this.loadItems();
+            toast('Item updated');
+        } catch (e) {
+            toast('Failed to update item', 'error');
         }
     }
 
@@ -58,23 +65,14 @@ class TodoList {
         }
     }
 
-    render() {
-        this.el.innerHTML = '';
-        const list = h('div', { class: 'list' });
-
-        // Input textarea with auto-resize
+    // UI Components
+    createNewItemTextarea() {
         const textarea = h('textarea', {
             rows: 1,
             placeholder: 'Add a new item... (Shift+Enter for new line)',
-            onInput: e => {
-                e.target.style.height = 'auto';
-                e.target.style.height = e.target.scrollHeight + 'px';
-            },
+            onInput: e => this.autoResizeTextarea(e.target),
             onKeyDown: async e => {
-                if (e.key === 'Enter') {
-                    if (e.shiftKey) {
-                        return;
-                    }
+                if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     const text = e.target.value.trim();
                     if (text) {
@@ -86,193 +84,122 @@ class TodoList {
             }
         });
 
-        list.appendChild(
-            h('div', { class: 'item input' }, textarea)
-        );
-
-        // Empty state
-        if (!this.items.length) {
-            list.appendChild(
-                h('div', { class: 'empty' },
-                    'No items yet. Type above to add one!'
-                )
-            );
-        }
-
-        // List items
-        const itemsContainer = h('div', { class: 'items' });
-        this.items.forEach(item => {
-            const li = h('div', { class: 'item', 'data-id': item.id },
-                h('span', { class: 'handle' }, '⋮'),
-                h('div', { class: 'item-content' }, item.text),
-                h('button', {
-                    class: 'delete',
-                    onClick: async () => {
-                        if (confirm('Delete this item?')) {
-                            await this.deleteItem(item.id);
-                        }
-                    }
-                }, '×')
-            );
-            itemsContainer.appendChild(li);
-        });
-        this.addSortable(list, itemsContainer, textarea);
-    }
-
-
-    addSortable(list, itemsContainer, textarea) {
-        list.appendChild(itemsContainer);
-
-        if (this.items.length) {
-            new Sortable(itemsContainer, {
-                animation: 150,
-                handle: '.handle',
-                dragClass: 'dragging',
-                onEnd: () => {
-                    const ids = [...itemsContainer.children].map(el => +el.dataset.id);
-                    const reordered = ids.map(id =>
-                        this.items.find(item => item.id === id)
-                    );
-                    this.reorderItems(reordered);
-                }
-            });
-        }
-
-        this.el.appendChild(list);
-        textarea.focus();
-    }
-
-    createTextarea(initialText = '', placeholder = '') {
-        const textarea = h('textarea', {
-            rows: 1,
-            placeholder,
-            value: initialText,
-            onInput: e => {
-                e.target.style.height = 'auto';
-                e.target.style.height = e.target.scrollHeight + 'px';
-            }
-        });
-
         // Initialize height
-        setTimeout(() => {
-            textarea.style.height = 'auto';
-            textarea.style.height = textarea.scrollHeight + 'px';
-        }, 0);
-
-
+        setTimeout(() => this.autoResizeTextarea(textarea), 0);
         return textarea;
     }
 
-    async updateItem(id, text) {
-        try {
-            await this.store.update(id, text);
-            await this.loadItems();
-            toast('Item updated');
-        } catch (e) {
-            toast('Failed to update item', 'error');
-        }
-    }
-
-    makeItemEditable(contentEl, item) {
-        // Create and configure textarea while content is still visible
-        const textarea = this.createTextarea(item.text);
-        const originalHeight = contentEl.offsetHeight;
-        textarea.style.height = originalHeight + 'px';
-
-        const finishEditing = async (save = true) => {
-            const newText = textarea.value.trim();
-            if (save && newText && newText !== item.text) {
-                await this.updateItem(item.id, newText);
-            } else {
-                this.render(); // Revert on cancel
-            }
-        };
-
-        textarea.onkeydown = async e => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                await finishEditing(true);
-            } else if (e.key === 'Escape') {
-                await finishEditing(false);
-            }
-        };
-
-        textarea.onblur = () => finishEditing(true);
-
-        // Replace content with textarea in a single operation
-        contentEl.replaceChildren(textarea);
+    createEditItemTextarea(item, originalHeight, onFinish) {
+        const textarea = h('textarea', {
+            rows: 1,
+            value: item.text,
+            style: { height: originalHeight + 'px' },
+            onInput: e => this.autoResizeTextarea(e.target),
+            onKeyDown: async e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    await onFinish(true);
+                } else if (e.key === 'Escape') {
+                    await onFinish(false);
+                }
+            },
+            onBlur: () => onFinish(true)
+        });
 
         // Focus and move cursor to end after the textarea is in the DOM
         requestAnimationFrame(() => {
             textarea.focus();
             textarea.setSelectionRange(textarea.value.length, textarea.value.length);
         });
+
+        return textarea;
+    }
+
+    autoResizeTextarea(textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+    }
+    createEmptyState() {
+        return h('div', { class: 'empty' },
+            'No items yet. Type above to add one!'
+        );
+    }
+
+    createListItem(item) {
+        const contentEl = h('div', {
+            class: `item-content${item.source === 'local' ? ' editable' : ''}`,
+        }, item.text);
+
+        if (item.source === 'local')
+            contentEl.ondblclick = e => {
+                if (!e.target.closest('textarea'))
+                    this.makeItemEditable(contentEl, item);
+                };
+
+        return h('div', { class: 'item', 'data-id': item.id },
+            h('span', { class: 'handle' }, '⋮'),
+            contentEl,
+            h('button', {
+                class: 'delete',
+                onClick: async () => {
+                    if (confirm('Delete this item?')) {
+                        await this.deleteItem(item.id);
+                    }
+                }
+            }, '×')
+        );
+    }
+
+    makeItemEditable(contentEl, item) {
+        const originalHeight = contentEl.offsetHeight;
+
+        const finishEditing = async (save = true) => {
+            const newText = contentEl.querySelector('textarea').value.trim();
+            if (save && newText && newText !== item.text)
+                await this.updateItem(item.id, newText);
+            else
+                this.render();
+        };
+
+        contentEl.replaceChildren(this.createEditItemTextarea(item, originalHeight, finishEditing));
+    }
+
+    initializeSortable(itemsContainer) {
+        if (this.items.length) {
+            new Sortable(itemsContainer, {
+                animation: 150,
+                handle: '.handle',
+                dragClass: 'dragging',
+                onEnd: () => this.reorderItems(
+                    [...itemsContainer.children]
+                        .map(el => +el.dataset.id)
+                        .map(id => this.items.find(item => item.id === id))
+                )
+            });
+        }
     }
 
     render() {
         this.el.innerHTML = '';
         const list = h('div', { class: 'list' });
 
-        // Input item
-        const textarea = this.createTextarea(
-            '',
-            'Add a new item... (Shift+Enter for new line)'
-        );
+        // Add input area
+        list.appendChild( h('div', {class: 'item input'},
+            this.createNewItemTextarea()
+        ));
 
-        textarea.onkeydown = async e => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                const text = e.target.value.trim();
-                if (text) {
-                    await this.addItem(text);
-                    e.target.value = '';
-                    e.target.style.height = 'auto';
-                }
-            }
-        };
-
-        list.appendChild(
-            h('div', { class: 'item input' }, textarea)
-        );
-
-        // Empty state
+        // Add empty state or items
         if (!this.items.length) {
-            list.appendChild(
-                h('div', { class: 'empty' },
-                    'No items yet. Type above to add one!'
-                )
-            );
+            list.appendChild(this.createEmptyState());
+        } else {
+            const itemsContainer = h('div', { class: 'items' });
+            this.items.forEach(item => {
+                itemsContainer.appendChild(this.createListItem(item));
+            });
+            list.appendChild(itemsContainer);
+            this.initializeSortable(itemsContainer);
         }
 
-        // List items
-        const itemsContainer = h('div', { class: 'items' });
-        this.items.forEach(item => {
-            const contentEl = h('div', {
-                class: `item-content${item.source === 'local' ? ' editable' : ''}`,
-            }, item.text);
-
-            if (item.source === 'local') {
-                contentEl.ondblclick = e => {
-                    if (!e.target.closest('textarea')) {
-                        this.makeItemEditable(contentEl, item);
-                    }
-                };
-            }
-
-            const li = h('div', { class: 'item', 'data-id': item.id },
-                h('span', { class: 'handle' }, '⋮'),
-                contentEl,
-                h('button', {
-                    class: 'delete',
-                    onClick: async () => {
-                        if (confirm('Delete this item?')) {
-                            await this.deleteItem(item.id);
-                        }
-                    }
-                }, '×')
-            );
-            itemsContainer.appendChild(li);
-        });
-        this.addSortable(list, itemsContainer, textarea);
+        this.el.appendChild(list);
     }
 }
