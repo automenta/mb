@@ -248,6 +248,14 @@ class P2PNode extends EventTarget {
         this.node.on('error', (err) => {
             this.emit('log', { message: `Error: ${err.message}` });
         });
+
+        setInterval(() => {
+            this.emit('network-stats-updated', {
+                peerCount: this.peers.peers.size,
+                messagesRouted: this.messages.stats.messagesRouted,
+                uptime: this.netstats.getUptime()
+            });
+        }, 1000); // Update every 1000ms (1 second)
     }
 
     emit(name, detail) {

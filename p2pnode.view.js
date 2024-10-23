@@ -151,14 +151,12 @@ class P2PNodeView extends HTMLElement {
 
         // Listen to all node events
         n.addEventListener('node-id-changed', (e) => this.updateNodeId(e.detail.id));
-        n.addEventListener('peer-count-changed', (e) => this.updatePeerCount(e.detail.count));
-        n.addEventListener('messages-routed-changed', (e) => this.updateMessageCount(e.detail.count));
-        n.addEventListener('uptime-changed', (e) => this.updateUptime(e.detail.seconds));
         n.addEventListener('bootstrap-status-changed', (e) => {
             this.setBootstrapStatus(e.detail.isBootstrap ? '(Active Bootstrap Node)' : '');
         });
         n.addEventListener('message-received', (e) => this.addMessage(e.detail.message));
         n.addEventListener('log', (e) => this.log(e.detail.message));
+        n.addEventListener('network-stats-updated', (e) => this.updateNetworkStats(e.detail));
     }
 
     setupEventListeners() {
@@ -188,7 +186,12 @@ class P2PNodeView extends HTMLElement {
     }
 
     addMessage(x) {
-        this.shadowRoot.getElementById('messages').textContent += JSON.stringify(x);
+        const messagesDiv = this.shadowRoot.getElementById('messages');
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message-item');
+        messageElement.textContent = JSON.stringify(x);
+        messagesDiv.appendChild(messageElement);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll
     }
 
     updateNodeId(id) {
