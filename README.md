@@ -13,8 +13,6 @@ Create the project and a top-level skeleton that integrates all the components a
 
 Keep the design as simple as possible, without limiting its potential for growth. Avoid overengineering and avoid excessively verbose/pedantic identifiers and design patterns.  Keep the code clear and compact.  Use comments sparingly, prefering self-documenting code.  Use the latest Javascript language features.  Involve no more than a few helpful common utility libraries.  If possible, find ways to generate and minimize the necessary code through clever object-oriented design and metaprogramming.
 
-
-
 ----
 
 Design an HTML/JS text input widget with the following feature:
@@ -45,7 +43,7 @@ Keep the design as simple as possible, without limiting its potential for growth
 
 ----
 
-Apply software development insight and wisdom to integrate the included web application components into a complete cohesive web application focused in a Personal TODO List.
+Integrate the included web application components into a complete cohesive web application focused in a Personal TODO List.
 
 Refactor the user-interface into more cohesive and conventional experience. Identify missing potential integration points between components that will enhance functionality and value.
 
