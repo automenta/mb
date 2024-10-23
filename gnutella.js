@@ -6,7 +6,7 @@ class Message {
         this.sender = sender;
         this.ttl = ttl;
         this.timestamp = Date.now();
-        this.path = [sender];
+        this.path = [sender]; // Initialize path with only the sender
     }
 }
 
