@@ -1,21 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P2P Node</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TODO</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
 
-    <script src="lru.js"></script>
-    <script src="profile.js"></script>
-    <script src="p2pnode.js"></script>
-    <script src="p2pnode.view.js"></script>
+  <script src="util.js"></script>
+
+  <script src="profile.js"></script>
+
+  <script src="p2pnode.js"></script>
+  <script src="p2pnode.view.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dexie/3.2.4/dexie.min.js"></script>
+
+  <script src="store.js"></script>
+  <script src="todo.js"></script>
+
+  <link href="todo.css" rel="stylesheet"/>
+
 </head>
 <body>
-    <p2pnode-view></p2pnode-view>
-    <script>
-        const node = new P2PNode();
-        document.querySelector('p2pnode-view').bindToNode(node);
-    </script>
+<div id="app"></div>
+
+<div id="dashboard">
+  <node-status-view></node-status-view>
+  <bootstrap-discovery-view></bootstrap-discovery-view>
+  <send-message-view></send-message-view>
+  <network-messages-view></network-messages-view>
+  <network-log-view></network-log-view>
+</div>
+
+<script>
+  const todo = new TodoList(document.getElementById('app'));
+
+
+  const node = new P2PNode();
+
+
+  const nodeStatusView = document.querySelector('node-status-view');
+  nodeStatusView.nodeReference = node;
+
+  const bootstrapDiscoveryView = document.querySelector('bootstrap-discovery-view');
+  bootstrapDiscoveryView.nodeReference = node;
+
+  const sendMessageView = document.querySelector('send-message-view');
+  sendMessageView.nodeReference = node;
+
+  const networkMessagesView = document.querySelector('network-messages-view');
+  networkMessagesView.nodeReference = node;
+
+  const networkLogView = document.querySelector('network-log-view');
+  networkLogView.nodeReference = node;
+
+</script>
 </body>
 </html>

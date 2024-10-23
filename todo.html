@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TODO List</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dexie/3.2.4/dexie.min.js"></script>
+
+    <script src="util.js"></script>
+    <script src="store.js"></script>
+    <script src="todo.js"></script>
+
+    <link href="todo.css" rel="stylesheet"/>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+
+    new TodoList(document.getElementById('app'));
+</script>
+</body>
+</html>

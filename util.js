@@ -1,4 +1,19 @@
-// LRU Cache for message deduplication
+window.h = (tag, props = {}, ...children) => {
+    const el = document.createElement(tag);
+    Object.entries(props).forEach(([k, v]) => {
+        if (k.startsWith('on')) el[k.toLowerCase()] = v;
+        else el.setAttribute(k, v);
+    });
+    el.append(...children);
+    return el;
+};
+
+window.toast = (msg, type = 'success') => {
+    const t = h('div', { class: `toast ${type}` }, msg);
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+};
+
 class LRUCache {
     constructor(capacity) {
         this.capacity = capacity;

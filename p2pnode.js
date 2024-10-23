@@ -214,7 +214,6 @@ class NetStats extends EventTarget {
     }
 }
 
-// Refactored p2pnodeNode class
 class P2PNode extends EventTarget {
     constructor() {
         super();
@@ -223,12 +222,13 @@ class P2PNode extends EventTarget {
         this.messages = new Messages();
         this.netstats = new NetStats();
         this.isBootstrap = false;
+        this.connections = new Map(); // Added this back - critical for tracking active connections
 
         this.setupEventListeners();
         this.initialize();
     }
 
-    async initialize() {
+    initialize() {
         this.node = new Peer({
             debug: 2,
             config: {
@@ -251,12 +251,107 @@ class P2PNode extends EventTarget {
 
         setInterval(() => {
             this.emit('network-stats-updated', {
-                peerCount: this.peers.peers.size,
+                peerCount: this.connections.size, // Changed to use connections.size
                 messagesRouted: this.messages.stats.messagesRouted,
                 uptime: this.netstats.getUptime()
             });
-        }, 1000); // Update every 1000ms (1 second)
+        }, 1000);
     }
+
+    handleIncomingConnection(conn) {
+        this.emit('log', { message: `Incoming connection from ${conn.peer}` });
+        this.setupConnection(conn);
+    }
+
+    setupConnection(conn) {
+        conn.on('open', () => {
+            this.connections.set(conn.peer, conn); // Store in connections Map
+            this.peers.add(conn.peer, conn);
+            this.emit('log', { message: `Connection established with peer: ${conn.peer}` });
+
+            if (this.isBootstrap) {
+                this.sharePeerList(conn);
+            }
+        });
+
+        conn.on('data', (data) => {
+            this.handleMessage(conn.peer, data);
+        });
+
+        conn.on('close', () => {
+            this.connections.delete(conn.peer); // Remove from connections Map
+            this.peers.remove(conn.peer);
+            this.emit('log', { message: `Connection closed with peer: ${conn.peer}` });
+        });
+
+        conn.on('error', (err) => {
+            this.emit('log', { message: `Connection error with peer ${conn.peer}: ${err.message}` });
+            this.connections.delete(conn.peer); // Remove from connections Map
+            this.peers.remove(conn.peer);
+        });
+    }
+
+    connectToBootstrap(bootstrapId) {
+        if (!bootstrapId || bootstrapId === this.node.id) return;
+
+        this.emit('log', { message: `Connecting to bootstrap node: ${bootstrapId}` });
+        this.peers.addBootstrapNode(bootstrapId);
+        const conn = this.node.connect(bootstrapId);
+        this.setupConnection(conn);
+    }
+
+    sharePeerList(conn) {
+        const peers = Array.from(this.connections.keys()); // Use connections Map
+        const message = this.messages.createMessage(
+            'PEER_LIST',
+            peers,
+            this.node.id
+        );
+        conn.send(message);
+    }
+
+    handlePeerList(peers) {
+        peers.forEach(peerId => {
+            if (peerId !== this.node.id && !this.connections.has(peerId)) { // Use connections Map
+                const conn = this.node.connect(peerId);
+                this.setupConnection(conn);
+            }
+        });
+    }
+
+    broadcast(content, ttl) {
+        if (!content) return;
+
+        const message = this.messages.createMessage(
+            'BROADCAST',
+            content,
+            this.node.id,
+            ttl
+        );
+
+        // Add our ID to the path
+        message.path = [this.node.id];
+
+        // Forward to all peers
+        this.connections.forEach((conn, peerId) => { // Use connections Map
+            conn.send(message);
+        });
+    }
+
+    handleBroadcast(message) {
+        if (message.ttl <= 0) return;
+
+        message.ttl--;
+        message.path.push(this.node.id);
+
+        // Forward to all peers except those in the path
+        this.connections.forEach((conn, peerId) => { // Use connections Map
+            if (!message.path.includes(peerId)) {
+                conn.send(message);
+            }
+        });
+    }
+
 
     emit(name, detail) {
         this.dispatchEvent(new CustomEvent(name, { detail }));
@@ -271,28 +366,6 @@ class P2PNode extends EventTarget {
         });
     }
 
-    handleIncomingConnection(conn) {
-        this.emit('log', { message: `Incoming connection from ${conn.peer}` });
-        this.setupConnection(conn);
-    }
-
-    setupConnection(conn) {
-        conn.on('open', () => {
-            this.peers.add(conn.peer, conn);
-            if (this.isBootstrap)
-                this.sharePeerList(conn);
-        });
-        conn.on('data', (data) => { this.handleMessage(conn.peer, data); });
-        conn.on('close', () => { this.peers.remove(conn.peer); });
-    }
-
-    connectToBootstrap(bootstrapId) {
-        if (!bootstrapId) return;
-
-        this.emit('log', { message: `Connecting to bootstrap node: ${bootstrapId}` });
-        this.peers.addBootstrapNode(bootstrapId);
-        this.setupConnection(this.node.connect(bootstrapId));
-    }
 
     becomeBootstrapNode() {
         this.isBootstrap = true;
@@ -345,35 +418,6 @@ class P2PNode extends EventTarget {
         this.emit('message-received', { message });
     }
 
-    handlePeerList(peers) {
-        peers.forEach(peerId => {
-            if (peerId !== this.node.id && !this.connections.has(peerId)) {
-                this.setupConnection(this.node.connect(peerId));
-            }
-        });
-    }
-
-    handleBroadcast(message) {
-        if (message.ttl <= 0) return;
-
-        message.ttl--;
-        message.path.push(this.node.id);
-
-        this.peers.broadcast(message);
-    }
-
-    broadcast(content, ttl) {
-        if (!content) return;
-
-        const message = this.messages.createMessage(
-            'BROADCAST',
-            content,
-            this.me.data.peerId,
-            ttl
-        );
-
-        this.handleBroadcast(message);
-    }
 
 
     handleSearchRequest(message) {
