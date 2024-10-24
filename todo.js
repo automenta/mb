@@ -12,6 +12,9 @@ class TodoList {
             await this.loadItems();
             toast('Remote items added');
         };
+
+        // Add event listeners for keyboard navigation
+        document.addEventListener('keydown', this.handleKeyDown.bind(this));
     }
 
     // Data management methods
@@ -136,7 +139,7 @@ class TodoList {
                     this.makeItemEditable(contentEl, item);
                 };
 
-        return h('div', { class: 'item', 'data-id': item.id },
+        return h('div', { class: 'item', 'data-id': item.id, tabindex: 0 },
             h('span', { class: 'handle' }, '⋮'),
             contentEl,
             h('button', {
@@ -179,6 +182,43 @@ class TodoList {
         }
     }
 
+    handleKeyDown(e) {
+        const focusedElement = document.activeElement;
+        const items = Array.from(this.el.querySelectorAll('.item'));
+        const currentIndex = items.indexOf(focusedElement);
+
+        switch (e.key) {
+            case 'ArrowUp':
+                if (currentIndex > 0) {
+                    items[currentIndex - 1].focus();
+                }
+                break;
+            case 'ArrowDown':
+                if (currentIndex < items.length - 1) {
+                    items[currentIndex + 1].focus();
+                }
+                break;
+            case 'Enter':
+                if (focusedElement.classList.contains('item')) {
+                    const itemId = parseInt(focusedElement.dataset.id, 10);
+                    const item = this.items.find(item => item.id === itemId);
+                    this.makeItemEditable(focusedElement.querySelector('.item-content'), item);
+                }
+                break;
+            case 'Delete':
+                if (focusedElement.classList.contains('item')) {
+                    const itemId = parseInt(focusedElement.dataset.id, 10);
+                    this.deleteItem(itemId);
+                }
+                break;
+            case 'Escape':
+                if (focusedElement.tagName === 'TEXTAREA') {
+                    focusedElement.blur();
+                }
+                break;
+        }
+    }
+
     render() {
         this.el.innerHTML = '';
         const list = h('div', { class: 'list' });
@@ -203,6 +243,3 @@ class TodoList {
         this.el.appendChild(list);
     }
 }
-
-
-
