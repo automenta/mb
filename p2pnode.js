@@ -221,7 +221,6 @@ class P2PNode extends EventTarget {
         this.messages = new Messages();
         this.netstats = new NetStats();
         this.isBootstrap = false;
-        // Removed connections map
 
         this.setupEventListeners();
         this.initialize();
@@ -237,14 +236,14 @@ class P2PNode extends EventTarget {
             }
         });
 
-        this.node.on('open', (id) => {
+        this.node.on('open', id => {
             this.me.setPeerId(id);
             this.emit('node-id-changed', { id });
             this.emit('log', { message: `Node initialized with ID: ${id}` });
         });
 
         this.node.on('connection', this.handleIncomingConnection.bind(this));
-        this.node.on('error', (err) => this.emit('log', {message: `Error: ${err.message}`}));
+        this.node.on('error', err => this.emit('log', {message: `Error: ${err.message}`}));
 
         setInterval(() =>
             this.emit('network-stats-updated', {
@@ -259,35 +258,35 @@ class P2PNode extends EventTarget {
         this.setupConnection(conn);
     }
 
-    setupConnection(conn) {
-        const handleConnectionEvent = (event) => {
+    setupConnection(c) {
+        const handleConnectionEvent = event => {
             switch (event.type) {
                 case 'open':
                     // Store connection directly in peers map
-                    this.peers.add(conn.peer, conn);
-                    this.emit('log', { message: `Connection established with peer: ${conn.peer}` });
+                    this.peers.add(c.peer, c);
+                    this.emit('log', { message: `Connection established with peer: ${c.peer}` });
 
                     if (this.isBootstrap)
-                        this.sharePeerList(conn);
+                        this.sharePeerList(c);
                     break;
                 case 'data':
-                    this.handleMessage(conn.peer, event.data);
+                    this.handleMessage(c.peer, event.data);
                     break;
                 case 'close':
-                    this.peers.remove(conn.peer);
-                    this.emit('log', { message: `Connection closed with peer: ${conn.peer}` });
+                    this.peers.remove(c.peer);
+                    this.emit('log', { message: `Connection closed with peer: ${c.peer}` });
                     break;
                 case 'error':
-                    this.emit('log', { message: `Connection error with peer ${conn.peer}: ${err.message}` });
-                    this.peers.remove(conn.peer);
+                    this.emit('log', { message: `Connection error with peer ${c.peer}: ${err.message}` });
+                    this.peers.remove(c.peer);
                     break;
             }
         };
 
-        conn.on('open', handleConnectionEvent);
-        conn.on('data', handleConnectionEvent);
-        conn.on('close', handleConnectionEvent);
-        conn.on('error', handleConnectionEvent);
+        c.on('open', handleConnectionEvent);
+        c.on('data', handleConnectionEvent);
+        c.on('close', handleConnectionEvent);
+        c.on('error', handleConnectionEvent);
     }
 
     connectToBootstrap(bootstrapId) {
@@ -316,7 +315,7 @@ class P2PNode extends EventTarget {
     broadcast(content, ttl) {
         if (!content) return;
 
-        const message = this.messages.createMessage(
+        const m = this.messages.createMessage(
             'BROADCAST',
             content,
             this.node.id,
@@ -324,10 +323,10 @@ class P2PNode extends EventTarget {
         );
 
         // Add our ID to the path
-        message.path = [this.node.id];
+        m.path = [this.node.id];
 
         // Forward to all peers
-        this.peers.forEach((peer, peerId) => peer.connection.send(message));
+        this.peers.forEach((peer, peerId) => peer.connection.send(m));
     }
 
     handleBroadcast(message) {
@@ -346,9 +345,7 @@ class P2PNode extends EventTarget {
     sendResponse(message, type) {
         const responseMessage = new Message(type, message.timestamp, this.node.id);
         this.peers.forEach((peer, peerId) => {
-            if (peerId === message.sender) {
-                peer.connection.send(responseMessage);
-            }
+            if (peerId === message.sender) peer.connection.send(responseMessage);
         });
     }
 
@@ -365,11 +362,10 @@ class P2PNode extends EventTarget {
     }
 
     forwardEvent(source, ...eventNames) {
-        eventNames.forEach(eventName => {
-            source.addEventListener(eventName, (event) =>
+        eventNames.forEach(eventName =>
+            source.addEventListener(eventName, event =>
                 this.emit(event.type, event.detail)
-            );
-        });
+            ));
     }
 
     becomeBootstrapNode() {
@@ -390,44 +386,27 @@ class P2PNode extends EventTarget {
             PING: () => this.sendResponse(message, 'PONG'),
             PONG: () => this.handlePong(message),
             KEEP_ALIVE: () => this.sendResponse(message, 'KEEP_ALIVE')
+            //     case 'SEARCH_REQUEST':
+            //     case 'SEARCH_RESULT':
+            //     case 'FILE_REQUEST':
+            //     case 'FILE_TRANSFER':
+            //     case 'NODE_INFO':
+            //     case 'KEEP_ALIVE':
+            //     case 'DISCONNECT':
         };
 
-        // switch (message.type) {
-        //     case 'SEARCH_REQUEST':
-        //         this.handleSearchRequest(message);
-        //         break;
-        //     case 'SEARCH_RESULT':
-        //         this.handleSearchResult(message);
-        //         break;
-        //     case 'FILE_REQUEST':
-        //         this.handleFileRequest(message);
-        //         break;
-        //     case 'FILE_TRANSFER':
-        //         this.handleFileTransfer(message);
-        //         break;
-        //     case 'NODE_INFO':
-        //         this.handleNodeInfo(message);
-        //         break;
-        //     case 'KEEP_ALIVE':
-        //         this.handleKeepAlive(message);
-        //         break;
-        //     case 'DISCONNECT':
-        //         this.handleDisconnect(message);
-        //         break;
-        // }
 
         const handler = handlers[message.type];
-        if (handler) {
+        if (handler)
             handler();
-        } else {
+        else
             this.emit('log', { message: `Unknown message type: ${message.type}` });
-        }
+
 
         this.emit('message-received', { message });
         } catch (error) {
             this.emit('log', { message: `Error handling message: ${error.message}`, error });
-            // Optionally, re-throw the error to halt execution or handle it at a higher level
-            // throw error; 
+            // Optionally, re-throw the error to halt execution or handle it at a higher level throw error;
         }
     }
 
