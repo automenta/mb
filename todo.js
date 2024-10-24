@@ -5,8 +5,6 @@ class TodoList extends BaseEventEmitter {
         super();
         this.el = el;
         this.store = new Store('todos4');
-        this.p2pNode = new P2PNode();
-        this.syncManager = new SyncManager(this, this.p2pNode);
 
         this.initialize();
     }
@@ -14,10 +12,6 @@ class TodoList extends BaseEventEmitter {
     async initialize() {
         await this.loadItems();
         this.render();
-
-        // Set up network status monitoring
-        this.p2pNode.addEventListener('peer-added', () => this.updateNetworkStatus());
-        this.p2pNode.addEventListener('peer-removed', () => this.updateNetworkStatus());
     }
 
     async addItem(text) {
@@ -41,13 +35,6 @@ class TodoList extends BaseEventEmitter {
         await this.loadItems();
     }
 
-    updateNetworkStatus() {
-        const status = {
-            peersCount: this.p2pNode.peers.size,
-            isConnected: this.p2pNode.peers.size > 0
-        };
-        this.emit('network-status', status);
-    }
 
 
     // Data management methods
@@ -134,8 +121,9 @@ class TodoList extends BaseEventEmitter {
 
     autoResizeTextarea(textarea) {
         textarea.style.height = 'auto';
-        textarea.style.height = textarea.scrollHeight + 'px';
+        textarea.style.height = `${textarea.scrollHeight}px`;
     }
+
     createEmptyState() {
         return h('div', { class: 'empty' },
             'No items yet. Type above to add one!'
@@ -233,14 +221,6 @@ class TodoList extends BaseEventEmitter {
         return localTodo.id < remoteTodo.id ? localTodo : remoteTodo;
     }
 
-    // Add to TodoList class
-    async update(node) {
-        const items = await this.store.getAll();
-        node.broadcast({
-            type: 'UPDATE',
-            items: items
-        });
-    }
 
 }
 

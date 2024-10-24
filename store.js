@@ -7,34 +7,29 @@ const SYNC_TYPES = {
 };
 
 class SyncManager {
-    constructor(todoList, p2pNode) {
+    constructor(todoList, node) {
         this.todoList = todoList;
-        this.p2pNode = p2pNode;
+        this.node = node;
         this.store = todoList.store;
         this.syncInProgress = false;
         this.setupListeners();
     }
 
     setupListeners() {
-        // Handle new peer connections
-        this.p2pNode.addEventListener('peer-added', async ({ detail }) => await this.requestSync(detail.peerId));
+        this.node.addEventListener('peer-added', async ({ detail }) => await this.requestSync(detail.peerId, this.node));
+        this.node.addEventListener('message-received', ({ detail }) => this.handleSyncMessage(detail.message));
 
-        // Handle sync messages
-        this.p2pNode.addEventListener('message-received', ({ detail }) => this.handleSyncMessage(detail.message));
-
-        // Monitor local changes
         this.todoList.addEventListener('item-changed', ({ detail }) => this.broadcastChange(detail.item));
-
         this.todoList.addEventListener('item-deleted', ({ detail }) => this.broadcastDelete(detail.id));
     }
 
     async requestSync(peerId) {
-        const peer = this.p2pNode.peers.get(peerId);
+        const peer = this.node.peers.peers.get(peerId);
         if (peer?.connection)
             peer.connection.send({
                 type: SYNC_TYPES.SYNC_REQUEST,
                 content: {timestamp: Date.now()},
-                sender: this.p2pNode.node.id
+                sender: this.node.node.id
             });
 
     }
@@ -72,11 +67,11 @@ class SyncManager {
         const response = {
             type: SYNC_TYPES.SYNC_STATE,
             content: { items },
-            sender: this.p2pNode.node.id
+            sender: this.node.node.id
         };
 
         // Send directly to requesting peer
-        const peer = this.p2pNode.peers.get(message.sender);
+        const peer = this.node.peers.peers.get(message.sender);
         if (peer?.connection)
             peer.connection.send(response);
     }
@@ -126,21 +121,21 @@ class SyncManager {
     }
 
     broadcastChange(item) {
-        this.p2pNode.broadcast({
+        this.node.broadcast({
             type: SYNC_TYPES.ITEM_CHANGE,
             content: item,
-            sender: this.p2pNode.node.id
+            sender: this.node.node.id
         });
     }
 
     broadcastDelete(id) {
-        this.p2pNode.broadcast({
+        this.node.broadcast({
             type: SYNC_TYPES.ITEM_DELETE,
             content: {
                 id,
                 timestamp: Date.now()
             },
-            sender: this.p2pNode.node.id
+            sender: this.node.node.id
         });
     }
 

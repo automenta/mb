@@ -130,9 +130,8 @@ class BootstrapDiscoveryView extends HTMLElement {
     setupEventListeners() {
         this.shadowRoot.getElementById('connect-bootstrap').addEventListener('click', () => {
             const bootstrapId = this.shadowRoot.getElementById('bootstrap-node').value;
-            if (bootstrapId && this.node) {
+            if (bootstrapId && this.node)
                 this.node.connectToBootstrap(bootstrapId);
-            }
         });
 
         this.shadowRoot.getElementById('become-bootstrap').addEventListener('click', () => {

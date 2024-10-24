@@ -26,6 +26,14 @@ class Message {
     }
 }
 
+class PeerInfo {
+    constructor(connection) {
+        this.connection = connection;
+        this.lastSeen = Date.now();
+        this.stats = { messagesReceived: 0, messagesSent: 0 };
+    }
+    // TODO other methods for updating stats, etc.
+}
 
 class PeerList extends BaseEventEmitter {
     constructor() {
@@ -36,14 +44,7 @@ class PeerList extends BaseEventEmitter {
     }
 
     add(peerId, connection) {
-        this.peers.set(peerId, {
-            connection,
-            lastSeen: Date.now(),
-            stats: {
-                messagesReceived: 0,
-                messagesSent: 0
-            }
-        });
+        this.peers.set(peerId, new PeerInfo(connection));
         this.persistPeers();
         this.emit('peer-added', {peerId});
         this.emit('peers-changed', {count: this.peers.size});
@@ -80,7 +81,7 @@ class PeerList extends BaseEventEmitter {
     }
 
     getConnections() {
-    return new Map([...this.peers.entries()].map(([id, data]) => [id, data.connection]));
+        return new Map([...this.peers.entries()].map(([id, data]) => [id, data.connection]));
     }
 
     getPeerIds() {
@@ -132,15 +133,6 @@ class Messages extends BaseEventEmitter {
 
     createMessage(type, content, sender, ttl = 7) {
         return new Message(type, content, sender, ttl);
-        // return {
-        //     id: crypto.randomUUID(),
-        //     type,
-        //     content,
-        //     sender,
-        //     ttl,
-        //     timestamp: Date.now(),
-        //     path: []
-        // };
     }
 
     hasSeenMessage(messageId) {
@@ -151,25 +143,14 @@ class Messages extends BaseEventEmitter {
         if (this.hasSeenMessage(message.id)) return false;
 
         this.seenMessages.put(message.id, true);
-        this.stats.messagesRouted++;
 
-        const type = message.type;
-        const typeCount = this.stats.messagesByType.get(type) || 0;
-        this.stats.messagesByType.set(type, typeCount + 1);
+        this.stats.messagesRouted++;
+        this.stats.messagesByType.set(message.type, (this.stats.messagesByType.get(message.type) || 0) + 1);
 
         return true;
     }
-
-    getStats() {
-        return {
-            total: this.stats.messagesRouted,
-            byType: Object.fromEntries(this.stats.messagesByType)
-        };
-    }
-
 }
 
-// networkStats.js
 class NetStats extends BaseEventEmitter {
     constructor() {
         super();
@@ -182,7 +163,7 @@ class NetStats extends BaseEventEmitter {
         };
     }
 
-    updateMessageCount(count) {
+    updateMessagesRouted(count) {
         this.stats.messagesRouted = count;
         this.emit('stats-updated', {field: 'messagesRouted', value: count});
     }
@@ -205,6 +186,8 @@ class NetStats extends BaseEventEmitter {
 }
 
 class P2PNode extends BaseEventEmitter {
+    #handlers;
+
     constructor() {
         super();
         this.me = new UserProfile();
@@ -213,11 +196,6 @@ class P2PNode extends BaseEventEmitter {
         this.netstats = new NetStats();
         this.isBootstrap = false;
 
-        this.setupEventListeners();
-        this.initialize();
-    }
-
-    initialize() {
         this.node = new Peer({
             debug: 2,
             config: {
@@ -226,6 +204,11 @@ class P2PNode extends BaseEventEmitter {
                 ]
             }
         });
+
+        // Forward relevant events from components
+        this.forwardEvent(this.me, 'profile-updated');
+        this.forwardEvent(this.peers, 'peer-added', 'peer-removed', 'peers-changed', 'message-sent', 'broadcast-error', 'bootstrap-added');
+        this.forwardEvent(this.netstats, 'stats-updated');
 
         this.node.on('open', id => {
             this.me.setPeerId(id);
@@ -236,12 +219,34 @@ class P2PNode extends BaseEventEmitter {
         this.node.on('connection', this.handleIncomingConnection.bind(this));
         this.node.on('error', err => this.emit('log', {message: `Error: ${err.message}`}));
 
+
+        const updateNetworkStatus = () => this.emit('network-status', {
+            peersCount: this.peers.size, isConnected: this.peers.size > 0
+        });
+        this.addEventListener('peer-added', updateNetworkStatus);
+        this.addEventListener('peer-removed', updateNetworkStatus);
+
         setInterval(() =>
             this.emit('network-stats-updated', {
                 peerCount: this.peers.peers.size,
                 messagesRouted: this.messages.stats.messagesRouted,
                 uptime: this.netstats.getUptime()
             }), 1000);
+
+        this.#handlers = {
+            'PEER_LIST': this.handlePeerList.bind(this),
+            'BROADCAST': this.handleBroadcast.bind(this),
+            'PING': this.handlePing.bind(this),
+            'PONG': this.handlePong.bind(this),
+            'KEEP_ALIVE': this.handleKeepAlive.bind(this)
+            //'UPDATE': this.handleUpdate.bind(this)
+            // SEARCH_REQUEST: () => this.handleSearchRequest(message),
+            // SEARCH_RESULT: () => this.handleSearchResult(message),
+            // FILE_REQUEST: () => this.handleFileRequest(message),
+            // FILE_TRANSFER: () => this.handleFileTransfer(message),
+            // NODE_INFO: () => this.handleNodeInfo(message),
+            // DISCONNECT: () => this.handleDisconnect(message),
+        };
     }
 
     handleIncomingConnection(conn) {
@@ -289,7 +294,7 @@ class P2PNode extends BaseEventEmitter {
     }
 
     handlePeerList(peers) {
-        peers.forEach(peerId => {
+        peers.content.forEach(peerId => {
             if (peerId !== this.node.id && !this.peers.has(peerId))
                 this.setupConnection(this.node.connect(peerId));
         });
@@ -332,13 +337,6 @@ class P2PNode extends BaseEventEmitter {
         peer?.connection.send(responseMessage);
     }
 
-    setupEventListeners() {
-        // Forward relevant events from components
-        this.forwardEvent(this.me, 'profile-updated');
-        this.forwardEvent(this.peers, 'peer-added', 'peer-removed', 'peers-changed', 'message-sent', 'broadcast-error', 'bootstrap-added');
-        this.forwardEvent(this.netstats, 'stats-updated');
-    }
-
     forwardEvent(source, ...eventNames) {
         eventNames.forEach(eventName =>
             source.addEventListener(eventName, event =>
@@ -353,41 +351,23 @@ class P2PNode extends BaseEventEmitter {
     }
 
     handleMessage(senderId, message) {
-        try {
-            if (!this.messages.trackMessage(message)) return;
 
-            this.peers.updatePeerStats(senderId, 'received');
+        if (!this.messages.trackMessage(message)) return;
 
-            const handlers = {
-                PEER_LIST: () => this.handlePeerList(message.content),
-                BROADCAST: () => this.handleBroadcast(message),
-                PING: () => this.sendResponse(message, 'PONG'),
-                PONG: () => this.handlePong(message),
-                KEEP_ALIVE: () => this.sendResponse(message, 'KEEP_ALIVE'),
-                UPDATE: () => this.handleUpdate(message)
-                // SEARCH_REQUEST: () => this.handleSearchRequest(message),
-                // SEARCH_RESULT: () => this.handleSearchResult(message),
-                // FILE_REQUEST: () => this.handleFileRequest(message),
-                // FILE_TRANSFER: () => this.handleFileTransfer(message),
-                // NODE_INFO: () => this.handleNodeInfo(message),
-                // DISCONNECT: () => this.handleDisconnect(message),
-            };
+        this.peers.updatePeerStats(senderId, 'received');
 
-
-            const handler = handlers[message.type];
-            if (handler)
+        const handler = this.#handlers[message.type];
+        if (handler) {
+            try {
                 handler(message);
-            else
-                this.emit('log', {message: `Unknown message type: ${message.type}`});
+                this.emit('message-received', {message});
+            } catch (error) {
+                this.emit('log', {message: `Error handling message: ${error.message}`, error});
+            }
+        } else
+            this.emit('log', {message: `Unknown message type: ${message.type}`});
 
-
-            this.emit('message-received', {message});
-        } catch (error) {
-            this.emit('log', {message: `Error handling message: ${error.message}`, error});
-            // Optionally, re-throw the error to halt execution or handle it at a higher level throw error;
-        }
     }
-
 
 
     handleSearchRequest(message) {
@@ -412,16 +392,18 @@ class P2PNode extends BaseEventEmitter {
 
 
     handlePing(message) {
-        this.emit('log', {message: 'Ping received'});
+        this.sendResponse(message, 'PONG')
     }
+
 
     handlePong(message) {
         this.emit('log', {message: 'Pong received'});
     }
 
     handleKeepAlive(message) {
-        this.emit('log', {message: 'KeepAlive received'});
+        this.sendResponse(message, 'KEEP_ALIVE');
     }
+
 
     handleDisconnect(message) {
         this.emit('log', {message: 'Disconnect notification received'});
