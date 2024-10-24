@@ -26,35 +26,26 @@ class TodoList {
         }
     }
 
-    async addItem(text) {
+    async updateStoreAndReload(action, message) {
         try {
-            const id = await this.store.add(text);
+            await action();
             await this.loadItems();
-            toast('Item added');
-            return id;
+            toast(message);
         } catch (e) {
-            toast('Failed to add item', 'error');
+            toast('Failed to ' + message.toLowerCase(), 'error');
         }
+    }
+
+    async addItem(text) {
+        await updateStoreAndReload(() => this.store.add(text), 'Item added');
     }
 
     async updateItem(id, text) {
-        try {
-            await this.store.update(id, text);
-            await this.loadItems();
-            toast('Item updated');
-        } catch (e) {
-            toast('Failed to update item', 'error');
-        }
+        await updateStoreAndReload(() => this.store.update(id, text), 'Item updated');
     }
 
     async deleteItem(id) {
-        try {
-            await this.store.delete(id);
-            await this.loadItems();
-            toast('Item deleted');
-        } catch (e) {
-            toast('Failed to delete item', 'error');
-        }
+        await updateStoreAndReload(() => this.store.delete(id), 'Item deleted');
     }
 
     async reorderItems(items) {
