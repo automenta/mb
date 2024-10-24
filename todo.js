@@ -37,15 +37,15 @@ class TodoList {
     }
 
     async addItem(text) {
-        await updateStoreAndReload(() => this.store.add(text), 'Item added');
+        await this.updateStoreAndReload(() => this.store.add(text), 'Item added');
     }
 
     async updateItem(id, text) {
-        await updateStoreAndReload(() => this.store.update(id, text), 'Item updated');
+        await this.updateStoreAndReload(() => this.store.update(id, text), 'Item updated');
     }
 
     async deleteItem(id) {
-        await updateStoreAndReload(() => this.store.delete(id), 'Item deleted');
+        await this.updateStoreAndReload(() => this.store.delete(id), 'Item deleted');
     }
 
     async reorderItems(items) {
