@@ -1,4 +1,3 @@
-/* todo.css */
 body {
     font-family: sans-serif;
     margin: 0;
@@ -70,7 +69,6 @@ body {
 }
 
 .items {
-    /* Styles for Sortable.js */
     list-style: none;
     padding: 0;
 }
