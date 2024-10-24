@@ -221,7 +221,7 @@ class P2PNode extends EventTarget {
         this.messages = new Messages();
         this.netstats = new NetStats();
         this.isBootstrap = false;
-        this.connections = new Map(); // Added this back - critical for tracking active connections
+        // Removed connections map
 
         this.setupEventListeners();
         this.initialize();
@@ -248,7 +248,7 @@ class P2PNode extends EventTarget {
 
         setInterval(() =>
             this.emit('network-stats-updated', {
-                peerCount: this.connections.size, // Changed to use connections.size
+                peerCount: this.peers.size, // Changed to use peers.size
                 messagesRouted: this.messages.stats.messagesRouted,
                 uptime: this.netstats.getUptime()
             }), 1000);
@@ -263,7 +263,7 @@ class P2PNode extends EventTarget {
         const handleConnectionEvent = (event) => {
             switch (event.type) {
                 case 'open':
-                    this.connections.set(conn.peer, conn); // Store in connections Map
+                    // Store connection directly in peers map
                     this.peers.add(conn.peer, conn);
                     this.emit('log', { message: `Connection established with peer: ${conn.peer}` });
 
@@ -274,13 +274,11 @@ class P2PNode extends EventTarget {
                     this.handleMessage(conn.peer, event.data);
                     break;
                 case 'close':
-                    this.connections.delete(conn.peer); // Remove from connections Map
                     this.peers.remove(conn.peer);
                     this.emit('log', { message: `Connection closed with peer: ${conn.peer}` });
                     break;
                 case 'error':
                     this.emit('log', { message: `Connection error with peer ${conn.peer}: ${err.message}` });
-                    this.connections.delete(conn.peer); // Remove from connections Map
                     this.peers.remove(conn.peer);
                     break;
             }
@@ -303,14 +301,14 @@ class P2PNode extends EventTarget {
     sharePeerList(conn) {
         conn.send(this.messages.createMessage(
             'PEER_LIST',
-            Array.from(this.connections.keys()),
+            Array.from(this.peers.keys()),
             this.node.id
         ));
     }
 
     handlePeerList(peers) {
         peers.forEach(peerId => {
-            if (peerId !== this.node.id && !this.connections.has(peerId))
+            if (peerId !== this.node.id && !this.peers.has(peerId))
                 this.setupConnection(this.node.connect(peerId));
         });
     }
@@ -329,7 +327,7 @@ class P2PNode extends EventTarget {
         message.path = [this.node.id];
 
         // Forward to all peers
-        this.connections.forEach((conn, peerId) => conn.send(message));
+        this.peers.forEach((peer, peerId) => peer.connection.send(message));
     }
 
     handleBroadcast(message) {
@@ -339,17 +337,17 @@ class P2PNode extends EventTarget {
         message.path.push(this.node.id);
 
         // Forward to all peers except those in the path
-        this.connections.forEach((conn, peerId) => {
+        this.peers.forEach((peer, peerId) => {
             if (!message.path.includes(peerId))
-                conn.send(message);
+                peer.connection.send(message);
         });
     }
 
     sendResponse(message, type) {
         const responseMessage = new Message(type, message.timestamp, this.node.id);
-        this.connections.forEach((conn, peerId) => {
+        this.peers.forEach((peer, peerId) => {
             if (peerId === message.sender) {
-                conn.send(responseMessage);
+                peer.connection.send(responseMessage);
             }
         });
     }
