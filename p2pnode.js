@@ -8,6 +8,19 @@ class Message {
         this.timestamp = Date.now();
         this.path = [];
     }
+    async sign(privateKey) {
+        const data = JSON.stringify({
+            type: this.type,
+            content: this.content,
+            sender: this.sender,
+            timestamp: this.timestamp
+        });
+        this.signature = await crypto.subtle.sign(
+            "RSASSA-PKCS1-v1_5",
+            privateKey,
+            new TextEncoder().encode(data)
+        );
+    }
 }
 
 
@@ -247,7 +260,7 @@ class P2PNode extends EventTarget {
 
         setInterval(() =>
             this.emit('network-stats-updated', {
-                peerCount: this.peers.size, // Changed to use peers.size
+                peerCount: this.peers.peers.size,
                 messagesRouted: this.messages.stats.messagesRouted,
                 uptime: this.netstats.getUptime()
             }), 1000);
@@ -259,34 +272,26 @@ class P2PNode extends EventTarget {
     }
 
     setupConnection(c) {
-        const handleConnectionEvent = event => {
-            switch (event.type) {
-                case 'open':
-                    // Store connection directly in peers map
-                    this.peers.add(c.peer, c);
-                    this.emit('log', { message: `Connection established with peer: ${c.peer}` });
+        c.on('open', () => {
+            // Store connection directly in peers map
+            this.peers.add(c.peer, c);
+            this.emit('log', { message: `Connection established with peer: ${c.peer}` });
 
-                    if (this.isBootstrap)
-                        this.sharePeerList(c);
-                    break;
-                case 'data':
-                    this.handleMessage(c.peer, event.data);
-                    break;
-                case 'close':
-                    this.peers.remove(c.peer);
-                    this.emit('log', { message: `Connection closed with peer: ${c.peer}` });
-                    break;
-                case 'error':
-                    this.emit('log', { message: `Connection error with peer ${c.peer}: ${err.message}` });
-                    this.peers.remove(c.peer);
-                    break;
-            }
-        };
+            if (this.isBootstrap)
+                this.sharePeerList(c);
+        });
 
-        c.on('open', handleConnectionEvent);
-        c.on('data', handleConnectionEvent);
-        c.on('close', handleConnectionEvent);
-        c.on('error', handleConnectionEvent);
+        c.on('data', (data) => this.handleMessage(c.peer, data));
+
+        c.on('close', () => {
+            this.peers.remove(c.peer);
+            this.emit('log', { message: `Connection closed with peer: ${c.peer}` });
+        });
+
+        c.on('error', (err) => {
+            this.emit('log', { message: `Connection error with peer ${c.peer}: ${err.message}` });
+            this.peers.remove(c.peer);
+        });
     }
 
     connectToBootstrap(bootstrapId) {
@@ -325,8 +330,12 @@ class P2PNode extends EventTarget {
         // Add our ID to the path
         m.path = [this.node.id];
 
+        // Track the message we're about to send
+        this.messages.trackMessage(m);
+
         // Forward to all peers
-        this.peers.forEach((peer, peerId) => peer.connection.send(m));
+        //this.peers.peers.forEach((peer, peerId) => peer.connection.send(m));
+        this.peers.broadcast(m);
     }
 
     handleBroadcast(message) {
@@ -336,7 +345,7 @@ class P2PNode extends EventTarget {
         message.path.push(this.node.id);
 
         // Forward to all peers except those in the path
-        this.peers.forEach((peer, peerId) => {
+        this.peers.peers.forEach((peer, peerId) => {
             if (!message.path.includes(peerId))
                 peer.connection.send(message);
         });
@@ -344,7 +353,7 @@ class P2PNode extends EventTarget {
 
     sendResponse(message, type) {
         const responseMessage = new Message(type, message.timestamp, this.node.id);
-        this.peers.forEach((peer, peerId) => {
+        this.peers.peers.forEach((peer, peerId) => {
             if (peerId === message.sender) peer.connection.send(responseMessage);
         });
     }
@@ -385,7 +394,8 @@ class P2PNode extends EventTarget {
             BROADCAST: () => this.handleBroadcast(message),
             PING: () => this.sendResponse(message, 'PONG'),
             PONG: () => this.handlePong(message),
-            KEEP_ALIVE: () => this.sendResponse(message, 'KEEP_ALIVE')
+            KEEP_ALIVE: () => this.sendResponse(message, 'KEEP_ALIVE'),
+            UPDATE: () => this.handleUpdate(message)
             //     case 'SEARCH_REQUEST':
             //     case 'SEARCH_RESULT':
             //     case 'FILE_REQUEST':
@@ -412,49 +422,44 @@ class P2PNode extends EventTarget {
 
 
 
+    handleUpdate(message) {
+        this.todoList.store.bulkAdd(message.content.items);
+    }
+
     handleSearchRequest(message) {
-        // Implementation preserved for future use
         this.emit('log', { message: 'Search request received' });
     }
 
     handleSearchResult(message) {
-        // Implementation preserved for future use
         this.emit('log', { message: 'Search result received' });
     }
 
     handleFileRequest(message) {
-        // Implementation preserved for future use
         this.emit('log', { message: 'File request received' });
     }
 
     handleFileTransfer(message) {
-        // Implementation preserved for future use
         this.emit('log', { message: 'File transfer received' });
     }
 
     handleNodeInfo(message) {
-        // Implementation preserved for future use
         this.emit('log', { message: 'Node info received' });
     }
 
 
     handlePing(message) {
-        // Implementation preserved for future use
-        this.emit('log', { message: 'Pong received' });
+        this.emit('log', { message: 'Ping received' });
     }
 
     handlePong(message) {
-        // Implementation preserved for future use
         this.emit('log', { message: 'Pong received' });
     }
 
     handleKeepAlive(message) {
-        // Implementation preserved for future use
         this.emit('log', { message: 'KeepAlive received' });
     }
 
     handleDisconnect(message) {
-        // Implementation preserved for future use
         this.emit('log', { message: 'Disconnect notification received' });
     }
 
@@ -463,5 +468,18 @@ class P2PNode extends EventTarget {
             const uptime = Math.floor((Date.now() - this.stats.startTime) / 1000);
             this.emit('uptime-changed', { seconds: uptime });
         }, 1000);
+    }
+
+    async resolveConflict(local, remote) {
+        // If items have different modification histories, keep the one with more changes
+        const localHistory = local.modificationCount || 0;
+        const remoteHistory = remote.modificationCount || 0;
+
+        if (localHistory !== remoteHistory) {
+            return localHistory > remoteHistory ? local : remote;
+        }
+
+        // If equal histories, use timestamp-based resolution
+        return local.updated > remote.updated ? local : remote;
     }
 }

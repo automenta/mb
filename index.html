@@ -55,20 +55,22 @@
   document.querySelector('network-log-view').nodeReference =
     node;
 
-  // Handle incoming messages to add to the todo list
-  node.addEventListener('message-received', e => {
-    const { message } = e.detail;
-    if (message.content && message.sender !== p2pNode.peerId) {
-      todo.addItem(message.content);
-    }
-  });
+  // // Handle incoming messages to add to the todo list
+  // node.addEventListener('message-received', e => {
+  //   const { message } = e.detail;
+  //   if (message.content && message.sender !== node.peerId) {
+  //     todo.addItem(message.content);
+  //   }
+  // });
+  //
+  // // Broadcast new todo items to peers
+  // const originalAddItem = todo.addItem.bind(todo);
+  // todo.addItem = async function(text) {
+  //   await originalAddItem(text);
+  //   node.broadcast(text);
+  // };
 
-  // Broadcast new todo items to peers
-  const originalAddItem = todo.addItem.bind(todo);
-  todo.addItem = async function(text) {
-    await originalAddItem(text);
-    node.broadcast(text);
-  };
+  //todo.update(node); //sync
 
 </script>
 </body>

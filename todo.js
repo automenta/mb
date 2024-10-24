@@ -1,20 +1,59 @@
 "use strict";
 
-class TodoList {
+class TodoList extends EventTarget {
     constructor(el) {
+        super();
         this.el = el;
-        this.store = new Store('todos');
-        this.items = [];
-        this.loadItems();
+        this.store = new Store('todos4');
+        this.p2pNode = new P2PNode();
+        this.syncManager = new SyncManager(this, this.p2pNode);
+
+        this.initialize();
+    }
+
+    async initialize() {
+        await this.loadItems();
         this.render();
 
-        // Example of how to handle incoming remote items
-        window.addRemoteItems = async (items) => {
-            await this.store.bulkAdd(items, 'remote');
-            await this.loadItems();
-            toast('Remote items added');
-        };
+        // Set up network status monitoring
+        this.p2pNode.addEventListener('peer-added', () => this.updateNetworkStatus());
+        this.p2pNode.addEventListener('peer-removed', () => this.updateNetworkStatus());
     }
+
+    async addItem(text) {
+        const item = await this.store.add(text);
+        this.emit('item-changed', { item });
+        await this.loadItems();
+    }
+
+    async updateItem(id, text) {
+        const item = await this.store.get(id);
+        if (item) {
+            item.text = text;
+            await this.store.upsert(item);
+            this.emit('item-changed', { item });
+            await this.loadItems();
+        }
+    }
+
+    async deleteItem(id) {
+        await this.store.delete(id);
+        this.emit('item-deleted', { id });
+        await this.loadItems();
+    }
+
+    emit(name, detail) {
+        this.dispatchEvent(new CustomEvent(name, { detail }));
+    }
+
+    updateNetworkStatus() {
+        const status = {
+            peersCount: this.p2pNode.peers.size,
+            isConnected: this.p2pNode.peers.size > 0
+        };
+        this.emit('network-status', status);
+    }
+
 
     // Data management methods
     async loadItems() {
@@ -36,17 +75,7 @@ class TodoList {
         }
     }
 
-    async addItem(text) {
-        await this.updateStoreAndReload(() => this.store.add(text), 'Item added');
-    }
 
-    async updateItem(id, text) {
-        await this.updateStoreAndReload(() => this.store.update(id, text), 'Item updated');
-    }
-
-    async deleteItem(id) {
-        await this.updateStoreAndReload(() => this.store.delete(id), 'Item deleted');
-    }
 
     async reorderItems(items) {
         try {
@@ -135,9 +164,7 @@ class TodoList {
             h('button', {
                 class: 'delete',
                 onClick: async () => {
-                    if (confirm('Delete this item?')) {
-                        await this.deleteItem(item.id);
-                    }
+                    if (confirm('Delete this item?')) await this.deleteItem(item.id);
                 }
             }, '×')
         );
@@ -199,5 +226,26 @@ class TodoList {
 
         this.el.appendChild(list);
     }
+
+    async resolveConflict(localTodo, remoteTodo) {
+        if (localTodo.lastModified > remoteTodo.lastModified) {
+            return localTodo;
+        }
+        if (localTodo.lastModified < remoteTodo.lastModified) {
+            return remoteTodo;
+        }
+        // If timestamps are equal, use deterministic approach
+        return localTodo.id < remoteTodo.id ? localTodo : remoteTodo;
+    }
+
+    // Add to TodoList class
+    async update(node) {
+        const items = await this.store.getAll();
+        node.broadcast({
+            type: 'UPDATE',
+            items: items
+        });
+    }
+
 }
 
