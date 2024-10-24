@@ -344,11 +344,19 @@ class P2PNode extends EventTarget {
 
     setupEventListeners() {
         // Forward relevant events from components
-        [this.me, this.peers, this.messages, this.netstats].forEach(component =>
-            component.addEventListener('*', (event) =>
-                this.emit(event.type, event.detail)));
+        this.forwardEvent(this.me, 'profile-updated');
+        this.forwardEvent(this.peers, 'peer-added', 'peer-removed', 'peers-changed', 'message-sent', 'broadcast-error', 'bootstrap-added');
+        this.forwardEvent(this.messages, 'message-tracked');
+        this.forwardEvent(this.netstats, 'stats-updated');
     }
 
+    forwardEvent(source, ...eventNames) {
+        eventNames.forEach(eventName => {
+            source.addEventListener(eventName, (event) =>
+                this.emit(event.type, event.detail)
+            );
+        });
+    }
 
     becomeBootstrapNode() {
         this.isBootstrap = true;
@@ -357,6 +365,7 @@ class P2PNode extends EventTarget {
     }
 
     handleMessage(senderId, message) {
+        try {
         if (!this.messages.trackMessage(message)) return;
 
         this.peers.updatePeerStats(senderId, 'received');
@@ -393,12 +402,18 @@ class P2PNode extends EventTarget {
         // }
 
         const handler = handlers[message.type];
-        if (handler)
+        if (handler) {
             handler();
-        else
+        } else {
             this.emit('log', { message: `Unknown message type: ${message.type}` });
+        }
 
         this.emit('message-received', { message });
+        } catch (error) {
+            this.emit('log', { message: `Error handling message: ${error.message}`, error });
+            // Optionally, re-throw the error to halt execution or handle it at a higher level
+            // throw error; 
+        }
     }
 
 
