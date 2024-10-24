@@ -12,9 +12,6 @@ class TodoList {
             await this.loadItems();
             toast('Remote items added');
         };
-
-        // Add event listeners for keyboard navigation
-        document.addEventListener('keydown', this.handleKeyDown.bind(this));
     }
 
     // Data management methods
@@ -139,7 +136,7 @@ class TodoList {
                     this.makeItemEditable(contentEl, item);
                 };
 
-        return h('div', { class: 'item', 'data-id': item.id, tabindex: 0 },
+        return h('div', { class: 'item', 'data-id': item.id },
             h('span', { class: 'handle' }, '⋮'),
             contentEl,
             h('button', {
@@ -155,10 +152,11 @@ class TodoList {
 
     makeItemEditable(contentEl, item) {
         const originalHeight = contentEl.offsetHeight;
+        const originalText = item.text;
 
         const finishEditing = async (save = true) => {
             const newText = contentEl.querySelector('textarea').value.trim();
-            if (save && newText && newText !== item.text)
+            if (save && newText && newText !== originalText)
                 await this.updateItem(item.id, newText);
             else
                 this.render();
@@ -179,43 +177,6 @@ class TodoList {
                         .map(id => this.items.find(item => item.id === id))
                 )
             });
-        }
-    }
-
-    handleKeyDown(e) {
-        const focusedElement = document.activeElement;
-        const items = Array.from(this.el.querySelectorAll('.item'));
-        const currentIndex = items.indexOf(focusedElement);
-
-        switch (e.key) {
-            case 'ArrowUp':
-                if (currentIndex > 0) {
-                    items[currentIndex - 1].focus();
-                }
-                break;
-            case 'ArrowDown':
-                if (currentIndex < items.length - 1) {
-                    items[currentIndex + 1].focus();
-                }
-                break;
-            case 'Enter':
-                if (focusedElement.classList.contains('item')) {
-                    const itemId = parseInt(focusedElement.dataset.id, 10);
-                    const item = this.items.find(item => item.id === itemId);
-                    this.makeItemEditable(focusedElement.querySelector('.item-content'), item);
-                }
-                break;
-            case 'Delete':
-                if (focusedElement.classList.contains('item')) {
-                    const itemId = parseInt(focusedElement.dataset.id, 10);
-                    this.deleteItem(itemId);
-                }
-                break;
-            case 'Escape':
-                if (focusedElement.tagName === 'TEXTAREA') {
-                    focusedElement.blur();
-                }
-                break;
         }
     }
 
