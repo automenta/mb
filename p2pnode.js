@@ -1,3 +1,5 @@
+"use strict";
+
 class Message {
     constructor(type, content, sender, ttl = 7) {
         this.id = crypto.randomUUID();
@@ -8,6 +10,7 @@ class Message {
         this.timestamp = Date.now();
         this.path = [];
     }
+
     async sign(privateKey) {
         const data = JSON.stringify({
             type: this.type,
@@ -24,7 +27,7 @@ class Message {
 }
 
 
-class PeerList extends EventTarget {
+class PeerList extends BaseEventEmitter {
     constructor() {
         super();
         this.peers = new Map();
@@ -42,15 +45,15 @@ class PeerList extends EventTarget {
             }
         });
         this.persistPeers();
-        this.emit('peer-added', { peerId });
-        this.emit('peers-changed', { count: this.peers.size });
+        this.emit('peer-added', {peerId});
+        this.emit('peers-changed', {count: this.peers.size});
     }
 
     remove(peerId) {
         if (this.peers.delete(peerId)) {
             this.persistPeers();
-            this.emit('peer-removed', { peerId });
-            this.emit('peers-changed', { count: this.peers.size });
+            this.emit('peer-removed', {peerId});
+            this.emit('peers-changed', {count: this.peers.size});
         }
     }
 
@@ -61,9 +64,9 @@ class PeerList extends EventTarget {
                     peer.connection.send(message);
                     peer.stats.messagesSent++;
                     peer.lastSeen = Date.now();
-                    this.emit('message-sent', { peerId, messageId: message.id });
+                    this.emit('message-sent', {peerId, messageId: message.id});
                 } catch (error) {
-                    this.emit('broadcast-error', { peerId, error: error.message });
+                    this.emit('broadcast-error', {peerId, error: error.message});
                 }
             }
         });
@@ -73,11 +76,11 @@ class PeerList extends EventTarget {
     addBootstrapNode(nodeId) {
         this.bootstrapNodes.add(nodeId);
         this.persistPeers();
-        this.emit('bootstrap-added', { nodeId });
+        this.emit('bootstrap-added', {nodeId});
     }
 
     getConnections() {
-        return new Map([...this.peers].map(([id, data]) => [id, data.connection]));
+    return new Map([...this.peers.entries()].map(([id, data]) => [id, data.connection]));
     }
 
     getPeerIds() {
@@ -112,12 +115,12 @@ class PeerList extends EventTarget {
         }
     }
 
-    emit(name, detail) {
-        this.dispatchEvent(new CustomEvent(name, { detail }));
+    has(peerId) {
+        return this.peers.has(peerId);
     }
 }
 
-class Messages extends EventTarget {
+class Messages extends BaseEventEmitter {
     constructor(maxCacheSize = 1000) {
         super();
         this.seenMessages = new LRUCache(maxCacheSize);
@@ -128,15 +131,16 @@ class Messages extends EventTarget {
     }
 
     createMessage(type, content, sender, ttl = 7) {
-        return {
-            id: crypto.randomUUID(),
-            type,
-            content,
-            sender,
-            ttl,
-            timestamp: Date.now(),
-            path: []
-        };
+        return new Message(type, content, sender, ttl);
+        // return {
+        //     id: crypto.randomUUID(),
+        //     type,
+        //     content,
+        //     sender,
+        //     ttl,
+        //     timestamp: Date.now(),
+        //     path: []
+        // };
     }
 
     hasSeenMessage(messageId) {
@@ -153,12 +157,6 @@ class Messages extends EventTarget {
         const typeCount = this.stats.messagesByType.get(type) || 0;
         this.stats.messagesByType.set(type, typeCount + 1);
 
-        this.emit('message-tracked', {
-            id: message.id,
-            type: type,
-            stats: this.getStats()
-        });
-
         return true;
     }
 
@@ -169,13 +167,10 @@ class Messages extends EventTarget {
         };
     }
 
-    emit(name, detail) {
-        this.dispatchEvent(new CustomEvent(name, { detail }));
-    }
 }
 
 // networkStats.js
-class NetStats extends EventTarget {
+class NetStats extends BaseEventEmitter {
     constructor() {
         super();
         this.stats = {
@@ -185,48 +180,31 @@ class NetStats extends EventTarget {
             peakPeerCount: 0,
             currentPeerCount: 0
         };
-        this.startStatsUpdate();
     }
 
     updateMessageCount(count) {
         this.stats.messagesRouted = count;
-        this.emit('stats-updated', { field: 'messagesRouted', value: count });
+        this.emit('stats-updated', {field: 'messagesRouted', value: count});
     }
 
     updatePeerCount(count) {
         this.stats.currentPeerCount = count;
         this.stats.peakPeerCount = Math.max(this.stats.peakPeerCount, count);
-        this.emit('stats-updated', { field: 'peerCount', value: count });
+        this.emit('stats-updated', {field: 'currentPeerCount', value: count});
     }
 
     addBytesTransferred(bytes) {
         this.stats.bytesTransferred += bytes;
-        this.emit('stats-updated', { field: 'bytesTransferred', value: this.stats.bytesTransferred });
+        this.emit('stats-updated', {field: 'bytesTransferred', value: this.stats.bytesTransferred});
     }
 
     getUptime() {
         return Math.floor((Date.now() - this.stats.startTime) / 1000);
     }
 
-    getStats() {
-        return {
-            ...this.stats,
-            uptime: this.getUptime()
-        };
-    }
-
-    startStatsUpdate() {
-        // setInterval(() => {
-        //     this.emit('uptime-changed', { seconds: this.getUptime() });
-        // }, 1000);
-    }
-
-    emit(name, detail) {
-        this.dispatchEvent(new CustomEvent(name, { detail }));
-    }
 }
 
-class P2PNode extends EventTarget {
+class P2PNode extends BaseEventEmitter {
     constructor() {
         super();
         this.me = new UserProfile();
@@ -244,15 +222,15 @@ class P2PNode extends EventTarget {
             debug: 2,
             config: {
                 iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' }
+                    {urls: 'stun:stun.l.google.com:19302'}
                 ]
             }
         });
 
         this.node.on('open', id => {
             this.me.setPeerId(id);
-            this.emit('node-id-changed', { id });
-            this.emit('log', { message: `Node initialized with ID: ${id}` });
+            this.emit('node-id-changed', {id});
+            this.emit('log', {message: `Node initialized with ID: ${id}`});
         });
 
         this.node.on('connection', this.handleIncomingConnection.bind(this));
@@ -267,7 +245,7 @@ class P2PNode extends EventTarget {
     }
 
     handleIncomingConnection(conn) {
-        this.emit('log', { message: `Incoming connection from ${conn.peer}` });
+        this.emit('log', {message: `Incoming connection from ${conn.peer}`});
         this.setupConnection(conn);
     }
 
@@ -275,7 +253,7 @@ class P2PNode extends EventTarget {
         c.on('open', () => {
             // Store connection directly in peers map
             this.peers.add(c.peer, c);
-            this.emit('log', { message: `Connection established with peer: ${c.peer}` });
+            this.emit('log', {message: `Connection established with peer: ${c.peer}`});
 
             if (this.isBootstrap)
                 this.sharePeerList(c);
@@ -285,11 +263,11 @@ class P2PNode extends EventTarget {
 
         c.on('close', () => {
             this.peers.remove(c.peer);
-            this.emit('log', { message: `Connection closed with peer: ${c.peer}` });
+            this.emit('log', {message: `Connection closed with peer: ${c.peer}`});
         });
 
         c.on('error', (err) => {
-            this.emit('log', { message: `Connection error with peer ${c.peer}: ${err.message}` });
+            this.emit('log', {message: `Connection error with peer ${c.peer}: ${err.message}`});
             this.peers.remove(c.peer);
         });
     }
@@ -297,7 +275,7 @@ class P2PNode extends EventTarget {
     connectToBootstrap(bootstrapId) {
         if (!bootstrapId || bootstrapId === this.node.id) return;
 
-        this.emit('log', { message: `Connecting to bootstrap node: ${bootstrapId}` });
+        this.emit('log', {message: `Connecting to bootstrap node: ${bootstrapId}`});
         this.peers.addBootstrapNode(bootstrapId);
         this.setupConnection(this.node.connect(bootstrapId));
     }
@@ -330,43 +308,34 @@ class P2PNode extends EventTarget {
         // Add our ID to the path
         m.path = [this.node.id];
 
-        // Track the message we're about to send
         this.messages.trackMessage(m);
 
-        // Forward to all peers
-        //this.peers.peers.forEach((peer, peerId) => peer.connection.send(m));
         this.peers.broadcast(m);
     }
 
-    handleBroadcast(message) {
-        if (message.ttl <= 0) return;
+    handleBroadcast(m) {
+        if (m.ttl <= 0) return;
 
-        message.ttl--;
-        message.path.push(this.node.id);
+        m.ttl--;
+        m.path.push(this.node.id);
 
         // Forward to all peers except those in the path
         this.peers.peers.forEach((peer, peerId) => {
-            if (!message.path.includes(peerId))
-                peer.connection.send(message);
+            if (!m.path.includes(peerId))
+                peer.connection.send(m);
         });
     }
 
-    sendResponse(message, type) {
-        const responseMessage = new Message(type, message.timestamp, this.node.id);
-        this.peers.peers.forEach((peer, peerId) => {
-            if (peerId === message.sender) peer.connection.send(responseMessage);
-        });
-    }
-
-    emit(name, detail) {
-        this.dispatchEvent(new CustomEvent(name, { detail }));
+    sendResponse(m, type) {
+        const responseMessage = new Message(type, m.timestamp, this.node.id);
+        const peer = this.peers.peers.get(m.sender);
+        peer?.connection.send(responseMessage);
     }
 
     setupEventListeners() {
         // Forward relevant events from components
         this.forwardEvent(this.me, 'profile-updated');
         this.forwardEvent(this.peers, 'peer-added', 'peer-removed', 'peers-changed', 'message-sent', 'broadcast-error', 'bootstrap-added');
-        this.forwardEvent(this.messages, 'message-tracked');
         this.forwardEvent(this.netstats, 'stats-updated');
     }
 
@@ -379,96 +348,85 @@ class P2PNode extends EventTarget {
 
     becomeBootstrapNode() {
         this.isBootstrap = true;
-        this.emit('log', { message: 'This node is now a bootstrap node' });
-        this.emit('bootstrap-status-changed', { isBootstrap: true });
+        this.emit('log', {message: 'This node is now a bootstrap node'});
+        this.emit('bootstrap-status-changed', {isBootstrap: true});
     }
 
     handleMessage(senderId, message) {
         try {
-        if (!this.messages.trackMessage(message)) return;
+            if (!this.messages.trackMessage(message)) return;
 
-        this.peers.updatePeerStats(senderId, 'received');
+            this.peers.updatePeerStats(senderId, 'received');
 
-        const handlers = {
-            PEER_LIST: () => this.handlePeerList(message.content),
-            BROADCAST: () => this.handleBroadcast(message),
-            PING: () => this.sendResponse(message, 'PONG'),
-            PONG: () => this.handlePong(message),
-            KEEP_ALIVE: () => this.sendResponse(message, 'KEEP_ALIVE'),
-            UPDATE: () => this.handleUpdate(message)
-            //     case 'SEARCH_REQUEST':
-            //     case 'SEARCH_RESULT':
-            //     case 'FILE_REQUEST':
-            //     case 'FILE_TRANSFER':
-            //     case 'NODE_INFO':
-            //     case 'KEEP_ALIVE':
-            //     case 'DISCONNECT':
-        };
-
-
-        const handler = handlers[message.type];
-        if (handler)
-            handler();
-        else
-            this.emit('log', { message: `Unknown message type: ${message.type}` });
+            const handlers = {
+                PEER_LIST: () => this.handlePeerList(message.content),
+                BROADCAST: () => this.handleBroadcast(message),
+                PING: () => this.sendResponse(message, 'PONG'),
+                PONG: () => this.handlePong(message),
+                KEEP_ALIVE: () => this.sendResponse(message, 'KEEP_ALIVE'),
+                UPDATE: () => this.handleUpdate(message)
+                // SEARCH_REQUEST: () => this.handleSearchRequest(message),
+                // SEARCH_RESULT: () => this.handleSearchResult(message),
+                // FILE_REQUEST: () => this.handleFileRequest(message),
+                // FILE_TRANSFER: () => this.handleFileTransfer(message),
+                // NODE_INFO: () => this.handleNodeInfo(message),
+                // DISCONNECT: () => this.handleDisconnect(message),
+            };
 
 
-        this.emit('message-received', { message });
+            const handler = handlers[message.type];
+            if (handler)
+                handler(message);
+            else
+                this.emit('log', {message: `Unknown message type: ${message.type}`});
+
+
+            this.emit('message-received', {message});
         } catch (error) {
-            this.emit('log', { message: `Error handling message: ${error.message}`, error });
+            this.emit('log', {message: `Error handling message: ${error.message}`, error});
             // Optionally, re-throw the error to halt execution or handle it at a higher level throw error;
         }
     }
 
 
 
-    handleUpdate(message) {
-        this.todoList.store.bulkAdd(message.content.items);
-    }
-
     handleSearchRequest(message) {
-        this.emit('log', { message: 'Search request received' });
+        this.emit('log', {message: 'Search request received'});
     }
 
     handleSearchResult(message) {
-        this.emit('log', { message: 'Search result received' });
+        this.emit('log', {message: 'Search result received'});
     }
 
     handleFileRequest(message) {
-        this.emit('log', { message: 'File request received' });
+        this.emit('log', {message: 'File request received'});
     }
 
     handleFileTransfer(message) {
-        this.emit('log', { message: 'File transfer received' });
+        this.emit('log', {message: 'File transfer received'});
     }
 
     handleNodeInfo(message) {
-        this.emit('log', { message: 'Node info received' });
+        this.emit('log', {message: 'Node info received'});
     }
 
 
     handlePing(message) {
-        this.emit('log', { message: 'Ping received' });
+        this.emit('log', {message: 'Ping received'});
     }
 
     handlePong(message) {
-        this.emit('log', { message: 'Pong received' });
+        this.emit('log', {message: 'Pong received'});
     }
 
     handleKeepAlive(message) {
-        this.emit('log', { message: 'KeepAlive received' });
+        this.emit('log', {message: 'KeepAlive received'});
     }
 
     handleDisconnect(message) {
-        this.emit('log', { message: 'Disconnect notification received' });
+        this.emit('log', {message: 'Disconnect notification received'});
     }
 
-    startStatsUpdate() {
-        setInterval(() => {
-            const uptime = Math.floor((Date.now() - this.stats.startTime) / 1000);
-            this.emit('uptime-changed', { seconds: uptime });
-        }, 1000);
-    }
 
     async resolveConflict(local, remote) {
         // If items have different modification histories, keep the one with more changes

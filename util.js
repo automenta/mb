@@ -1,5 +1,12 @@
 "use strict";
 
+
+class BaseEventEmitter extends EventTarget {
+    emit(name, detail) {
+        this.dispatchEvent(new CustomEvent(name, { detail }));
+    }
+}
+
 window.h = (tag, props = {}, ...children) => {
     const el = document.createElement(tag);
     Object.entries(props).forEach(([k, v]) => {
@@ -40,4 +47,3 @@ class LRUCache {
         this.cache.set(key, value);
     }
 }
-

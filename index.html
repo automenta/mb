@@ -48,6 +48,10 @@
   const node = new P2PNode();
 
 
+  node.handleUpdate  = (message) => {
+    todo.store.bulkAdd(message.content.items);
+  };
+
   document.querySelector('node-status-view').nodeReference =
   document.querySelector('bootstrap-discovery-view').nodeReference =
   document.querySelector('send-message-view').nodeReference =

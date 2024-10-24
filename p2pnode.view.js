@@ -57,9 +57,9 @@ class NodeStatusView extends HTMLElement {
     }
 
     updateNodeId(id) {
-        const nodeIdSpan = this.shadowRoot.getElementById('node-id');
-        nodeIdSpan.textContent = id;
-        nodeIdSpan.onclick = () => {
+        const s = this.shadowRoot.getElementById('node-id');
+        s.textContent = id;
+        s.onclick = () => {
             navigator.clipboard.writeText(id)
                 .then(() => toast('Node ID copied to clipboard'))
                 .catch(err => toast('Failed to copy Node ID', 'error'));

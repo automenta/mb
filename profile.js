@@ -1,4 +1,4 @@
-class UserProfile extends EventTarget {
+class UserProfile extends BaseEventEmitter {
     constructor(initialData = {}) {
         super();
         this.data = {
@@ -35,7 +35,4 @@ class UserProfile extends EventTarget {
         return { ...this.data };
     }
 
-    emit(name, detail) {
-        this.dispatchEvent(new CustomEvent(name, { detail }));
-    }
 }

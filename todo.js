@@ -1,6 +1,6 @@
 "use strict";
 
-class TodoList extends EventTarget {
+class TodoList extends BaseEventEmitter {
     constructor(el) {
         super();
         this.el = el;
@@ -21,8 +21,7 @@ class TodoList extends EventTarget {
     }
 
     async addItem(text) {
-        const item = await this.store.add(text);
-        this.emit('item-changed', { item });
+        this.emit('item-changed', { item: await this.store.add(text) });
         await this.loadItems();
     }
 
@@ -40,10 +39,6 @@ class TodoList extends EventTarget {
         await this.store.delete(id);
         this.emit('item-deleted', { id });
         await this.loadItems();
-    }
-
-    emit(name, detail) {
-        this.dispatchEvent(new CustomEvent(name, { detail }));
     }
 
     updateNetworkStatus() {

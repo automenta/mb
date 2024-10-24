@@ -17,36 +17,26 @@ class SyncManager {
 
     setupListeners() {
         // Handle new peer connections
-        this.p2pNode.addEventListener('peer-added', async ({ detail }) => {
-            await this.requestSync(detail.peerId);
-        });
+        this.p2pNode.addEventListener('peer-added', async ({ detail }) => await this.requestSync(detail.peerId));
 
         // Handle sync messages
-        this.p2pNode.addEventListener('message-received', ({ detail }) => {
-            this.handleSyncMessage(detail.message);
-        });
+        this.p2pNode.addEventListener('message-received', ({ detail }) => this.handleSyncMessage(detail.message));
 
         // Monitor local changes
-        this.todoList.addEventListener('item-changed', ({ detail }) => {
-            this.broadcastChange(detail.item);
-        });
+        this.todoList.addEventListener('item-changed', ({ detail }) => this.broadcastChange(detail.item));
 
-        this.todoList.addEventListener('item-deleted', ({ detail }) => {
-            this.broadcastDelete(detail.id);
-        });
+        this.todoList.addEventListener('item-deleted', ({ detail }) => this.broadcastDelete(detail.id));
     }
 
     async requestSync(peerId) {
-        const request = {
-            type: SYNC_TYPES.SYNC_REQUEST,
-            content: { timestamp: Date.now() },
-            sender: this.p2pNode.node.id
-        };
-
         const peer = this.p2pNode.peers.get(peerId);
-        if (peer?.connection) {
-            peer.connection.send(request);
-        }
+        if (peer?.connection)
+            peer.connection.send({
+                type: SYNC_TYPES.SYNC_REQUEST,
+                content: {timestamp: Date.now()},
+                sender: this.p2pNode.node.id
+            });
+
     }
 
     async handleSyncMessage(message) {
@@ -87,9 +77,8 @@ class SyncManager {
 
         // Send directly to requesting peer
         const peer = this.p2pNode.peers.get(message.sender);
-        if (peer?.connection) {
+        if (peer?.connection)
             peer.connection.send(response);
-        }
     }
 
     async handleSyncState(message) {
@@ -106,9 +95,9 @@ class SyncManager {
             const localItem = localItemMap.get(remoteItem.id);
 
             // Add or update if remote item is newer
-            if (!localItem || this.isNewer(remoteItem, localItem)) {
+            if (!localItem || this.isNewer(remoteItem, localItem))
                 await this.store.upsert(remoteItem);
-            }
+
         }
 
         await this.todoList.loadItems();
@@ -137,24 +126,22 @@ class SyncManager {
     }
 
     broadcastChange(item) {
-        const message = {
+        this.p2pNode.broadcast({
             type: SYNC_TYPES.ITEM_CHANGE,
             content: item,
             sender: this.p2pNode.node.id
-        };
-        this.p2pNode.broadcast(message);
+        });
     }
 
     broadcastDelete(id) {
-        const message = {
+        this.p2pNode.broadcast({
             type: SYNC_TYPES.ITEM_DELETE,
             content: {
                 id,
                 timestamp: Date.now()
             },
             sender: this.p2pNode.node.id
-        };
-        this.p2pNode.broadcast(message);
+        });
     }
 
     isNewer(itemA, itemB) {
@@ -184,12 +171,12 @@ class Store {
     }
 
     async getAll() {
-        return await this.db.items.toArray();
+        return this.db.items.toArray();
     }
 
     async add(text, source = 'local') {
         const now = new Date().toISOString();
-        return await this.db.items.add({
+        return this.db.items.add({
             text,
             source,
             created: now,
@@ -203,18 +190,18 @@ class Store {
 
     async bulkAdd(items, source = 'remote') {
         let order = await this.order();
-        const now = this.date();
 
         const processedItems = items.map(item => ({
             ...item,
             order: order++,
             source,
-            created: now,
-            updated: now
+            created: item.created || this.date(),
+            updated: item.updated || this.date()
         }));
 
-        return await Promise.all(processedItems.map(item => this.db.items.add(item)));
+        return await this.db.items.bulkPut(processedItems);
     }
+
 
     date() {
         return new Date().toISOString();
@@ -225,9 +212,6 @@ class Store {
         return maxOrder ? maxOrder.order + 1 : 0;
     }
 
-    async delete(id) {
-        await this.db.items.delete(id);
-    }
 
     async reorder(items) {
         const now = this.date();
