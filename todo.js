@@ -1,66 +1,23 @@
 class TodoList {
-    constructor(el, options = {}) {
+    constructor(el) {
         this.el = el;
         this.store = new Store('todos');
         this.items = [];
-
-        // Default implementations
-        this.renderers = {
-            textDisplay: (text, item) => text,
-            textEditor: options => {
-                const textarea = h('textarea', {
-                    rows: 1,
-                    value: options.initialText || '',
-                    placeholder: options.placeholder,
-                    style: options.height ? { height: options.height + 'px' } : {},
-                    onInput: e => this.autoResizeTextarea(e.target),
-                    onKeyDown: async e => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            const text = e.target.value.trim();
-                            if (text) {
-                                await options.onComplete(text);
-                                if (options.clearAfterComplete) {
-                                    e.target.value = '';
-                                    e.target.style.height = 'auto';
-                                }
-                            }
-                        } else if (e.key === 'Escape' && options.onCancel) {
-                            options.onCancel();
-                        }
-                    },
-                    onBlur: () => options.onBlur?.()
-                });
-
-                if (options.focus) {
-                    requestAnimationFrame(() => {
-                        textarea.focus();
-                        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-                    });
-                }
-
-                // Initialize height for new item editor
-                if (!options.height)
-                    setTimeout(() => this.autoResizeTextarea(textarea), 0);
-
-                return textarea;
-            }
-        };
-
-        // Override default implementations with provided options
-        Object.assign(this.renderers, options.renderers);
-
         this.loadItems();
         this.render();
 
-        window.addRemoteItems = async items => {
+        // Example of how to handle incoming remote items
+        window.addRemoteItems = async (items) => {
             await this.store.bulkAdd(items, 'remote');
             await this.loadItems();
             toast('Remote items added');
         };
+
+        // Add event listeners for keyboard navigation
+        document.addEventListener('keydown', this.handleKeyDown.bind(this));
     }
 
-    // Data management methods remain the same
+    // Data management methods
     async loadItems() {
         try {
             this.items = await this.store.getAll();
@@ -111,20 +68,60 @@ class TodoList {
         }
     }
 
-    // UI Components using abstract renderers
+    // UI Components
     createNewItemTextarea() {
-        return this.renderers.textEditor({
+        const textarea = h('textarea', {
+            rows: 1,
             placeholder: 'Add a new item... (Shift+Enter for new line)',
-            onComplete: text => this.addItem(text),
-            clearAfterComplete: true
+            onInput: e => this.autoResizeTextarea(e.target),
+            onKeyDown: async e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    const text = e.target.value.trim();
+                    if (text) {
+                        await this.addItem(text);
+                        e.target.value = '';
+                        e.target.style.height = 'auto';
+                    }
+                }
+            }
         });
+
+        // Initialize height
+        setTimeout(() => this.autoResizeTextarea(textarea), 0);
+        return textarea;
+    }
+
+    createEditItemTextarea(item, originalHeight, onFinish) {
+        const textarea = h('textarea', {
+            rows: 1,
+            value: item.text,
+            style: { height: originalHeight + 'px' },
+            onInput: e => this.autoResizeTextarea(e.target),
+            onKeyDown: async e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    await onFinish(true);
+                } else if (e.key === 'Escape') {
+                    await onFinish(false);
+                }
+            },
+            onBlur: () => onFinish(true)
+        });
+
+        // Focus and move cursor to end after the textarea is in the DOM
+        requestAnimationFrame(() => {
+            textarea.focus();
+            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+        });
+
+        return textarea;
     }
 
     autoResizeTextarea(textarea) {
         textarea.style.height = 'auto';
         textarea.style.height = textarea.scrollHeight + 'px';
     }
-
     createEmptyState() {
         return h('div', { class: 'empty' },
             'No items yet. Type above to add one!'
@@ -134,15 +131,15 @@ class TodoList {
     createListItem(item) {
         const contentEl = h('div', {
             class: `item-content${item.source === 'local' ? ' editable' : ''}`,
-        }, this.renderers.textDisplay(item.text, item));
+        }, item.text);
 
         if (item.source === 'local')
             contentEl.ondblclick = e => {
                 if (!e.target.closest('textarea'))
                     this.makeItemEditable(contentEl, item);
-            };
+                };
 
-        return h('div', { class: 'item', 'data-id': item.id },
+        return h('div', { class: 'item', 'data-id': item.id, tabindex: 0 },
             h('span', { class: 'handle' }, '⋮'),
             contentEl,
             h('button', {
@@ -167,14 +164,7 @@ class TodoList {
                 this.render();
         };
 
-        contentEl.replaceChildren(this.renderers.textEditor({
-            initialText: item.text,
-            height: originalHeight,
-            focus: true,
-            onComplete: text => this.updateItem(item.id, text),
-            onCancel: () => this.render(),
-            onBlur: () => finishEditing(true)
-        }));
+        contentEl.replaceChildren(this.createEditItemTextarea(item, originalHeight, finishEditing));
     }
 
     initializeSortable(itemsContainer) {
@@ -192,19 +182,60 @@ class TodoList {
         }
     }
 
+    handleKeyDown(e) {
+        const focusedElement = document.activeElement;
+        const items = Array.from(this.el.querySelectorAll('.item'));
+        const currentIndex = items.indexOf(focusedElement);
+
+        switch (e.key) {
+            case 'ArrowUp':
+                if (currentIndex > 0) {
+                    items[currentIndex - 1].focus();
+                }
+                break;
+            case 'ArrowDown':
+                if (currentIndex < items.length - 1) {
+                    items[currentIndex + 1].focus();
+                }
+                break;
+            case 'Enter':
+                if (focusedElement.classList.contains('item')) {
+                    const itemId = parseInt(focusedElement.dataset.id, 10);
+                    const item = this.items.find(item => item.id === itemId);
+                    this.makeItemEditable(focusedElement.querySelector('.item-content'), item);
+                }
+                break;
+            case 'Delete':
+                if (focusedElement.classList.contains('item')) {
+                    const itemId = parseInt(focusedElement.dataset.id, 10);
+                    this.deleteItem(itemId);
+                }
+                break;
+            case 'Escape':
+                if (focusedElement.tagName === 'TEXTAREA') {
+                    focusedElement.blur();
+                }
+                break;
+        }
+    }
+
     render() {
         this.el.innerHTML = '';
         const list = h('div', { class: 'list' });
 
-        list.appendChild(h('div', { class: 'item input' },
+        // Add input area
+        list.appendChild( h('div', {class: 'item input'},
             this.createNewItemTextarea()
         ));
 
+        // Add empty state or items
         if (!this.items.length) {
             list.appendChild(this.createEmptyState());
         } else {
             const itemsContainer = h('div', { class: 'items' });
-            this.items.forEach(item => itemsContainer.appendChild(this.createListItem(item)));
+            this.items.forEach(item => {
+                itemsContainer.appendChild(this.createListItem(item));
+            });
             list.appendChild(itemsContainer);
             this.initializeSortable(itemsContainer);
         }
@@ -212,3 +243,6 @@ class TodoList {
         this.el.appendChild(list);
     }
 }
+
+
+
