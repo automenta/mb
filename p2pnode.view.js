@@ -26,6 +26,9 @@ class NodeStatusView extends HTMLElement {
                     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
                     gap: 10px;
                 }
+                #node-id {
+                    cursor: pointer; /* Add this line */
+                }
             </style>
             <div class="card">
                 <h2>Node Status</h2>
