@@ -10,24 +10,25 @@ class UserProfile extends EventTarget {
         };
     }
 
+    set(field, value) {
+        this.data[field] = value;
+        this.emit('profile-updated', { field, value });
+    }
+
     setPeerId(id) {
-        this.data.peerId = id;
-        this.emit('profile-updated', { field: 'peerId', value: id });
+        this.set('peerId', id);
     }
 
     setDisplayName(name) {
-        this.data.displayName = name;
-        this.emit('profile-updated', { field: 'displayName', value: name });
+        this.set('displayName', name);
     }
 
     setBio(bio) {
-        this.data.bio = bio;
-        this.emit('profile-updated', { field: 'bio', value: bio });
+        this.set('bio', bio);
     }
 
     setPreference(key, value) {
-        this.data.preferences[key] = value;
-        this.emit('profile-updated', { field: 'preferences', value: this.data.preferences });
+        this.set('preferences', { ...this.data.preferences, [key]: value });
     }
 
     toJSON() {
