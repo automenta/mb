@@ -18,7 +18,6 @@ class NodeStatusView extends HTMLElement {
         this.shadowRoot.innerHTML = `
             <style>
                 .stat-card {
-                    background: #f0f0f0;
                     padding: 10px;
                     border-radius: 4px;
                 }
@@ -50,8 +49,8 @@ class NodeStatusView extends HTMLElement {
 
     bindToNode() {
         if (!this.node) return;
-        this.node.addEventListener('node-id-changed', (e) => this.updateNodeId(e.detail.id));
-        this.node.addEventListener('network-stats-updated', (e) => this.updateNetworkStats(e.detail));
+        this.node.addEventListener('node-id-changed', e => this.updateNodeId(e.detail.id));
+        this.node.addEventListener('network-stats-updated', e => this.updateNetworkStats(e.detail));
     }
 
     updateNodeId(id) {
@@ -128,18 +127,16 @@ class BootstrapDiscoveryView extends HTMLElement {
         });
 
         this.shadowRoot.getElementById('become-bootstrap').addEventListener('click', () => {
-            if (this.node) {
+            if (this.node)
                 this.node.becomeBootstrapNode();
-            }
         });
     }
 
     bindToNode() {
         if (!this.node) return;
 
-        this.node.addEventListener('bootstrap-status-changed', (e) => {
-            const statusSpan = this.shadowRoot.getElementById('bootstrap-status');
-            statusSpan.textContent = e.detail.isBootstrap ? '(Active Bootstrap Node)' : '';
+        this.node.addEventListener('bootstrap-status-changed', e => {
+            this.shadowRoot.getElementById('bootstrap-status').textContent = e.detail.isBootstrap ? '(Active Bootstrap Node)' : '';
         });
     }
 }
@@ -246,8 +243,7 @@ class NetworkMessagesView extends HTMLElement {
                 }
                 .message-item {
                     padding: 8px;
-                    margin: 4px 0;
-                    background: #f9f9f9;
+                    margin: 4px 0;                   
                     border-radius: 4px;
                     font-family: monospace;
                 }
@@ -262,14 +258,14 @@ class NetworkMessagesView extends HTMLElement {
     bindToNode() {
         if (!this.node) return;
 
-        this.node.addEventListener('message-received', (e) => this.addMessage(e.detail.message));
+        this.node.addEventListener('message-received', e => this.addMessage(e.detail.message));
     }
 
-    addMessage(message) {
+    addMessage(m) {
         const messagesDiv = this.shadowRoot.getElementById('messages');
         const messageElement = document.createElement('div');
         messageElement.classList.add('message-item');
-        messageElement.textContent = JSON.stringify(message);
+        messageElement.textContent = JSON.stringify(m);
         messagesDiv.appendChild(messageElement);
         messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll
     }
@@ -298,7 +294,6 @@ class NetworkLogView extends HTMLElement {
         this.shadowRoot.innerHTML = `
             <style>
                 .log {
-                    background: #f5f5f5;
                     padding: 10px;
                     border-radius: 4px;
                     max-height: 200px;
@@ -315,9 +310,8 @@ class NetworkLogView extends HTMLElement {
     }
 
     bindToNode() {
-        if (!this.node) return;
-
-        this.node.addEventListener('log', (e) => this.log(e.detail.message));
+        if (this.node)
+            this.node.addEventListener('log', e => this.log(e.detail.message));
     }
 
     log(message) {

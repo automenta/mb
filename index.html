@@ -5,8 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TODO</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 
   <script src="util.js"></script>
+  <script src="lm.js"></script>
 
   <script src="profile.js"></script>
 
@@ -36,30 +38,35 @@
 </div>
 
 <script>
-  const todo = new TodoList(document.getElementById('todolist'));
-  // const todo = new SemanticTodoList(document.getElementById('todolist'), {
-  //   systemPrompt: "Convert the todo item text into JSON with 'task' and 'priority' fields",
-  //   endpoint: 'your-llm-endpoint'
-  // });
 
+  function item(text) {
+    let e = $('<div>');
+    e.append(text).append('<button>*</button>');
+    return e[0];
+
+  }
+
+  const todo = new TodoList(document.getElementById('todolist'), {
+    renderers: {
+      textDisplay: text => item(text)
+      // textEditor: options => {
+      //
+      // }
+    }
+  });
 
   const node = new P2PNode();
 
 
-  const nodeStatusView = document.querySelector('node-status-view');
-  nodeStatusView.nodeReference = node;
+  document.querySelector('node-status-view').nodeReference = node;
 
-  const bootstrapDiscoveryView = document.querySelector('bootstrap-discovery-view');
-  bootstrapDiscoveryView.nodeReference = node;
+  document.querySelector('bootstrap-discovery-view').nodeReference = node;
 
-  const sendMessageView = document.querySelector('send-message-view');
-  sendMessageView.nodeReference = node;
+  document.querySelector('send-message-view').nodeReference = node;
 
-  const networkMessagesView = document.querySelector('network-messages-view');
-  networkMessagesView.nodeReference = node;
+  document.querySelector('network-messages-view').nodeReference = node;
 
-  const networkLogView = document.querySelector('network-log-view');
-  networkLogView.nodeReference = node;
+  document.querySelector('network-log-view').nodeReference = node;
 
 </script>
 </body>

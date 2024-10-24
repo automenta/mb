@@ -1,20 +1,66 @@
 class TodoList {
-    constructor(el) {
+    constructor(el, options = {}) {
         this.el = el;
         this.store = new Store('todos');
         this.items = [];
+
+        // Default implementations
+        this.renderers = {
+            textDisplay: (text, item) => text,
+            textEditor: options => {
+                const textarea = h('textarea', {
+                    rows: 1,
+                    value: options.initialText || '',
+                    placeholder: options.placeholder,
+                    style: options.height ? { height: options.height + 'px' } : {},
+                    onInput: e => this.autoResizeTextarea(e.target),
+                    onKeyDown: async e => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            const text = e.target.value.trim();
+                            if (text) {
+                                await options.onComplete(text);
+                                if (options.clearAfterComplete) {
+                                    e.target.value = '';
+                                    e.target.style.height = 'auto';
+                                }
+                            }
+                        } else if (e.key === 'Escape' && options.onCancel) {
+                            options.onCancel();
+                        }
+                    },
+                    onBlur: () => options.onBlur?.()
+                });
+
+                if (options.focus) {
+                    requestAnimationFrame(() => {
+                        textarea.focus();
+                        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+                    });
+                }
+
+                // Initialize height for new item editor
+                if (!options.height)
+                    setTimeout(() => this.autoResizeTextarea(textarea), 0);
+
+                return textarea;
+            }
+        };
+
+        // Override default implementations with provided options
+        Object.assign(this.renderers, options.renderers);
+
         this.loadItems();
         this.render();
 
-        // Example of how to handle incoming remote items
-        window.addRemoteItems = async (items) => {
+        window.addRemoteItems = async items => {
             await this.store.bulkAdd(items, 'remote');
             await this.loadItems();
             toast('Remote items added');
         };
     }
 
-    // Data management methods
+    // Data management methods remain the same
     async loadItems() {
         try {
             this.items = await this.store.getAll();
@@ -65,60 +111,20 @@ class TodoList {
         }
     }
 
-    // UI Components
+    // UI Components using abstract renderers
     createNewItemTextarea() {
-        const textarea = h('textarea', {
-            rows: 1,
+        return this.renderers.textEditor({
             placeholder: 'Add a new item... (Shift+Enter for new line)',
-            onInput: e => this.autoResizeTextarea(e.target),
-            onKeyDown: async e => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    const text = e.target.value.trim();
-                    if (text) {
-                        await this.addItem(text);
-                        e.target.value = '';
-                        e.target.style.height = 'auto';
-                    }
-                }
-            }
+            onComplete: text => this.addItem(text),
+            clearAfterComplete: true
         });
-
-        // Initialize height
-        setTimeout(() => this.autoResizeTextarea(textarea), 0);
-        return textarea;
-    }
-
-    createEditItemTextarea(item, originalHeight, onFinish) {
-        const textarea = h('textarea', {
-            rows: 1,
-            value: item.text,
-            style: { height: originalHeight + 'px' },
-            onInput: e => this.autoResizeTextarea(e.target),
-            onKeyDown: async e => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    await onFinish(true);
-                } else if (e.key === 'Escape') {
-                    await onFinish(false);
-                }
-            },
-            onBlur: () => onFinish(true)
-        });
-
-        // Focus and move cursor to end after the textarea is in the DOM
-        requestAnimationFrame(() => {
-            textarea.focus();
-            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-        });
-
-        return textarea;
     }
 
     autoResizeTextarea(textarea) {
         textarea.style.height = 'auto';
         textarea.style.height = textarea.scrollHeight + 'px';
     }
+
     createEmptyState() {
         return h('div', { class: 'empty' },
             'No items yet. Type above to add one!'
@@ -128,13 +134,13 @@ class TodoList {
     createListItem(item) {
         const contentEl = h('div', {
             class: `item-content${item.source === 'local' ? ' editable' : ''}`,
-        }, item.text);
+        }, this.renderers.textDisplay(item.text, item));
 
         if (item.source === 'local')
             contentEl.ondblclick = e => {
                 if (!e.target.closest('textarea'))
                     this.makeItemEditable(contentEl, item);
-                };
+            };
 
         return h('div', { class: 'item', 'data-id': item.id },
             h('span', { class: 'handle' }, '⋮'),
@@ -161,7 +167,14 @@ class TodoList {
                 this.render();
         };
 
-        contentEl.replaceChildren(this.createEditItemTextarea(item, originalHeight, finishEditing));
+        contentEl.replaceChildren(this.renderers.textEditor({
+            initialText: item.text,
+            height: originalHeight,
+            focus: true,
+            onComplete: text => this.updateItem(item.id, text),
+            onCancel: () => this.render(),
+            onBlur: () => finishEditing(true)
+        }));
     }
 
     initializeSortable(itemsContainer) {
@@ -183,19 +196,15 @@ class TodoList {
         this.el.innerHTML = '';
         const list = h('div', { class: 'list' });
 
-        // Add input area
-        list.appendChild( h('div', {class: 'item input'},
+        list.appendChild(h('div', { class: 'item input' },
             this.createNewItemTextarea()
         ));
 
-        // Add empty state or items
         if (!this.items.length) {
             list.appendChild(this.createEmptyState());
         } else {
             const itemsContainer = h('div', { class: 'items' });
-            this.items.forEach(item => {
-                itemsContainer.appendChild(this.createListItem(item));
-            });
+            this.items.forEach(item => itemsContainer.appendChild(this.createListItem(item)));
             list.appendChild(itemsContainer);
             this.initializeSortable(itemsContainer);
         }
@@ -203,6 +212,3 @@ class TodoList {
         this.el.appendChild(list);
     }
 }
-
-
-

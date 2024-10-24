@@ -5,21 +5,21 @@ class Store {
             items: '++id,text,order,source,created,updated'
         });
     }
+
     async update(id, text) {
-        const now = new Date().toISOString();
         await this.db.items.update(id, {
             text,
-            updated: now
+            updated: this.date()
         });
     }
+
     async getAll() {
         return this.db.items.orderBy('order').toArray();
     }
 
     async add(text, source = 'local') {
-        const maxOrder = await this.db.items.orderBy('order').last();
-        const order = maxOrder ? maxOrder.order + 1 : 0;
-        const now = new Date().toISOString();
+        const order = await this.order();
+        const now = this.date();
         return this.db.items.add({
             text,
             order,
@@ -30,9 +30,8 @@ class Store {
     }
 
     async bulkAdd(items, source = 'remote') {
-        const maxOrder = await this.db.items.orderBy('order').last();
-        let order = maxOrder ? maxOrder.order + 1 : 0;
-        const now = new Date().toISOString();
+        let order = await this.order();
+        const now = this.date();
 
         const processedItems = items.map(item => ({
             ...item,
@@ -45,12 +44,21 @@ class Store {
         return await this.db.items.bulkAdd(processedItems);
     }
 
+    date() {
+        return new Date().toISOString();
+    }
+
+    async order() {
+        const maxOrder = await this.db.items.orderBy('order').last();
+        return maxOrder ? maxOrder.order + 1 : 0;
+    }
+
     async delete(id) {
         await this.db.items.delete(id);
     }
 
     async reorder(items) {
-        const now = new Date().toISOString();
+        const now = this.date();
         await this.db.items.bulkPut(
             items.map((item, i) => ({
                 ...item,
