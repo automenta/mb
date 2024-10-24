@@ -4,8 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TODO</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
 
   <script src="util.js"></script>
   <script src="lm.js"></script>
@@ -27,6 +29,7 @@
 
 </head>
 <body>
+
 <div id="todolist"></div>
 
 <div id="net">
@@ -39,34 +42,32 @@
 
 <script>
 
-  function item(text) {
-    let e = $('<div>');
-    e.append(text).append('<button>*</button>');
-    return e[0];
-
-  }
-
-  const todo = new TodoList(document.getElementById('todolist'), {
-    renderers: {
-      textDisplay: text => item(text)
-      // textEditor: options => {
-      //
-      // }
-    }
-  });
+  const todo = new TodoList(document.getElementById('todolist'));
 
   const node = new P2PNode();
 
 
-  document.querySelector('node-status-view').nodeReference = node;
+  document.querySelector('node-status-view').nodeReference =
+  document.querySelector('bootstrap-discovery-view').nodeReference =
+  document.querySelector('send-message-view').nodeReference =
+  document.querySelector('network-messages-view').nodeReference =
+  document.querySelector('network-log-view').nodeReference =
+    node;
 
-  document.querySelector('bootstrap-discovery-view').nodeReference = node;
+  // Handle incoming messages to add to the todo list
+  node.addEventListener('message-received', e => {
+    const { message } = e.detail;
+    if (message.content && message.sender !== p2pNode.peerId) {
+      todo.addItem(message.content);
+    }
+  });
 
-  document.querySelector('send-message-view').nodeReference = node;
-
-  document.querySelector('network-messages-view').nodeReference = node;
-
-  document.querySelector('network-log-view').nodeReference = node;
+  // Broadcast new todo items to peers
+  const originalAddItem = todo.addItem.bind(todo);
+  todo.addItem = async function(text) {
+    await originalAddItem(text);
+    node.broadcast(text);
+  };
 
 </script>
 </body>

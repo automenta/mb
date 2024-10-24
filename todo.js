@@ -162,9 +162,9 @@ class TodoList {
                 this.render();
         };
 
-        // Instead of replacing, just add the textarea as a child
+
+        contentEl.firstChild.remove();
         contentEl.appendChild(this.createEditItemTextarea(item, originalHeight, finishEditing));
-        // Set the textarea's value to the original text
         contentEl.querySelector('textarea').value = originalText;
     }
 
