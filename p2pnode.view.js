@@ -54,7 +54,13 @@ class NodeStatusView extends HTMLElement {
     }
 
     updateNodeId(id) {
-        this.shadowRoot.getElementById('node-id').textContent = id;
+        const nodeIdSpan = this.shadowRoot.getElementById('node-id');
+        nodeIdSpan.textContent = id;
+        nodeIdSpan.onclick = () => {
+            navigator.clipboard.writeText(id)
+                .then(() => toast('Node ID copied to clipboard'))
+                .catch(err => toast('Failed to copy Node ID', 'error'));
+        };
     }
 
     updateNetworkStats(stats) {
