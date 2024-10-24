@@ -260,28 +260,36 @@ class P2PNode extends EventTarget {
     }
 
     setupConnection(conn) {
-        conn.on('open', () => {
-            this.connections.set(conn.peer, conn); // Store in connections Map
-            this.peers.add(conn.peer, conn);
-            this.emit('log', { message: `Connection established with peer: ${conn.peer}` });
+        const handleConnectionEvent = (event) => {
+            switch (event.type) {
+                case 'open':
+                    this.connections.set(conn.peer, conn); // Store in connections Map
+                    this.peers.add(conn.peer, conn);
+                    this.emit('log', { message: `Connection established with peer: ${conn.peer}` });
 
-            if (this.isBootstrap)
-                this.sharePeerList(conn);
-        });
+                    if (this.isBootstrap)
+                        this.sharePeerList(conn);
+                    break;
+                case 'data':
+                    this.handleMessage(conn.peer, event.data);
+                    break;
+                case 'close':
+                    this.connections.delete(conn.peer); // Remove from connections Map
+                    this.peers.remove(conn.peer);
+                    this.emit('log', { message: `Connection closed with peer: ${conn.peer}` });
+                    break;
+                case 'error':
+                    this.emit('log', { message: `Connection error with peer ${conn.peer}: ${err.message}` });
+                    this.connections.delete(conn.peer); // Remove from connections Map
+                    this.peers.remove(conn.peer);
+                    break;
+            }
+        };
 
-        conn.on('data', (data) => this.handleMessage(conn.peer, data));
-
-        conn.on('close', () => {
-            this.connections.delete(conn.peer); // Remove from connections Map
-            this.peers.remove(conn.peer);
-            this.emit('log', { message: `Connection closed with peer: ${conn.peer}` });
-        });
-
-        conn.on('error', (err) => {
-            this.emit('log', { message: `Connection error with peer ${conn.peer}: ${err.message}` });
-            this.connections.delete(conn.peer); // Remove from connections Map
-            this.peers.remove(conn.peer);
-        });
+        conn.on('open', handleConnectionEvent);
+        conn.on('data', handleConnectionEvent);
+        conn.on('close', handleConnectionEvent);
+        conn.on('error', handleConnectionEvent);
     }
 
     connectToBootstrap(bootstrapId) {
@@ -337,6 +345,14 @@ class P2PNode extends EventTarget {
         });
     }
 
+    sendResponse(message, type) {
+        const responseMessage = new Message(type, message.timestamp, this.node.id);
+        this.connections.forEach((conn, peerId) => {
+            if (peerId === message.sender) {
+                conn.send(responseMessage);
+            }
+        });
+    }
 
     emit(name, detail) {
         this.dispatchEvent(new CustomEvent(name, { detail }));
@@ -373,8 +389,9 @@ class P2PNode extends EventTarget {
         const handlers = {
             PEER_LIST: () => this.handlePeerList(message.content),
             BROADCAST: () => this.handleBroadcast(message),
-            PING: () => this.handlePing(message),
-            PONG: () => this.handlePong(message)
+            PING: () => this.sendResponse(message, 'PONG'),
+            PONG: () => this.handlePong(message),
+            KEEP_ALIVE: () => this.sendResponse(message, 'KEEP_ALIVE')
         };
 
         // switch (message.type) {
@@ -445,12 +462,8 @@ class P2PNode extends EventTarget {
 
 
     handlePing(message) {
-        const pongMessage = new Message('PONG', message.timestamp, this.node.id);
-        this.connections.forEach((conn, peerId) => {
-            if (peerId === message.sender) {
-                conn.send(pongMessage);
-            }
-        });
+        // Implementation preserved for future use
+        this.emit('log', { message: 'Pong received' });
     }
 
     handlePong(message) {
@@ -459,12 +472,8 @@ class P2PNode extends EventTarget {
     }
 
     handleKeepAlive(message) {
-        const keepAliveMessage = new Message('KEEP_ALIVE', message.timestamp, this.node.id);
-        this.connections.forEach((conn, peerId) => {
-            if (peerId === message.sender) {
-                conn.send(keepAliveMessage);
-            }
-        });
+        // Implementation preserved for future use
+        this.emit('log', { message: 'KeepAlive received' });
     }
 
     handleDisconnect(message) {

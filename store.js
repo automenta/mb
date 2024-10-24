@@ -41,7 +41,7 @@ class Store {
             updated: now
         }));
 
-        return await this.db.items.bulkAdd(processedItems);
+        return await Promise.all(processedItems.map(item => this.db.items.add(item)));
     }
 
     date() {
