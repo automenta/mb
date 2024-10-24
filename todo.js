@@ -1,3 +1,5 @@
+"use strict";
+
 class TodoList {
     constructor(el) {
         this.el = el;
@@ -125,7 +127,7 @@ class TodoList {
         );
     }
 
-    createListItem(item) {
+    createTodoItem(item) {
         const contentEl = h('div', {
             class: `item-content${item.source === 'local' ? ' editable' : ''}`,
         }, item.text);
@@ -198,7 +200,7 @@ class TodoList {
         } else {
             const itemsContainer = h('div', { class: 'items' });
             this.items.forEach(item => {
-                itemsContainer.appendChild(this.createListItem(item));
+                itemsContainer.appendChild(this.createTodoItem(item));
             });
             list.appendChild(itemsContainer);
             this.initializeSortable(itemsContainer);
@@ -207,6 +209,4 @@ class TodoList {
         this.el.appendChild(list);
     }
 }
-
-
 
