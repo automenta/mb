@@ -144,7 +144,6 @@ class SyncManager {
     }
 }
 
-// Enhanced Store class
 class Store {
     constructor(name) {
         this.db = new Dexie(name);

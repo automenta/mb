@@ -1,14 +1,23 @@
 {
-  "name": "mb",
-  "version": "1.0.0",
-  "description": "",
-  "main": "todo.js",
-  "scripts": {
-    "start": "vite",
-    "build": "vite build",
-    "serve": "vite preview"
-  },
+  "name": "mb2",
   "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "signaling": "PORT=4444 node ./node_modules/y-webrtc/bin/server.js"
+  },
+  "dependencies": {
+    "jquery": "latest",
+    "quill": "latest",
+    "quill-cursors": "^4.0.3",
+    "y-quill": "latest",
+    "y-webrtc": "latest",
+    "y-indexeddb": "latest",
+    "yjs": "latest"
+  },
   "devDependencies": {
     "vite": "latest"
   }
