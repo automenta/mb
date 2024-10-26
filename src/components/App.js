@@ -6,6 +6,7 @@ import {QuillBinding} from 'y-quill';
 
 import Network from '/src/net.js';
 
+import '/style.css'
 import 'quill/dist/quill.snow.css';
 
 Quill.register('modules/cursors', QuillCursors);
@@ -13,7 +14,7 @@ Quill.register('modules/cursors', QuillCursors);
 class App extends HTMLElement {
     constructor() {
         super();
-        this.attachShadow({ mode: 'open' });
+        this.attachShadow({mode: 'open'});
         this.doc = new Y.Doc();
         this.channel = 'todo';
         this.net = new Network(this.channel, this.doc);
@@ -22,52 +23,62 @@ class App extends HTMLElement {
     }
 
     awareness() {
-    return this.net.net.awareness;
+        return this.net.net.awareness;
     }
 
     async init() {
-        const quillStyleText = await this.fetchQuillStyles();
+        const cssQuill = await this.cssQuill();
 
         this.shadowRoot.innerHTML = `
       <style>
-        ${quillStyleText}
+        ${cssQuill}
         
-        #container { display: flex; height: 100vh; font-family: Arial, sans-serif; }
-        #sidebar { width: 250px; background: #f0f0f0; overflow-y: auto; border-right: 1px solid #ccc; padding: 10px; }
-        #main-view { flex: 1; padding: 10px; display: flex; flex-direction: column; }
+        #container { display: flex; height: 100vh;  }
+        #sidebar { width: 250px;  overflow-y: auto; padding: 10px; }
+        #main-view { flex: 1; padding: 10px; display: flex;  }
         #editor-container { flex: 1; display: flex; flex-direction: column; position: relative; }
+        
         .ql-container.ql-snow { flex: 1; overflow-y: auto; border: none; }
+        .ql-snow .ql-picker-options {
+            background-color: black;
+        }
         .ql-toolbar.ql-snow { 
             border: 1px solid #ccc;
             box-sizing: border-box;
             padding: 8px;
             position: sticky;
-            top: 0;
-            background: white;
+            top: 0;            
             z-index: 1;
         }
+        
         #editor {
             height: 100%;
             overflow-y: auto;
             border: 1px solid #ccc;
             border-top: none;
+            font-size: 100%;
         }
-        .special-page { padding: 20px; }
-        ul { list-style: none; padding: 0; }
+        
+        ul { list-style: none; padding: 0.5em; margin: 0; }
         li { padding: 5px; cursor: pointer; }
-        li:hover { background: #ddd; }
-        button { margin: 5px 0; padding: 5px 10px; }
-        .context-menu { position: absolute; background: #fff; border: 1px solid #ccc; box-shadow: 2px 2px 6px rgba(0,0,0,0.2); display: none; z-index: 1000; }
+        li:hover { background: #333; }
+        
+        button {             
+            background-color: #444;
+            color: white; 
+        }
+        
+        .context-menu { position: absolute; border: 1px solid #ccc; box-shadow: 2px 2px 6px rgba(30,30,30,0.2); display: none; z-index: 1000; }
         .context-menu ul { list-style: none; margin: 0; padding: 0; }
         .context-menu li { padding: 8px 12px; cursor: pointer; }
-        .context-menu li:hover { background: #eee; }
+        .context-menu li:hover { background: #333; }
       </style>
       <div id="container">
         <div id="sidebar">         
-          <ul id="special-pages"></ul>
-          <hr>
-          <button id="add-page">Add Page</button>
+          <button id="add-page">+</button>
           <ul id="page-list"></ul>
+          <hr>
+          <ul id="special-pages"></ul>
         </div>
         <div id="main-view">
           <div id="editor-container"></div>
@@ -85,16 +96,11 @@ class App extends HTMLElement {
         this.openDefaultPage();
     }
 
-    async fetchQuillStyles() {
+    async cssQuill() {
         try {
-            const response = await fetch('https://cdn.quilljs.com/1.3.7/quill.snow.css');
-            const cssText = await response.text();
-
-            const cursorResponse = await fetch(
-                'https://cdn.jsdelivr.net/npm/quill-cursors@latest/dist/quill-cursors.css');
-            const cursorCssText = await cursorResponse.text();
-
-            return cssText + '\n' + cursorCssText;
+            return await (await fetch('https://cdn.quilljs.com/1.3.7/quill.snow.css')).text() +
+                '\n' +
+                await (await fetch('https://cdn.jsdelivr.net/npm/quill-cursors@latest/dist/quill-cursors.css')).text();
         } catch (error) {
             console.error('Error loading Quill styles:', error);
             return '';
@@ -122,7 +128,7 @@ class App extends HTMLElement {
             modules: {
                 cursors: true,
                 toolbar: [
-                    [{ header: [1, 2, false] }],
+                    [{header: [1, 2, false]}],
                     ['bold', 'italic', 'underline'],
                     ['image', 'code-block']
                 ],
@@ -138,10 +144,10 @@ class App extends HTMLElement {
 
     initSidebar() {
         const specialPages = [
-            { id: 'profile', title: 'User Profile' },
-            { id: 'friends', title: 'Friends List' },
-            { id: 'network', title: 'Network Status' },
-            { id: 'database', title: 'Database' },
+            {id: 'profile', title: 'User Profile'},
+            {id: 'friends', title: 'Friends List'},
+            {id: 'network', title: 'Network Status'},
+            {id: 'database', title: 'Database'},
         ];
         const specialList = $(this.shadowRoot.querySelector('#special-pages'));
         specialPages.forEach(page => {
@@ -181,7 +187,7 @@ class App extends HTMLElement {
 
     addPage() {
         const pageId = `page-${Date.now()}`;
-        this.pages.set(pageId, { title: 'New Page', contentId: `content-${pageId}` });
+        this.pages.set(pageId, {title: 'New Page', contentId: `content-${pageId}`});
     }
 
     openPage(pageId) {
@@ -223,10 +229,10 @@ class App extends HTMLElement {
     renderProfilePage(container) {
         const user = this.awareness().getLocalState().user;
         const nameInput = $('<input type="text" placeholder="Name">').val(user.name).on('input', e => {
-            this.awareness().setLocalStateField('user', { ...user, name: e.target.value });
+            this.awareness().setLocalStateField('user', {...user, name: e.target.value});
         });
         const colorInput = $('<input type="color">').val(user.color).on('input', e => {
-            this.awareness().setLocalStateField('user', { ...user, color: e.target.value });
+            this.awareness().setLocalStateField('user', {...user, color: e.target.value});
         });
         $(container).append(
             $('<div></div>').append('<label>Name: </label>', nameInput, '<br>'),
@@ -278,7 +284,7 @@ class App extends HTMLElement {
                 const newName = prompt('Enter new page name:');
                 if (newName) {
                     const page = this.pages.get(selectedPageId);
-                    this.pages.set(selectedPageId, { ...page, title: newName });
+                    this.pages.set(selectedPageId, {...page, title: newName});
                 }
             }
             contextMenu.hide();
@@ -297,14 +303,14 @@ class App extends HTMLElement {
             e.preventDefault();
             const li = $(e.target).closest('li');
             selectedPageId = li.data('pageId');
-            contextMenu.css({ top: e.clientY, left: e.clientX }).show();
+            contextMenu.css({top: e.clientY, left: e.clientX}).show();
         });
     }
 
     showContextMenu(event, pageId) {
         event.preventDefault();
         const contextMenu = $(this.shadowRoot.querySelector('#context-menu'));
-        contextMenu.css({ top: event.clientY, left: event.clientX }).show();
+        contextMenu.css({top: event.clientY, left: event.clientX}).show();
         this.selectedPageId = pageId;
     }
 }
