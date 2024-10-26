@@ -284,8 +284,18 @@ class App extends HTMLElement {
             pages: this.pages.size,
             clients: this.awareness().getStates().size,
         };
-        $(container).append(`<p>Pages: ${stats.pages}</p>`, `<p>Clients: ${stats.clients}</p>`);
-        // TODO: Implement table view with sort and filter
+        const table = $('<table class="database-table"></table>');
+        const headerRow = $('<tr></tr>');
+        headerRow.append('<th>Page ID</th>', '<th>Page Title</th>', '<th>Content ID</th>');
+        table.append(headerRow);
+
+        this.pages.forEach((value, key) => {
+            const row = $('<tr></tr>');
+            row.append(`<td>${key}</td>`, `<td>${value.title}</td>`, `<td>${value.contentId}</td>`);
+            table.append(row);
+        });
+
+        $(container).append(table);
     }
 
     initContextMenu() {
