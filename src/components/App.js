@@ -1,13 +1,14 @@
 import $ from 'jquery';
-import * as Y from 'yjs';
+
+import DB from '/src/db.js';
+
+import Network from '/src/net.js';
+
+import '/style.css'
+
 import Quill from 'quill';
 import QuillCursors from 'quill-cursors';
 import {QuillBinding} from 'y-quill';
-
-import Network from '/src/net.js';
-import NetworkVisualizer from './NetworkVisualizer.js';
-
-import '/style.css'
 import 'quill/dist/quill.snow.css';
 
 Quill.register('modules/cursors', QuillCursors);
@@ -15,17 +16,18 @@ Quill.register('modules/cursors', QuillCursors);
 class App extends HTMLElement {
     constructor() {
         super();
-        this.attachShadow({mode: 'open'});
-        this.doc = new Y.Doc();
+
         this.channel = 'todo';
-        this.net = new Network(this.channel, this.doc);
-        this.pages = this.doc.getMap('pages');
+
+        this.db = new DB(this.channel);
+        this.net = new Network(this.channel, this.db);
+
         this.init();
+        this.attachShadow({mode: 'open'});
     }
 
-    awareness() {
-        return this.net.net.awareness;
-    }
+    user() { return this.net.user(); }
+    awareness() { return this.net.awareness(); }
 
     async init() {
         const cssQuill = await this.cssQuill();
@@ -99,7 +101,11 @@ class App extends HTMLElement {
     `;
         this.initSidebar();
         this.initContextMenu();
-        this.openDefaultPage();
+
+        if (this.db.pages.size === 0)
+            this.newEmptyPage();
+        else
+            this.viewPage(this.db.pages.keys().next().value);
     }
 
     async cssQuill() {
@@ -113,17 +119,20 @@ class App extends HTMLElement {
         }
     }
 
-    cleanupEditor() {
+    quillStop() {
         if (this.currentBinding) {
             this.currentBinding.destroy();
             this.currentBinding = null;
         }
-        const editorContainer = this.shadowRoot.querySelector('#editor-container');
-        editorContainer.innerHTML = '';
+        this.editorContainer().innerHTML = '';
     }
 
-    initQuillEditor() {
-        const container = this.shadowRoot.querySelector('#editor-container');
+    editorContainer() {
+        return this.shadowRoot.querySelector('#editor-container');
+    }
+
+    quillStart() {
+        const container = this.editorContainer();
         container.innerHTML = `<div id="editor"></div>`;
 
         //https://quilljs.com/docs/
@@ -168,80 +177,64 @@ class App extends HTMLElement {
         ];
         const specialList = $(this.shadowRoot.querySelector('#special-pages'));
         specialPages.forEach(page =>
-            $('<li></li>')
+            $('<li>')
                 .text(page.title)
-                .on('click', () => this.openSpecialPage(page.id))
+                .click(() => this.viewSpecial(page.id))
                 .appendTo(specialList));
 
-        $('#add-page', this.shadowRoot).on('click', () => this.addPage());
+        $('#add-page', this.shadowRoot).click(() => this.newEmptyPage());
 
         this.pageList = $(this.shadowRoot.querySelector('#page-list'));
-        this.pages.observe(() => this.renderPageList());
+        this.db.pages.observe(() => this.renderPageList());
         this.renderPageList();
-    }
-
-    openDefaultPage() {
-        if (this.pages.size === 0) {
-            this.addPage();
-        } else {
-            this.openPage(this.pages.keys().next().value);
-        }
     }
 
     renderPageList() {
         this.pageList.empty();
-        this.pages.forEach((value, key) =>
-            this.pageList.append(
-                $('<li>')
-                    .text(value.title)
-                    .data('pageId', key)
-                    .click(() => this.openPage(key))
-                    .on('contextmenu', (e) => this.showContextMenu(e, key))
-            ));
+        this.db.pages.forEach((value, key) => this.pageList.append(
+            $('<li>').text(value.title)
+                .data('pageId', key)
+                .click(() => this.viewPage(key))
+                .on('contextmenu', (e) => this.showContextMenu(e, key))
+        ));
     }
 
-    addPage() {
-        const pageId = `page-${Date.now()}`;
-        this.pages.set(pageId, {title: 'New Page', contentId: `content-${pageId}`});
+    newEmptyPage() {
+        return this.db.pageNew(`page-${Date.now()}`, 'Empty');
     }
 
-    openPage(pageId) {
-        this.cleanupEditor();
-        const page = this.pages.get(pageId);
-
-        const quill = this.initQuillEditor();
-
-        const yText = this.doc.getText(page.contentId);
-        this.currentBinding = new QuillBinding(yText, quill, this.awareness());
+    viewPage(pageId) {
+        this.quillStop();
+        this.currentBinding = new QuillBinding(
+            this.db.pageContent(pageId), this.quillStart(), this.awareness());
     }
 
-    openSpecialPage(pageId) {
-        this.cleanupEditor();
-        const editorContainer = this.shadowRoot.querySelector('#editor-container');
-        const div = document.createElement('div');
-        div.className = 'special-page';
-        editorContainer.appendChild(div);
+    viewSpecial(pageId) {
+        this.quillStop();
+
+        const div = $('<div>').addClass('special-page');
 
         switch (pageId) {
             case 'profile':
-                this.renderProfilePage(div);
+                this.renderProfile(this.user(), div);
                 break;
             case 'friends':
-                this.renderFriendsPage(div);
+                this.renderFriends(div);
                 break;
             case 'network':
-                this.net.renderNetworkStatusPage(div);
+                this.net.renderNetwork(div);
                 break;
             case 'database':
-                this.renderDatabasePage(div);
+                this.db.renderDatabase(div);
                 break;
             default:
                 div.innerHTML = '<p>Page not found.</p>';
         }
+
+        $(this.editorContainer()).append(div);
     }
 
-    renderProfilePage(container) {
-        const user = this.awareness().getLocalState().user;
+    renderProfile(user, container) {
         const nameInput = $('<input type="text" placeholder="Name">').val(user.name)
             .on('input', e => this.awareness().setLocalStateField('user', {
                 ...user,
@@ -258,9 +251,8 @@ class App extends HTMLElement {
         );
     }
 
-    renderFriendsPage(container) {
+    renderFriends(container) {
         const updateFriends = () => {
-            container.innerHTML = '<h3>Friends</h3>';
             const users = [];
             this.awareness().getStates().forEach(state => {
                 if (state.user) users.push(state.user);
@@ -271,63 +263,38 @@ class App extends HTMLElement {
                     .text(user.name)
                     .css('color', user.color)
                     .appendTo(ul));
-            $(container).append(ul);
+            $(container).append('<h3>Friends</h3>').append(ul);
         };
         this.awareness().on('change', updateFriends);
         updateFriends();
     }
 
 
-    renderDatabasePage(container) {
-        container.innerHTML = '<h3>Database Statistics</h3>';
-        const stats = {
-            pages: this.pages.size,
-            clients: this.awareness().getStates().size,
-        };
-        const table = $('<table class="database-table"></table>');
-        const headerRow = $('<tr></tr>');
-        headerRow.append('<th>Page ID</th>', '<th>Page Title</th>', '<th>Content ID</th>');
-        table.append(headerRow);
-
-        this.pages.forEach((value, key) => {
-            const row = $('<tr></tr>');
-            row.append(`<td>${key}</td>`, `<td>${value.title}</td>`, `<td>${value.contentId}</td>`);
-            table.append(row);
-        });
-
-        $(container).append(table);
-    }
-
     initContextMenu() {
         const contextMenu = $(this.shadowRoot.querySelector('#context-menu'));
+
         let selectedPageId = null;
 
-        this.shadowRoot.addEventListener('click', () => contextMenu.hide());
+        $(this.shadowRoot).click(() => contextMenu.hide());
 
-        $('#rename-page', contextMenu).on('click', () => {
+        $('#rename-page', contextMenu).click(() => {
             if (selectedPageId) {
                 const newName = prompt('Enter new page name:');
-                if (newName) {
-                    const page = this.pages.get(selectedPageId);
-                    this.pages.set(selectedPageId, {...page, title: newName});
-                }
+                if (newName)
+                    this.db.pageTitle(selectedPageId, newName);
             }
             contextMenu.hide();
         });
 
-        $('#delete-page', contextMenu).on('click', () => {
-            if (selectedPageId) {
-                if (confirm('Are you sure you want to delete this page?')) {
-                    this.pages.delete(selectedPageId);
-                }
-            }
+        $('#delete-page', contextMenu).click(() => {
+            if (selectedPageId && confirm('Are you sure you want to delete this page?'))
+                this.db.pages.delete(selectedPageId);
             contextMenu.hide();
         });
 
         this.shadowRoot.querySelector('#page-list').addEventListener('contextmenu', (e) => {
             e.preventDefault();
-            const li = $(e.target).closest('li');
-            selectedPageId = li.data('pageId');
+            selectedPageId = $(e.target).closest('li').data('pageId');
             contextMenu.css({top: e.clientY, left: e.clientX}).show();
         });
     }
@@ -338,6 +305,8 @@ class App extends HTMLElement {
         contextMenu.css({top: event.clientY, left: event.clientX}).show();
         this.selectedPageId = pageId;
     }
+
+
 }
 
 customElements.define('app-root', App);

@@ -1,11 +1,11 @@
-import * as Y from 'yjs';
-import { WebrtcProvider } from 'y-webrtc';
-import { IndexeddbPersistence } from 'y-indexeddb';
+import {WebrtcProvider} from 'y-webrtc';
+import {IndexeddbPersistence} from 'y-indexeddb';
 import $ from "jquery";
 
 class Network {
-  constructor(channel, doc) {
-        this.doc = doc;
+    constructor(channel, db) {
+        this.db = db;
+
         this.channel = channel;
         this.metrics = {
             messagesSent: 0,
@@ -14,10 +14,9 @@ class Network {
             peersConnected: new Set()
         };
 
-        this.db = new IndexeddbPersistence(channel, this.doc);
 
         //https://github.com/yjs/y-webrtc
-        this.net = new WebrtcProvider(channel, this.doc, {
+        this.net = new WebrtcProvider(channel, this.db.doc, {
             signaling: ['ws://localhost:4444']
         });
 
@@ -27,45 +26,38 @@ class Network {
             name: 'Anonymous',
             color: '#' + Math.floor(Math.random() * 16777215).toString(16)
         });
-        // this.net.awareness.metadata = {
-        //     clientId: Math.random().toString(36).substr(2, 9),
-        //     clientName: `Peer-${Math.floor(Math.random() * 1000)}`,
-        //     lastActive: Date.now()
-        // };
-
-
         this.setupEventListeners();
     }
 
 
-
     setupEventListeners() {
-    this.net.on('peers', ({ added, removed }) => {
+        this.net.on('peers', ({added, removed}) => {
             added.forEach(id => {
                 this.metrics.peersConnected.add(id);
-                this.emitNetworkEvent('peer-connected', { peerId: id });
+                this.emitNetworkEvent('peer-connected', {peerId: id});
             });
 
             removed.forEach(id => {
                 this.metrics.peersConnected.delete(id);
-                this.emitNetworkEvent('peer-disconnected', { peerId: id });
+                this.emitNetworkEvent('peer-disconnected', {peerId: id});
             });
         });
 
-        this.doc.on('update', (update, origin) => {
+        this.net.awareness.on('change', changes => {
+            this.emitNetworkEvent('awareness-update', {changes});
+        });
+
+        this.db.doc.on('update', (update, origin) => {
             this.metrics.bytesTransferred += update.length;
             if (origin === this.net) {
                 this.metrics.messagesSent++;
-                this.emitNetworkEvent('message-sent', { bytes: update.length });
+                this.emitNetworkEvent('message-sent', {bytes: update.length});
             } else {
                 this.metrics.messagesReceived++;
-                this.emitNetworkEvent('message-received', { bytes: update.length });
+                this.emitNetworkEvent('message-received', {bytes: update.length});
             }
         });
 
-        this.net.awareness.on('change', changes => {
-            this.emitNetworkEvent('awareness-update', { changes });
-        });
     }
 
     getNetworkStats() {
@@ -73,11 +65,11 @@ class Network {
             ...this.metrics,
             peersConnected: Array.from(this.metrics.peersConnected),
             connectedPeersCount: this.metrics.peersConnected.size,
-      awareness: Array.from(this.net.awareness.getStates().entries())
+            awareness: Array.from(this.net.awareness.getStates().entries())
                 .map(([clientId, state]) => ({
                     clientId,
-          metadata: state.user,
-          lastActive: Date.now()
+                    metadata: state.user,
+                    lastActive: Date.now()
                 }))
         };
     }
@@ -97,12 +89,22 @@ class Network {
     }
 
 
-    renderNetworkStatusPage(container) {
-        const updateStatus = () => {
-            $(container).append('<h3>Network</h3>').append('<network-visualizer></network-visualizer>');
-        };
+    renderNetwork(container) {
+        const updateStatus = () =>
+            $(container)
+                .append('<h3>Network</h3>')
+                .append('<network-visualizer></network-visualizer>');
         this.net.on('peers', updateStatus);
         updateStatus();
     }
+
+    user() {
+        return this.awareness().getLocalState().user;
+    }
+
+    awareness() {
+        return this.net.awareness;
+    }
 }
+
 export default Network;
