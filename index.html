@@ -6,8 +6,9 @@
     <title>TODO</title>
 </head>
 <body>
-  <app-root></app-root>
-  <network-visualizer></network-visualizer>
-  <script type="module" src="/src/main.js"></script>
+    <script type="module" src="/src/components/App.js"></script>
+    <script>
+        document.body.append(document.createElement('app-root'));
+    </script>
 </body>
 </html>

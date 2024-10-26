@@ -17,7 +17,6 @@ export class NetworkVisualizer extends HTMLElement {
                 :host {
                     display: block;
                     padding: 1em;
-                    font-family: monospace;
                 }
                 .stats-grid {
                     display: grid;
@@ -60,30 +59,29 @@ export class NetworkVisualizer extends HTMLElement {
             </style>
             <div class="stats-grid">
                 <div class="stat-box" id="messages">
-                    <h3>Messages</h3>
+                    <strong>Messages</strong>
                     <div>Sent: <span id="sent">0</span></div>
                     <div>Received: <span id="received">0</span></div>
                 </div>
                 <div class="stat-box" id="bandwidth">
-                    <h3>Bandwidth</h3>
+                    <strong>Bandwidth</strong>
                     <div>Total: <span id="bytes">0</span> bytes</div>
                 </div>
             </div>
             <div class="stat-box">
-                <h3>Connected Peers</h3>
+                <strong>Connections</strong>
                 <div class="peer-list" id="peers"></div>
             </div>
             <div class="stat-box">
-                <h3>Event Log</h3>
+                <strong>Events</strong>
                 <div class="event-log" id="events"></div>
             </div>
         `;
     }
 
     setupEventListeners() {
-        window.addEventListener('network-activity', (event) => {
-            this.updateVisualization(event.detail);
-        });
+        window.addEventListener('network-activity',
+        event => this.updateVisualization(event.detail));
     }
 
     updateVisualization(eventData) {

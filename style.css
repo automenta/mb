@@ -1,25 +1,21 @@
 body {
-  margin: 0;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
 
-  background-color: #111;
-  color: white;
+    place-items: center;
 
-  font-family: sans-serif;
-  font-weight: 400;
+    background-color: #111;
+    color: white;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    font-family: sans-serif;
+    font-weight: 400;
+
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
-
-app-root {
-  width:100%;
-  display:block;
-}
 
 

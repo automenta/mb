@@ -99,13 +99,7 @@ class Network {
 
     renderNetworkStatusPage(container) {
         const updateStatus = () => {
-            const ul = $('<ul></ul>');
-            const peers = Array.from(this.net.room.webrtcConns.keys());
-            peers.forEach(peerId => {
-                $('<li></li>').text(`Peer: ${peerId}`).appendTo(ul);
-            });
-            container.innerHTML = '<h3>Network Status</h3>';
-            $(container).append(ul);
+            $(container).append('<h3>Network</h3>').append('<network-visualizer></network-visualizer>');
         };
         this.net.on('peers', updateStatus);
         updateStatus();

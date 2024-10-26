@@ -5,6 +5,7 @@ import QuillCursors from 'quill-cursors';
 import {QuillBinding} from 'y-quill';
 
 import Network from '/src/net.js';
+import NetworkVisualizer from './NetworkVisualizer.js';
 
 import '/style.css'
 import 'quill/dist/quill.snow.css';
@@ -31,10 +32,15 @@ class App extends HTMLElement {
 
         this.shadowRoot.innerHTML = `
       <style>
-        ${cssQuill}
+        :host {
+            display: block;
+            width: 100%;
+        }
+             
+        ${cssQuill}              
         
         #container { display: flex; height: 100vh;  }
-        #sidebar { width: 250px;  overflow-y: auto; padding: 10px; }
+        #sidebar { width: 250px; overflow-y: auto; padding: 10px;  }
         #main-view { flex: 1; padding: 10px; display: flex;  }
         #editor-container { flex: 1; display: flex; flex-direction: column; position: relative; }
         
@@ -98,9 +104,9 @@ class App extends HTMLElement {
 
     async cssQuill() {
         try {
-            return await (await fetch('https://cdn.quilljs.com/1.3.7/quill.snow.css')).text() +
-                '\n' +
-                await (await fetch('https://cdn.jsdelivr.net/npm/quill-cursors@latest/dist/quill-cursors.css')).text();
+            return await(await fetch('https://cdn.quilljs.com/1.3.7/quill.snow.css')).text() +
+                   '\n' +
+                   await(await fetch('https://cdn.jsdelivr.net/npm/quill-cursors@latest/dist/quill-cursors.css')).text();
         } catch (error) {
             console.error('Error loading Quill styles:', error);
             return '';
@@ -114,48 +120,58 @@ class App extends HTMLElement {
         }
         const editorContainer = this.shadowRoot.querySelector('#editor-container');
         editorContainer.innerHTML = '';
-        this.currentQuill = null;
     }
 
     initQuillEditor() {
-        const editorContainer = this.shadowRoot.querySelector('#editor-container');
-        editorContainer.innerHTML = `
-            <div id="editor"></div>
-        `;
+        const container = this.shadowRoot.querySelector('#editor-container');
+        container.innerHTML = `<div id="editor"></div>`;
 
-        const quill = new Quill(editorContainer.querySelector('#editor'), {
+        //https://quilljs.com/docs/
+        return new Quill(container.querySelector('#editor'), {
             theme: 'snow',
             modules: {
                 cursors: true,
                 toolbar: [
-                    [{header: [1, 2, false]}],
-                    ['bold', 'italic', 'underline'],
-                    ['image', 'code-block']
+                    ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
+                    ['blockquote', 'code-block'],
+                    ['link', 'image', 'video', 'formula'],
+
+                    [{ 'header': 1 }, { 'header': 2 }],               // custom button values
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'list': 'check' }],
+                    [{ 'script': 'sub'}, { 'script': 'super' }],      // superscript/subscript
+                    [{ 'indent': '-1'}, { 'indent': '+1' }],          // outdent/indent
+                    [{ 'direction': 'rtl' }],                         // text direction
+
+                    [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
+                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+
+                    [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
+                    [{ 'font': [] }],
+                    [{ 'align': [] }],
+
+                    ['clean']                                         // remove formatting button
                 ],
                 history: {
                     userOnly: true
                 }
             },
-            placeholder: 'Start writing...'
+            placeholder: '...'
         });
-
-        return quill;
     }
 
     initSidebar() {
         const specialPages = [
             {id: 'profile', title: 'User Profile'},
             {id: 'friends', title: 'Friends List'},
-            {id: 'network', title: 'Network Status'},
+            {id: 'network', title: 'Network'},
             {id: 'database', title: 'Database'},
         ];
         const specialList = $(this.shadowRoot.querySelector('#special-pages'));
-        specialPages.forEach(page => {
+        specialPages.forEach(page =>
             $('<li></li>')
                 .text(page.title)
                 .on('click', () => this.openSpecialPage(page.id))
-                .appendTo(specialList);
-        });
+                .appendTo(specialList));
 
         $('#add-page', this.shadowRoot).on('click', () => this.addPage());
 
@@ -168,21 +184,20 @@ class App extends HTMLElement {
         if (this.pages.size === 0) {
             this.addPage();
         } else {
-            const firstPageId = this.pages.keys().next().value;
-            this.openPage(firstPageId);
+            this.openPage(this.pages.keys().next().value);
         }
     }
 
     renderPageList() {
         this.pageList.empty();
-        this.pages.forEach((value, key) => {
-            const li = $('<li></li>')
-                .text(value.title)
-                .data('pageId', key)
-                .on('click', () => this.openPage(key))
-                .on('contextmenu', (e) => this.showContextMenu(e, key));
-            this.pageList.append(li);
-        });
+        this.pages.forEach((value, key) =>
+            this.pageList.append(
+                $('<li>')
+                    .text(value.title)
+                    .data('pageId', key)
+                    .click(() => this.openPage(key))
+                    .on('contextmenu', (e) => this.showContextMenu(e, key))
+            ));
     }
 
     addPage() {
@@ -195,7 +210,6 @@ class App extends HTMLElement {
         const page = this.pages.get(pageId);
 
         const quill = this.initQuillEditor();
-        this.currentQuill = quill;
 
         const yText = this.doc.getText(page.contentId);
         this.currentBinding = new QuillBinding(yText, quill, this.awareness());
@@ -228,32 +242,35 @@ class App extends HTMLElement {
 
     renderProfilePage(container) {
         const user = this.awareness().getLocalState().user;
-        const nameInput = $('<input type="text" placeholder="Name">').val(user.name).on('input', e => {
-            this.awareness().setLocalStateField('user', {...user, name: e.target.value});
-        });
-        const colorInput = $('<input type="color">').val(user.color).on('input', e => {
-            this.awareness().setLocalStateField('user', {...user, color: e.target.value});
-        });
+        const nameInput = $('<input type="text" placeholder="Name">').val(user.name)
+            .on('input', e => this.awareness().setLocalStateField('user', {
+                ...user,
+                name: e.target.value
+            }));
+        const colorInput = $('<input type="color">').val(user.color)
+            .on('input', e => this.awareness().setLocalStateField('user', {
+                ...user,
+                color: e.target.value
+            }));
         $(container).append(
-            $('<div></div>').append('<label>Name: </label>', nameInput, '<br>'),
-            $('<div></div>').append('<label>Color: </label>', colorInput)
+            $('<div>').append('<label>Name: </label>', nameInput, '<br>'),
+            $('<div>').append('<label>Color: </label>', colorInput)
         );
     }
 
     renderFriendsPage(container) {
         const updateFriends = () => {
-            container.innerHTML = '<h3>Friends List</h3>';
+            container.innerHTML = '<h3>Friends</h3>';
             const users = [];
             this.awareness().getStates().forEach(state => {
                 if (state.user) users.push(state.user);
             });
-            const ul = $('<ul></ul>');
-            users.forEach(user => {
-                $('<li></li>')
+            const ul = $('<ul>');
+            users.forEach(user =>
+                $('<li>')
                     .text(user.name)
                     .css('color', user.color)
-                    .appendTo(ul);
-            });
+                    .appendTo(ul));
             $(container).append(ul);
         };
         this.awareness().on('change', updateFriends);
@@ -275,9 +292,7 @@ class App extends HTMLElement {
         const contextMenu = $(this.shadowRoot.querySelector('#context-menu'));
         let selectedPageId = null;
 
-        this.shadowRoot.addEventListener('click', () => {
-            contextMenu.hide();
-        });
+        this.shadowRoot.addEventListener('click', () => contextMenu.hide());
 
         $('#rename-page', contextMenu).on('click', () => {
             if (selectedPageId) {
@@ -316,5 +331,4 @@ class App extends HTMLElement {
 }
 
 customElements.define('app-root', App);
-
 export default App;
