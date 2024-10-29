@@ -4,41 +4,27 @@ import '/style.css';
 
 import Quill from 'quill';
 import QuillCursors from 'quill-cursors';
-import { QuillBinding } from 'y-quill';
+import {QuillBinding} from 'y-quill';
 import 'quill/dist/quill.snow.css';
 
-// Register Quill Cursors module
 Quill.register('modules/cursors', QuillCursors);
 
-/**
- * ContextMenu Class
- * Manages the context menu for page operations like rename and delete.
- */
 class ContextMenu {
     constructor(shadowRoot, db, app) {
-        this.shadowRoot = shadowRoot;
         this.db = db;
         this.app = app;
 
-        this.contextMenuElement = this.shadowRoot.querySelector('#context-menu');
+        this.shadowRoot = shadowRoot;
+        this.ele = this.shadowRoot.querySelector('#context-menu');
+
         this.selectedPageId = null;
 
-        this.init();
-    }
-
-    /**
-     * Initialize the context menu by rendering and binding events.
-     */
-    init() {
         this.renderContextMenu();
         this.bindEvents();
     }
 
-    /**
-     * Render the context menu HTML structure.
-     */
     renderContextMenu() {
-        this.contextMenuElement.innerHTML = `
+        this.ele.innerHTML = `
             <ul>
                 <li data-action="rename-page">Rename</li>
                 <li data-action="delete-page">Delete</li>
@@ -46,20 +32,16 @@ class ContextMenu {
         `;
     }
 
-    /**
-     * Bind necessary event listeners for the context menu.
-     */
     bindEvents() {
         // Hide context menu when clicking outside
-        this.shadowRoot.addEventListener('click', (event) => {
-            if (!this.contextMenuElement.contains(event.target)) {
+        this.shadowRoot.addEventListener('click', e => {
+            if (!this.ele.contains(e.target))
                 this.hide();
-            }
         });
 
         // Handle context menu actions using event delegation
-        this.contextMenuElement.addEventListener('click', (event) => {
-            const action = event.target.getAttribute('data-action');
+        this.ele.addEventListener('click', e => {
+            const action = e.target.getAttribute('data-action');
             if (!action) return;
 
             switch (action) {
@@ -76,53 +58,38 @@ class ContextMenu {
         });
     }
 
-    /**
-     * Prompt the user to rename the selected page.
-     */
     renamePage() {
         if (this.selectedPageId) {
             const newName = prompt('Enter new page name:');
-            if (newName) {
-                this.db.pageTitle(this.selectedPageId, newName);
-            }
+            if (newName) this.db.pageTitle(this.selectedPageId, newName);
         }
     }
 
-    /**
-     * Confirm and delete the selected page.
-     */
     deletePage() {
         if (this.selectedPageId && confirm('Are you sure you want to delete this page?')) {
             this.db.pages.delete(this.selectedPageId);
+            // If the deleted page was public, remove it from the network
+            const page = this.db.page(this.selectedPageId);
+            if (page && page.isPublic) this.app.net.removeSharedDocument(this.selectedPageId);
         }
     }
 
-    /**
-     * Display the context menu at the cursor position.
-     * @param {MouseEvent} event - The contextmenu event.
-     * @param {string} pageId - The ID of the selected page.
-     */
     showContextMenu(event, pageId) {
         event.preventDefault();
         this.selectedPageId = pageId;
         const { clientX: x, clientY: y } = event;
-        this.contextMenuElement.style.top = `${y}px`;
-        this.contextMenuElement.style.left = `${x}px`;
-        this.contextMenuElement.style.display = 'block';
+        this.ele.style.top = `${y}px`;
+        this.ele.style.left = `${x}px`;
+        this.ele.style.display = 'block';
     }
 
-    /**
-     * Hide the context menu.
-     */
+
     hide() {
-        this.contextMenuElement.style.display = 'none';
+        this.ele.style.display = 'none';
     }
 }
 
-/**
- * Sidebar Class
- * Manages the sidebar, including the list of pages and special pages.
- */
+
 class Sidebar {
     constructor(shadowRoot, db, app) {
         this.shadowRoot = shadowRoot;
@@ -132,66 +99,85 @@ class Sidebar {
         this.init();
     }
 
-    /**
-     * Initialize the sidebar by rendering its content and binding events.
-     */
     init() {
-        this.sidebarElement = this.shadowRoot.querySelector('#sidebar');
+        this.element = this.shadowRoot.querySelector('#sidebar');
         this.renderSidebar();
         this.bindEvents();
     }
 
-    /**
-     * Render the sidebar content including special pages and the list of user pages.
-     */
     renderSidebar() {
-        const specialPages = [
-            { id: 'profile', title: 'User Profile' },
-            { id: 'friends', title: 'Friends List' },
-            { id: 'network', title: 'Network' },
-            { id: 'database', title: 'Database' },
-        ];
-
-        // Create and append the Add Page button
-        const addButton = document.createElement('button');
-        addButton.id = 'add-page';
-        addButton.textContent = '+';
-        addButton.title = 'Add New Page';
-        addButton.addEventListener('click', () => {
-            const pageId = `page-${Date.now()}`;
-            this.db.pageNew(pageId, 'Empty');
-        });
-        this.sidebarElement.appendChild(addButton);
-
-        // Create and append the user pages list
-        this.pageList = document.createElement('ul');
-        this.pageList.id = 'page-list';
-        this.sidebarElement.appendChild(this.pageList);
-
-        // Observe changes in the pages and re-render the list accordingly
-        this.db.pages.observe(() => this.renderPageList());
+        this.element.appendChild(this.menu());
         this.renderPageList();
-
-        // Create and append the special pages list
-        const specialList = document.createElement('ul');
-        specialList.id = 'special-pages';
-        this.sidebarElement.appendChild(specialList);
-
-        specialPages.forEach(page => {
-            const li = document.createElement('li');
-            li.textContent = page.title;
-            li.classList.add('special-page-item');
-            li.title = `View ${page.title}`;
-            li.addEventListener('click', () => this.app.editor.viewSpecial(page.id));
-            specialList.appendChild(li);
-        });
     }
 
-    /**
-     * Render the list of user-created pages.
-     */
     renderPageList() {
-        // Clear the existing list
+        this.pageList = document.createElement('ul');
+        this.pageList.id = 'page-list';
+        this.element.appendChild(this.pageList);
+
+        // Observe changes in the pages and re-render the list accordingly
+        this.db.pages.observe(() => this.updatePageList());
+        this.updatePageList();
+    }
+
+    menu() {
+        const m = document.createElement('div');
+        m.id = 'menubar';
+        m.classList.add('menubar');
+
+        {
+            const b = document.createElement('button');
+            b.id = 'add-page';
+            b.classList.add('menubar-button', 'add-page-button');
+            b.textContent = '+';
+            b.title = 'Add New Page';
+            b.addEventListener('click', () => {
+                const pageId = `page-${Date.now()}`;
+                this.db.pageNew(pageId, 'Empty', false); // Default to Private
+                this.app.editor.viewPage(pageId);
+            });
+            m.appendChild(b);
+        }
+
+
+        {
+            const specialPages = [
+                {id: 'profile', title: 'Me', class: MePage},
+                {id: 'friends', title: 'Friends', class: FriendsPage},
+                {id: 'network', title: 'Net', class: NetPage},
+                {id: 'database', title: 'DB', class: DBPage},
+            ];
+
+            specialPages.forEach(page => {
+                const button = document.createElement('button');
+                button.classList.add('menubar-button');
+                button.textContent = page.title;
+                button.title = `Access ${page.title}`;
+                let y;
+                switch (page.id) {
+                    case 'profile':
+                        y = this.app.profilePage;
+                        break;
+                    case 'friends':
+                        y = this.app.friendsListPage;
+                        break;
+                    case 'network':
+                        y = this.app.networkPage;
+                        break;
+                    case 'database':
+                        y = this.app.databasePage;
+                        break;
+                    default:
+                        console.warn(`No page class defined for ${(page.id)}`);
+                }
+                button.addEventListener('click', () => y.render());
+                m.appendChild(button);
+            });
+        }
+        return m;
+    }
+
+    updatePageList() {
         this.pageList.innerHTML = '';
 
         // Iterate through the pages and create list items
@@ -202,177 +188,64 @@ class Sidebar {
             li.title = `Open ${value.title}`;
             li.classList.add('user-page-item');
 
+            // Add a visual indicator for public pages
+            if (value.isPublic) {
+                const publicIndicator = document.createElement('span');
+                publicIndicator.textContent = ' 🌐';
+                publicIndicator.title = 'Public Document';
+                li.appendChild(publicIndicator);
+            }
+
             // Click to view the page
             li.addEventListener('click', () => this.app.editor.viewPage(key));
 
             // Right-click to open the context menu
-            li.addEventListener('contextmenu', (e) => {
+            li.addEventListener('contextmenu', e => {
                 e.preventDefault();
                 this.app.contextMenu.showContextMenu(e, key);
+            });
+
+            // Double-click to toggle privacy
+            li.addEventListener('dblclick', () => {
+                const page = this.db.page(key);
+                if (page) {
+                    const newPrivacy = !page.isPublic;
+                    this.db.pagePrivacy(key, newPrivacy);
+                    if (newPrivacy) {
+                        this.app.net.shareDocument(key);
+                    } else {
+                        this.app.net.unshareDocument(key);
+                    }
+                    this.updatePageList(); // Update the UI indicator
+                }
             });
 
             this.pageList.appendChild(li);
         });
     }
 
-    /**
-     * Bind any additional events if necessary.
-     */
     bindEvents() {
         // Placeholder for future event bindings
     }
 }
 
-/**
- * Editor Class
- * Handles the Quill editor initialization, binding, and operations.
- */
-class Editor {
-    constructor(shadowRoot, db, getAwareness, app) {
-        this.shadowRoot = shadowRoot;
-        this.db = db;
-        this.getAwareness = getAwareness;
-        this.app = app;
-        this.currentBinding = null;
-        this.quill = null;
-
-        this.init();
-    }
-
-    /**
-     * Initialize the editor container.
-     */
-    init() {
-        this.editorContainer = this.shadowRoot.querySelector('#editor-container');
-    }
-
-    /**
-     * Stop the current Quill editor instance and clean up bindings.
-     */
-    quillStop() {
-        if (this.currentBinding) {
-            this.currentBinding.destroy();
-            this.currentBinding = null;
-        }
-        if (this.quill) {
-            this.quill = null;
-        }
-        this.editorContainer.innerHTML = '';
-    }
-
-    /**
-     * Start a new Quill editor instance.
-     * @returns {Quill} The initialized Quill instance.
-     */
-    quillStart() {
-        const container = this.editorContainer;
-        container.innerHTML = `<div id="editor"></div>`;
-
-        this.quill = new Quill(container.querySelector('#editor'), {
-            theme: 'snow',
-            modules: {
-                cursors: true,
-                toolbar: [
-                    ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
-                    ['blockquote', 'code-block'],
-                    ['link', 'image', 'video', 'formula'],
-
-                    [{ 'header': 1 }, { 'header': 2 }],               // custom button values
-                    [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'list': 'check' }],
-                    [{ 'script': 'sub'}, { 'script': 'super' }],      // superscript/subscript
-                    [{ 'indent': '-1'}, { 'indent': '+1' }],          // outdent/indent
-                    [{ 'direction': 'rtl' }],                         // text direction
-
-                    [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
-                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-
-                    [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
-                    [{ 'font': [] }],
-                    [{ 'align': [] }],
-
-                    ['clean']                                         // remove formatting button
-                ],
-                history: {
-                    userOnly: true
-                }
-            },
-            placeholder: 'Start writing here...'
-        });
-
-        return this.quill;
-    }
-
-    /**
-     * View a specific user-created page by binding its content to the editor.
-     * @param {string} pageId - The ID of the page to view.
-     */
-    viewPage(pageId) {
-        this.quillStop();
-        this.currentBinding = new QuillBinding(
-            this.db.pageContent(pageId),
-            this.quillStart(),
-            this.getAwareness()
-        );
-    }
-
-    /**
-     * View a special page (e.g., Profile, Friends).
-     * @param {string} pageId - The ID of the special page to view.
-     */
-    viewSpecial(pageId) {
-        this.quillStop();
-        this.app.specialPages.render(pageId);
-    }
-}
-
-/**
- * SpecialPages Class
- * Renders special pages such as Profile, Friends, Network, and Database.
- */
-class SpecialPages {
-    constructor(shadowRoot, getUser, getAwareness, db) {
+class MePage {
+    constructor(shadowRoot, getUser, getAwareness) {
         this.shadowRoot = shadowRoot;
         this.getUser = getUser;
         this.getAwareness = getAwareness;
-        this.db = db;
     }
 
-    /**
-     * Render the specified special page.
-     * @param {string} pageId - The ID of the special page to render.
-     */
-    render(pageId) {
+    render() {
         const editorContainer = this.shadowRoot.querySelector('#editor-container');
         editorContainer.innerHTML = '';
 
         const container = document.createElement('div');
-        container.classList.add('special-page');
+        container.classList.add('profile-page');
         editorContainer.appendChild(container);
 
-        switch (pageId) {
-            case 'profile':
-                this.renderProfile(this.getUser(), container);
-                break;
-            case 'friends':
-                this.renderFriends(container);
-                break;
-            case 'network':
-                this.renderNetwork(container);
-                break;
-            case 'database':
-                this.renderDatabase(container);
-                break;
-            default:
-                container.innerHTML = '<p>Page not found.</p>';
-        }
-    }
+        const user = this.getUser();
 
-    /**
-     * Render the User Profile page.
-     * @param {Object} user - The current user object.
-     * @param {HTMLElement} container - The container to render the profile in.
-     */
-    renderProfile(user, container) {
         const nameLabel = document.createElement('label');
         nameLabel.textContent = 'Name: ';
         nameLabel.setAttribute('for', 'user-name');
@@ -382,7 +255,7 @@ class SpecialPages {
         nameInput.id = 'user-name';
         nameInput.placeholder = 'Name';
         nameInput.value = user.name;
-        nameInput.addEventListener('input', (e) => {
+        nameInput.addEventListener('input', e => {
             const updatedUser = { ...user, name: e.target.value };
             this.getAwareness().setLocalStateField('user', updatedUser);
         });
@@ -395,29 +268,40 @@ class SpecialPages {
         colorInput.type = 'color';
         colorInput.id = 'user-color';
         colorInput.value = user.color;
-        colorInput.addEventListener('input', (e) => {
+        colorInput.addEventListener('input', e => {
             const updatedUser = { ...user, color: e.target.value };
             this.getAwareness().setLocalStateField('user', updatedUser);
         });
 
         const nameDiv = document.createElement('div');
+        nameDiv.classList.add('profile-field');
         nameDiv.appendChild(nameLabel);
         nameDiv.appendChild(nameInput);
 
         const colorDiv = document.createElement('div');
+        colorDiv.classList.add('profile-field');
         colorDiv.appendChild(colorLabel);
         colorDiv.appendChild(colorInput);
 
         container.appendChild(nameDiv);
-        container.appendChild(document.createElement('br'));
         container.appendChild(colorDiv);
     }
+}
 
-    /**
-     * Render the Friends List page.
-     * @param {HTMLElement} container - The container to render the friends list in.
-     */
-    renderFriends(container) {
+class FriendsPage {
+    constructor(shadowRoot, getAwareness) {
+        this.shadowRoot = shadowRoot;
+        this.getAwareness = getAwareness;
+    }
+
+    render() {
+        const editorContainer = this.shadowRoot.querySelector('#editor-container');
+        editorContainer.innerHTML = '';
+
+        const container = document.createElement('div');
+        container.classList.add('friends-list-page');
+        editorContainer.appendChild(container);
+
         const header = document.createElement('h3');
         header.textContent = 'Friends';
         container.appendChild(header);
@@ -448,36 +332,301 @@ class SpecialPages {
         // Update the friends list when awareness changes
         this.getAwareness().on('change', updateFriends);
     }
+}
 
-    /**
-     * Render the Network page.
-     * @param {HTMLElement} container - The container to render the network in.
-     */
-    renderNetwork(container) {
+class NetPage {
+    constructor(shadowRoot, db) {
+        this.shadowRoot = shadowRoot;
+        this.db = db;
+    }
+
+    render() {
+        const editorContainer = this.shadowRoot.querySelector('#editor-container');
+        editorContainer.innerHTML = '';
+
+        const container = document.createElement('div');
+        container.classList.add('network-page');
+        editorContainer.appendChild(container);
+
         if (typeof this.db.renderNetwork === 'function') {
             this.db.renderNetwork(container);
         } else {
             container.innerHTML = '<p>Network feature not implemented.</p>';
         }
     }
+}
 
-    /**
-     * Render the Database page.
-     * @param {HTMLElement} container - The container to render the database in.
-     */
-    renderDatabase(container) {
-        if (typeof this.db.renderDatabase === 'function') {
+class DBPage {
+    constructor(shadowRoot, db) {
+        this.shadowRoot = shadowRoot;
+        this.db = db;
+    }
+    render() {
+        const editorContainer = this.shadowRoot.querySelector('#editor-container');
+        editorContainer.innerHTML = '';
+
+        const container = document.createElement('div');
+        container.classList.add('database-page');
+        editorContainer.appendChild(container);
+
+        if (typeof this.db.renderDatabase === 'function')
             this.db.renderDatabase(container);
-        } else {
+        else
             container.innerHTML = '<p>Database feature not implemented.</p>';
-        }
     }
 }
 
-/**
- * App Class
- * The main application class that initializes and coordinates other components.
- */
+class Editor {
+    constructor(shadowRoot, db, getAwareness, app) {
+        this.shadowRoot = shadowRoot;
+        this.db = db;
+        this.getAwareness = getAwareness;
+        this.app = app;
+        this.binding = null;
+        this.quill = null;
+        this.currentPageId = null;
+
+        this.init();
+    }
+
+    init() {
+        this.editorContainer = this.shadowRoot.querySelector('#editor-container');
+        // Add new styles for the control section
+        const styles = document.createElement('style');
+        styles.textContent = `
+            .editor-controls {
+                padding: 12px;
+                border-bottom: 1px solid #ddd;
+                background: #f8f9fa;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+            .title-input {
+                flex: 1;
+                padding: 8px;
+                font-size: 16px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                margin-right: 12px;
+            }
+            .privacy-toggle {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .template-buttons {
+                display: flex;
+                gap: 8px;
+            }
+            .template-button {
+                padding: 8px 12px;
+                background: #fff;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 16px;
+                transition: background-color 0.2s;
+            }
+            .template-button:hover {
+                background: #f0f0f0;
+            }
+            .toggle-switch {
+                position: relative;
+                display: inline-block;
+                width: 48px;
+                height: 24px;
+            }
+            .toggle-switch input {
+                opacity: 0;
+                width: 0;
+                height: 0;
+            }
+            .toggle-slider {
+                position: absolute;
+                cursor: pointer;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: #ccc;
+                transition: .4s;
+                border-radius: 24px;
+            }
+            .toggle-slider:before {
+                position: absolute;
+                content: "";
+                height: 18px;
+                width: 18px;
+                left: 3px;
+                bottom: 3px;
+                background-color: white;
+                transition: .4s;
+                border-radius: 50%;
+            }
+            input:checked + .toggle-slider {
+                background-color: #2196F3;
+            }
+            input:checked + .toggle-slider:before {
+                transform: translateX(24px);
+            }
+        `;
+        this.shadowRoot.appendChild(styles);
+    }
+
+    createControlSection(pageId) {
+        const page = this.db.page(pageId);
+        const controls = document.createElement('div');
+        controls.classList.add('editor-controls');
+
+        // Title input
+        const titleInput = document.createElement('input');
+        titleInput.type = 'text';
+        titleInput.classList.add('title-input');
+        titleInput.value = page.title;
+        titleInput.placeholder = 'Page Title';
+        titleInput.addEventListener('change', () => {
+            this.db.pageTitle(pageId, titleInput.value);
+        });
+
+        // Privacy toggle
+        const privacyToggle = document.createElement('div');
+        privacyToggle.classList.add('privacy-toggle');
+
+        const toggleLabel = document.createElement('span');
+        toggleLabel.textContent = 'Public';
+
+        const toggleSwitch = document.createElement('label');
+        toggleSwitch.classList.add('toggle-switch');
+
+        const toggleInput = document.createElement('input');
+        toggleInput.type = 'checkbox';
+        toggleInput.checked = page.isPublic;
+        toggleInput.addEventListener('change', () => {
+            this.db.pagePrivacy(pageId, toggleInput.checked);
+            if (toggleInput.checked) {
+                this.app.net.shareDocument(pageId);
+            } else {
+                this.app.net.unshareDocument(pageId);
+            }
+        });
+
+        const toggleSlider = document.createElement('span');
+        toggleSlider.classList.add('toggle-slider');
+
+        toggleSwitch.appendChild(toggleInput);
+        toggleSwitch.appendChild(toggleSlider);
+        privacyToggle.appendChild(toggleLabel);
+        privacyToggle.appendChild(toggleSwitch);
+
+        // Template buttons
+        const templateButtons = document.createElement('div');
+        templateButtons.classList.add('template-buttons');
+
+        const templates = [
+            { icon: '📝', title: 'Note Template', template: 'note' },
+            { icon: '📅', title: 'Meeting Template', template: 'meeting' },
+            { icon: '✅', title: 'Todo Template', template: 'todo' },
+            { icon: '📊', title: 'Report Template', template: 'report' }
+        ];
+
+        templates.forEach(({ icon, title, template }) => {
+            const button = document.createElement('button');
+            button.classList.add('template-button');
+            button.textContent = icon;
+            button.title = title;
+            button.addEventListener('click', () => {
+                // Template insertion logic would go here
+                console.log(`Insert ${template} template`);
+            });
+            templateButtons.appendChild(button);
+        });
+
+        controls.appendChild(titleInput);
+        controls.appendChild(privacyToggle);
+        controls.appendChild(templateButtons);
+
+        return controls;
+    }
+
+    quillStop() {
+        if (this.binding) {
+            this.binding.destroy();
+            this.binding = null;
+        }
+        if (this.quill) {
+            this.quill.off('text-change', this.handleTextChange);
+            this.quill = null;
+        }
+        this.editorContainer.innerHTML = '';
+    }
+
+    quillStart() {
+        const c = this.editorContainer;
+        c.innerHTML = `<div id="editor"></div>`;
+
+        this.quill = new Quill(c.querySelector('#editor'), {
+            theme: 'snow',
+            modules: {
+                cursors: true,
+                toolbar: [
+                    ['bold', 'italic', 'underline', 'strike'],
+                    ['blockquote', 'code-block'],
+                    ['link', 'image', 'video', 'formula'],
+                    [{ 'header': 1 }, { 'header': 2 }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'list': 'check' }],
+                    [{ 'script': 'sub'}, { 'script': 'super' }],
+                    [{ 'indent': '-1'}, { 'indent': '+1' }],
+                    [{ 'direction': 'rtl' }],
+                    [{ 'size': ['small', false, 'large', 'huge'] }],
+                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                    [{ 'color': [] }, { 'background': [] }],
+                    [{ 'font': [] }],
+                    [{ 'align': [] }],
+                    ['clean']
+                ],
+                history: {
+                    userOnly: true
+                }
+            },
+            placeholder: 'Start writing here...'
+        });
+
+        this.quill.on('selection-change', (range, oldRange, source) => {
+            this.currentSelection = range;
+        });
+
+        return this.quill;
+    }
+
+    handleTextChange = (delta, oldDelta, source) => {
+        if (source !== 'user') return;
+    };
+
+    viewPage(pageId) {
+        this.currentPageId = pageId;
+        const page = this.db.pageContent(pageId);
+        if (!page) {
+            alert('Page not found.');
+            return;
+        }
+
+        this.quillStop();
+
+
+        this.binding = new QuillBinding(
+            this.db.pageContent(pageId),
+            this.quillStart(),
+            this.getAwareness()
+        );
+
+        this.quill.on('text-change', this.handleTextChange);
+
+        this.editorContainer.insertBefore(this.createControlSection(pageId), this.editorContainer.children[0]); //prepend
+
+    }
+}
+
 class App extends HTMLElement {
     constructor() {
         super();
@@ -487,28 +636,26 @@ class App extends HTMLElement {
         this.db = new DB(this.channel);
         this.net = new Network(this.channel, this.db);
 
-        this.attachShadow({ mode: 'open' });
+        // Initialize shared documents tracking
+        // TODO move this to db
+        this.sharedDocuments = new Set();
+
+
+        const root = this.attachShadow({mode: 'open'});
+        this.profilePage = new MePage(root, this.user.bind(this), this.awareness.bind(this));
+        this.friendsListPage = new FriendsPage(root, this.awareness.bind(this));
+        this.networkPage = new NetPage(root, this.db);
+        this.databasePage = new DBPage(root, this.db);
     }
 
-    /**
-     * Get the current user.
-     * @returns {Object} The current user object.
-     */
     user() {
         return this.net.user();
     }
 
-    /**
-     * Get the awareness instance.
-     * @returns {Object} The awareness instance.
-     */
     awareness() {
         return this.net.awareness();
     }
 
-    /**
-     * Lifecycle method called when the element is added to the DOM.
-     */
     async connectedCallback() {
         const cssQuill = await this.loadQuillStyles();
 
@@ -592,23 +739,36 @@ class App extends HTMLElement {
                     background: #f5f5f5; 
                 }
                 
-                /* Button Styling */
-                button {             
+                /* Menubar Styling */
+                .menubar {
+                    display: flow;
+                    gap: 10px;
+                    margin-bottom: 10px;
+                }
+
+                .menubar-button {
                     background-color: #007BFF;
                     color: white; 
                     border: none;
-                    padding: 8px;
+                    padding: 8px 12px;
                     cursor: pointer;
-                    font-size: 16px;
+                    font-size: 14px;
                     border-radius: 4px;
-                    margin-bottom: 10px;
                     transition: background-color 0.3s;
                 }
 
-                button:hover {
+                .menubar-button:hover {
                     background-color: #0056b3;
                 }
-                
+
+                .add-page-button {
+                    background-color: #28a745;
+                }
+
+                .add-page-button:hover {
+                    background-color: #1e7e34;
+                }
+
                 /* Context Menu Styling */
                 .context-menu { 
                     position: absolute; 
@@ -633,30 +793,82 @@ class App extends HTMLElement {
                     color: white; 
                 }
 
-                /* Special Pages Styling */
-                .special-page-item {
-                    padding: 8px;
-                    cursor: pointer;
-                    border-bottom: 1px solid #eee;
-                }
-                .special-page-item:hover {
-                    background: #f5f5f5;
-                }
-
                 /* Special Page Content Styling */
-                .special-page label {
+                .profile-page label,
+                .friends-list-page label,
+                .network-page label,
+                .database-page label {
                     display: inline-block;
                     width: 80px;
                     margin-right: 10px;
                 }
-                .special-page input[type="text"],
-                .special-page input[type="color"] {
+                .profile-page input[type="text"],
+                .profile-page input[type="color"],
+                .friends-list-page input,
+                .network-page input,
+                .database-page input {
                     padding: 5px;
                     border: 1px solid #ccc;
                     border-radius: 4px;
                 }
-                .special-page h3 {
+                .profile-page h3,
+                .friends-list-page h3,
+                .network-page h3,
+                .database-page h3 {
                     margin-top: 0;
+                }
+
+                /* Toggle Switch Styling */
+                .toggle-switch {
+                    position: relative;
+                    display: inline-block;
+                    width: 60px;
+                    height: 34px;
+                    margin-left: 10px;
+                }
+
+                .toggle-switch input {
+                    opacity: 0;
+                    width: 0;
+                    height: 0;
+                }
+
+                .slider {
+                    position: absolute;
+                    cursor: pointer;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background-color: #ccc;
+                    transition: .4s;
+                    border-radius: 34px;
+                }
+
+                .slider:before {
+                    position: absolute;
+                    content: "";
+                    height: 26px;
+                    width: 26px;
+                    left: 4px;
+                    bottom: 4px;
+                    background-color: white;
+                    transition: .4s;
+                    border-radius: 50%;
+                }
+
+                input:checked + .slider {
+                    background-color: #2196F3;
+                }
+
+                input:checked + .slider:before {
+                    transform: translateX(26px);
+                }
+
+                /* Profile and Friends List Field Styling */
+                .profile-field,
+                .friends-list-field {
+                    margin-bottom: 10px;
                 }
             </style>
             <div id="container">
@@ -677,10 +889,6 @@ class App extends HTMLElement {
         this.initializeApp();
     }
 
-    /**
-     * Load Quill CSS styles from CDNs.
-     * @returns {Promise<string>} The combined CSS styles.
-     */
     async loadQuillStyles() {
         try {
             const [quillSnow, quillCursors] = await Promise.all([
@@ -694,9 +902,6 @@ class App extends HTMLElement {
         }
     }
 
-    /**
-     * Initialize all component instances.
-     */
     initComponents() {
         // Initialize ContextMenu first as it might be used by Sidebar
         this.contextMenu = new ContextMenu(this.shadowRoot, this.db, this);
@@ -704,22 +909,29 @@ class App extends HTMLElement {
         // Initialize Editor
         this.editor = new Editor(this.shadowRoot, this.db, this.awareness.bind(this), this);
 
-        // Initialize SpecialPages
-        this.specialPages = new SpecialPages(this.shadowRoot, this.user.bind(this), this.awareness.bind(this), this.db);
-
         // Initialize Sidebar
         this.sidebar = new Sidebar(this.shadowRoot, this.db, this);
     }
 
-    /**
-     * Initialize the application by loading the first page or creating a new one.
-     */
     initializeApp() {
-        if (this.db.pages.size === 0) {
-            this.db.pageNew(`page-${Date.now()}`, 'Empty');
-        } else {
-            const firstPageId = this.db.pages.keys().next().value;
-            this.editor.viewPage(firstPageId);
+        // if (this.db.pages.size === 0) {
+        //     this.db.pageNew(`page-${Date.now()}`, 'Empty', false); // Default to Private
+        // }
+        // const firstPageId = this.db.pages.keys().next().value;
+        // this.editor.viewPage(firstPageId);
+    }
+
+    shareDocument(pageId) {
+        if (!this.sharedDocuments.has(pageId)) {
+            this.net.shareDocument(pageId);
+            this.sharedDocuments.add(pageId);
+        }
+    }
+
+    unshareDocument(pageId) {
+        if (this.sharedDocuments.has(pageId)) {
+            this.net.unshareDocument(pageId);
+            this.sharedDocuments.delete(pageId);
         }
     }
 }

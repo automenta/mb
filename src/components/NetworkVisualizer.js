@@ -97,7 +97,7 @@ export class NetworkVisualizer extends HTMLElement {
         const peerList = this.shadowRoot.querySelector('#peers');
         peerList.innerHTML = stats.awareness.map(peer => `
             <div class="peer-badge">
-                ${peer.metadata.clientName}
+                ${peer.metadata.clientID}
                 (${new Date(peer.lastActive).toLocaleTimeString()})
             </div>
         `).join('');
