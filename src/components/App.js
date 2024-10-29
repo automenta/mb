@@ -1,24 +1,22 @@
+import '/style.css';
 import DB from '/src/db.js';
 import Network from '/src/net.js';
-import '/style.css';
+import MePage from './Me.js';
 
 import Quill from 'quill';
 import QuillCursors from 'quill-cursors';
-import {QuillBinding} from 'y-quill';
+import { QuillBinding } from 'y-quill';
 import 'quill/dist/quill.snow.css';
 
 Quill.register('modules/cursors', QuillCursors);
 
-class ContextMenu {
+class PageContextMenu {
     constructor(shadowRoot, db, app) {
         this.db = db;
         this.app = app;
-
         this.shadowRoot = shadowRoot;
-        this.ele = this.shadowRoot.querySelector('#context-menu');
-
         this.selectedPageId = null;
-
+        this.ele = this.shadowRoot.querySelector('#context-menu');
         this.renderContextMenu();
         this.bindEvents();
     }
@@ -33,27 +31,14 @@ class ContextMenu {
     }
 
     bindEvents() {
-        // Hide context menu when clicking outside
-        this.shadowRoot.addEventListener('click', e => {
-            if (!this.ele.contains(e.target))
-                this.hide();
+        this.shadowRoot.addEventListener('click', (e) => {
+            if (!this.ele.contains(e.target)) this.hide();
         });
-
-        // Handle context menu actions using event delegation
-        this.ele.addEventListener('click', e => {
+        this.ele.addEventListener('click', (e) => {
             const action = e.target.getAttribute('data-action');
             if (!action) return;
-
-            switch (action) {
-                case 'rename-page':
-                    this.renamePage();
-                    break;
-                case 'delete-page':
-                    this.deletePage();
-                    break;
-                default:
-                    break;
-            }
+            if (action === 'rename-page') this.renamePage();
+            else if (action === 'delete-page') this.deletePage();
             this.hide();
         });
     }
@@ -68,7 +53,6 @@ class ContextMenu {
     deletePage() {
         if (this.selectedPageId && confirm('Are you sure you want to delete this page?')) {
             this.db.pages.delete(this.selectedPageId);
-            // If the deleted page was public, remove it from the network
             const page = this.db.page(this.selectedPageId);
             if (page && page.isPublic) this.app.net.removeSharedDocument(this.selectedPageId);
         }
@@ -78,24 +62,23 @@ class ContextMenu {
         event.preventDefault();
         this.selectedPageId = pageId;
         const { clientX: x, clientY: y } = event;
-        this.ele.style.top = `${y}px`;
-        this.ele.style.left = `${x}px`;
-        this.ele.style.display = 'block';
+        Object.assign(this.ele.style, {
+            top: `${y}px`,
+            left: `${x}px`,
+            display: 'block'
+        });
     }
-
 
     hide() {
         this.ele.style.display = 'none';
     }
 }
 
-
 class Sidebar {
     constructor(shadowRoot, db, app) {
         this.shadowRoot = shadowRoot;
         this.db = db;
         this.app = app;
-
         this.init();
     }
 
@@ -114,178 +97,88 @@ class Sidebar {
         this.pageList = document.createElement('ul');
         this.pageList.id = 'page-list';
         this.element.appendChild(this.pageList);
-
-        // Observe changes in the pages and re-render the list accordingly
         this.db.pages.observe(() => this.updatePageList());
         this.updatePageList();
     }
 
     menu() {
-        const m = document.createElement('div');
-        m.id = 'menubar';
-        m.classList.add('menubar');
+        const menuBar = document.createElement('div');
+        menuBar.id = 'menubar';
+        menuBar.classList.add('menubar');
 
-        {
-            const b = document.createElement('button');
-            b.id = 'add-page';
-            b.classList.add('menubar-button', 'add-page-button');
-            b.textContent = '+';
-            b.title = 'Add New Page';
-            b.addEventListener('click', () => {
-                const pageId = `page-${Date.now()}`;
-                this.db.pageNew(pageId, 'Empty', false); // Default to Private
-                this.app.editor.viewPage(pageId);
-            });
-            m.appendChild(b);
-        }
+        const addPageButton = document.createElement('button');
+        addPageButton.id = 'add-page';
+        addPageButton.classList.add('menubar-button', 'add-page-button');
+        addPageButton.textContent = '+';
+        addPageButton.title = 'Add New Page';
+        addPageButton.addEventListener('click', () => {
+            const pageId = `page-${Date.now()}`;
+            this.db.pageNew(pageId, 'Empty', false);
+            this.app.editor.viewPage(pageId);
+        });
+        menuBar.appendChild(addPageButton);
 
+        const specialPages = [
+            { id: 'profile', title: 'Me', class: MePage },
+            { id: 'friends', title: 'Friends', class: FriendsPage },
+            { id: 'network', title: 'Net', class: NetPage },
+            { id: 'database', title: 'DB', class: DBPage },
+        ];
 
-        {
-            const specialPages = [
-                {id: 'profile', title: 'Me', class: MePage},
-                {id: 'friends', title: 'Friends', class: FriendsPage},
-                {id: 'network', title: 'Net', class: NetPage},
-                {id: 'database', title: 'DB', class: DBPage},
-            ];
+        specialPages.forEach((page) => {
+            const button = document.createElement('button');
+            button.classList.add('menubar-button');
+            button.textContent = page.title;
+            button.title = `Access ${page.title}`;
+            let pageInstance;
+            switch (page.id) {
+                case 'profile': pageInstance = this.app.profilePage; break;
+                case 'friends': pageInstance = this.app.friendsListPage; break;
+                case 'network': pageInstance = this.app.networkPage; break;
+                case 'database': pageInstance = this.app.databasePage; break;
+                default: console.warn(`No page class defined for ${page.id}`);
+            }
+            button.addEventListener('click', () => pageInstance.render());
+            menuBar.appendChild(button);
+        });
 
-            specialPages.forEach(page => {
-                const button = document.createElement('button');
-                button.classList.add('menubar-button');
-                button.textContent = page.title;
-                button.title = `Access ${page.title}`;
-                let y;
-                switch (page.id) {
-                    case 'profile':
-                        y = this.app.profilePage;
-                        break;
-                    case 'friends':
-                        y = this.app.friendsListPage;
-                        break;
-                    case 'network':
-                        y = this.app.networkPage;
-                        break;
-                    case 'database':
-                        y = this.app.databasePage;
-                        break;
-                    default:
-                        console.warn(`No page class defined for ${(page.id)}`);
-                }
-                button.addEventListener('click', () => y.render());
-                m.appendChild(button);
-            });
-        }
-        return m;
+        return menuBar;
     }
 
     updatePageList() {
         this.pageList.innerHTML = '';
-
-        // Iterate through the pages and create list items
         this.db.pages.forEach((value, key) => {
             const li = document.createElement('li');
             li.textContent = value.title;
             li.dataset.pageId = key;
             li.title = `Open ${value.title}`;
             li.classList.add('user-page-item');
-
-            // Add a visual indicator for public pages
             if (value.isPublic) {
-                const publicIndicator = document.createElement('span');
-                publicIndicator.textContent = ' 🌐';
-                publicIndicator.title = 'Public Document';
-                li.appendChild(publicIndicator);
+                const span = document.createElement('span');
+                span.textContent = ' 🌐';
+                span.title = 'Public Document';
+                li.appendChild(span);
             }
-
-            // Click to view the page
             li.addEventListener('click', () => this.app.editor.viewPage(key));
-
-            // Right-click to open the context menu
-            li.addEventListener('contextmenu', e => {
+            li.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 this.app.contextMenu.showContextMenu(e, key);
             });
-
-            // Double-click to toggle privacy
             li.addEventListener('dblclick', () => {
                 const page = this.db.page(key);
                 if (page) {
                     const newPrivacy = !page.isPublic;
                     this.db.pagePrivacy(key, newPrivacy);
-                    if (newPrivacy) {
-                        this.app.net.shareDocument(key);
-                    } else {
-                        this.app.net.unshareDocument(key);
-                    }
-                    this.updatePageList(); // Update the UI indicator
+                    if (newPrivacy) this.app.net.shareDocument(key);
+                    else this.app.net.unshareDocument(key);
+                    this.updatePageList();
                 }
             });
-
             this.pageList.appendChild(li);
         });
     }
 
-    bindEvents() {
-        // Placeholder for future event bindings
-    }
-}
-
-class MePage {
-    constructor(shadowRoot, getUser, getAwareness) {
-        this.shadowRoot = shadowRoot;
-        this.getUser = getUser;
-        this.getAwareness = getAwareness;
-    }
-
-    render() {
-        const editorContainer = this.shadowRoot.querySelector('#editor-container');
-        editorContainer.innerHTML = '';
-
-        const container = document.createElement('div');
-        container.classList.add('profile-page');
-        editorContainer.appendChild(container);
-
-        const user = this.getUser();
-
-        const nameLabel = document.createElement('label');
-        nameLabel.textContent = 'Name: ';
-        nameLabel.setAttribute('for', 'user-name');
-
-        const nameInput = document.createElement('input');
-        nameInput.type = 'text';
-        nameInput.id = 'user-name';
-        nameInput.placeholder = 'Name';
-        nameInput.value = user.name;
-        nameInput.addEventListener('input', e => {
-            const updatedUser = { ...user, name: e.target.value };
-            this.getAwareness().setLocalStateField('user', updatedUser);
-        });
-
-        const colorLabel = document.createElement('label');
-        colorLabel.textContent = 'Color: ';
-        colorLabel.setAttribute('for', 'user-color');
-
-        const colorInput = document.createElement('input');
-        colorInput.type = 'color';
-        colorInput.id = 'user-color';
-        colorInput.value = user.color;
-        colorInput.addEventListener('input', e => {
-            const updatedUser = { ...user, color: e.target.value };
-            this.getAwareness().setLocalStateField('user', updatedUser);
-        });
-
-        const nameDiv = document.createElement('div');
-        nameDiv.classList.add('profile-field');
-        nameDiv.appendChild(nameLabel);
-        nameDiv.appendChild(nameInput);
-
-        const colorDiv = document.createElement('div');
-        colorDiv.classList.add('profile-field');
-        colorDiv.appendChild(colorLabel);
-        colorDiv.appendChild(colorInput);
-
-        container.appendChild(nameDiv);
-        container.appendChild(colorDiv);
-    }
+    bindEvents() {}
 }
 
 class FriendsPage {
@@ -297,28 +190,22 @@ class FriendsPage {
     render() {
         const editorContainer = this.shadowRoot.querySelector('#editor-container');
         editorContainer.innerHTML = '';
-
         const container = document.createElement('div');
         container.classList.add('friends-list-page');
         editorContainer.appendChild(container);
-
         const header = document.createElement('h3');
         header.textContent = 'Friends';
         container.appendChild(header);
-
         const ul = document.createElement('ul');
         container.appendChild(ul);
 
         const updateFriends = () => {
             const users = [];
-            this.getAwareness().getStates().forEach(state => {
+            this.getAwareness().getStates().forEach((state) => {
                 if (state.user) users.push(state.user);
             });
-
-            // Clear existing list
             ul.innerHTML = '';
-
-            users.forEach(user => {
+            users.forEach((user) => {
                 const li = document.createElement('li');
                 li.textContent = user.name;
                 li.style.color = user.color;
@@ -326,10 +213,7 @@ class FriendsPage {
             });
         };
 
-        // Initial render
         updateFriends();
-
-        // Update the friends list when awareness changes
         this.getAwareness().on('change', updateFriends);
     }
 }
@@ -343,11 +227,9 @@ class NetPage {
     render() {
         const editorContainer = this.shadowRoot.querySelector('#editor-container');
         editorContainer.innerHTML = '';
-
         const container = document.createElement('div');
         container.classList.add('network-page');
         editorContainer.appendChild(container);
-
         if (typeof this.db.renderNetwork === 'function') {
             this.db.renderNetwork(container);
         } else {
@@ -361,18 +243,18 @@ class DBPage {
         this.shadowRoot = shadowRoot;
         this.db = db;
     }
+
     render() {
         const editorContainer = this.shadowRoot.querySelector('#editor-container');
         editorContainer.innerHTML = '';
-
         const container = document.createElement('div');
         container.classList.add('database-page');
         editorContainer.appendChild(container);
-
-        if (typeof this.db.renderDatabase === 'function')
+        if (typeof this.db.renderDatabase === 'function') {
             this.db.renderDatabase(container);
-        else
+        } else {
             container.innerHTML = '<p>Database feature not implemented.</p>';
+        }
     }
 }
 
@@ -380,20 +262,20 @@ class Editor {
     constructor(shadowRoot, db, getAwareness, app) {
         this.shadowRoot = shadowRoot;
         this.db = db;
-        this.getAwareness = getAwareness;
         this.app = app;
+        this.getAwareness = getAwareness;
         this.binding = null;
         this.quill = null;
         this.currentPageId = null;
-
         this.init();
     }
 
-    init() {
+    async init() {
         this.editorContainer = this.shadowRoot.querySelector('#editor-container');
-        // Add new styles for the control section
+        const cssQuill = await this.quillStyles();
         const styles = document.createElement('style');
         styles.textContent = `
+            ${cssQuill}
             .editor-controls {
                 padding: 12px;
                 border-bottom: 1px solid #ddd;
@@ -450,7 +332,7 @@ class Editor {
                 right: 0;
                 bottom: 0;
                 background-color: #ccc;
-                transition: .4s;
+                transition: 0.4s;
                 border-radius: 24px;
             }
             .toggle-slider:before {
@@ -461,7 +343,7 @@ class Editor {
                 left: 3px;
                 bottom: 3px;
                 background-color: white;
-                transition: .4s;
+                transition: 0.4s;
                 border-radius: 50%;
             }
             input:checked + .toggle-slider {
@@ -474,12 +356,11 @@ class Editor {
         this.shadowRoot.appendChild(styles);
     }
 
-    createControlSection(pageId) {
+    controlSection(pageId) {
         const page = this.db.page(pageId);
         const controls = document.createElement('div');
         controls.classList.add('editor-controls');
 
-        // Title input
         const titleInput = document.createElement('input');
         titleInput.type = 'text';
         titleInput.classList.add('title-input');
@@ -489,7 +370,6 @@ class Editor {
             this.db.pageTitle(pageId, titleInput.value);
         });
 
-        // Privacy toggle
         const privacyToggle = document.createElement('div');
         privacyToggle.classList.add('privacy-toggle');
 
@@ -504,11 +384,7 @@ class Editor {
         toggleInput.checked = page.isPublic;
         toggleInput.addEventListener('change', () => {
             this.db.pagePrivacy(pageId, toggleInput.checked);
-            if (toggleInput.checked) {
-                this.app.net.shareDocument(pageId);
-            } else {
-                this.app.net.unshareDocument(pageId);
-            }
+            toggleInput.checked ? this.app.net.shareDocument(pageId) : this.app.net.unshareDocument(pageId);
         });
 
         const toggleSlider = document.createElement('span');
@@ -519,7 +395,6 @@ class Editor {
         privacyToggle.appendChild(toggleLabel);
         privacyToggle.appendChild(toggleSwitch);
 
-        // Template buttons
         const templateButtons = document.createElement('div');
         templateButtons.classList.add('template-buttons');
 
@@ -536,7 +411,6 @@ class Editor {
             button.textContent = icon;
             button.title = title;
             button.addEventListener('click', () => {
-                // Template insertion logic would go here
                 console.log(`Insert ${template} template`);
             });
             templateButtons.appendChild(button);
@@ -550,10 +424,7 @@ class Editor {
     }
 
     quillStop() {
-        if (this.binding) {
-            this.binding.destroy();
-            this.binding = null;
-        }
+        if (this.binding) this.binding.destroy();
         if (this.quill) {
             this.quill.off('text-change', this.handleTextChange);
             this.quill = null;
@@ -562,10 +433,9 @@ class Editor {
     }
 
     quillStart() {
-        const c = this.editorContainer;
-        c.innerHTML = `<div id="editor"></div>`;
-
-        this.quill = new Quill(c.querySelector('#editor'), {
+        const container = this.editorContainer;
+        container.innerHTML = `<div id="editor"></div>`;
+        this.quill = new Quill(container.querySelector('#editor'), {
             theme: 'snow',
             modules: {
                 cursors: true,
@@ -574,9 +444,9 @@ class Editor {
                     ['blockquote', 'code-block'],
                     ['link', 'image', 'video', 'formula'],
                     [{ 'header': 1 }, { 'header': 2 }],
-                    [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'list': 'check' }],
-                    [{ 'script': 'sub'}, { 'script': 'super' }],
-                    [{ 'indent': '-1'}, { 'indent': '+1' }],
+                    [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'list': 'check' }],
+                    [{ 'script': 'sub' }, { 'script': 'super' }],
+                    [{ 'indent': '-1' }, { 'indent': '+1' }],
                     [{ 'direction': 'rtl' }],
                     [{ 'size': ['small', false, 'large', 'huge'] }],
                     [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
@@ -585,17 +455,11 @@ class Editor {
                     [{ 'align': [] }],
                     ['clean']
                 ],
-                history: {
-                    userOnly: true
-                }
+                history: { userOnly: true }
             },
             placeholder: 'Start writing here...'
         });
-
-        this.quill.on('selection-change', (range, oldRange, source) => {
-            this.currentSelection = range;
-        });
-
+        this.quill.on('selection-change', (range) => { this.currentSelection = range; });
         return this.quill;
     }
 
@@ -603,62 +467,48 @@ class Editor {
         if (source !== 'user') return;
     };
 
-    viewPage(pageId) {
+    async viewPage(pageId) {
         this.currentPageId = pageId;
         const page = this.db.pageContent(pageId);
-        if (!page) {
-            alert('Page not found.');
-            return;
-        }
-
+        if (!page) { alert('Page not found.'); return; }
         this.quillStop();
-
-
-        this.binding = new QuillBinding(
-            this.db.pageContent(pageId),
-            this.quillStart(),
-            this.getAwareness()
-        );
-
+        this.binding = new QuillBinding(this.db.pageContent(pageId), this.quillStart(), this.getAwareness());
         this.quill.on('text-change', this.handleTextChange);
+        this.editorContainer.insertBefore(this.controlSection(pageId), this.editorContainer.firstChild);
+    }
 
-        this.editorContainer.insertBefore(this.createControlSection(pageId), this.editorContainer.children[0]); //prepend
-
+    async quillStyles() {
+        try {
+            const [quillSnow, quillCursors] = await Promise.all([
+                fetch('https://cdn.quilljs.com/1.3.7/quill.snow.css').then(res => res.text()),
+                fetch('https://cdn.jsdelivr.net/npm/quill-cursors@latest/dist/quill-cursors.css').then(res => res.text())
+            ]);
+            return quillSnow + '\n' + quillCursors;
+        } catch (error) {
+            console.error('Error loading Quill styles:', error);
+            return '';
+        }
     }
 }
 
 class App extends HTMLElement {
     constructor() {
         super();
-
         this.channel = 'todo';
-
         this.db = new DB(this.channel);
         this.net = new Network(this.channel, this.db);
-
-        // Initialize shared documents tracking
-        // TODO move this to db
         this.sharedDocuments = new Set();
-
-
-        const root = this.attachShadow({mode: 'open'});
+        const root = this.attachShadow({ mode: 'open' });
         this.profilePage = new MePage(root, this.user.bind(this), this.awareness.bind(this));
         this.friendsListPage = new FriendsPage(root, this.awareness.bind(this));
         this.networkPage = new NetPage(root, this.db);
         this.databasePage = new DBPage(root, this.db);
     }
 
-    user() {
-        return this.net.user();
-    }
-
-    awareness() {
-        return this.net.awareness();
-    }
+    user() { return this.net.user(); }
+    awareness() { return this.net.awareness(); }
 
     async connectedCallback() {
-        const cssQuill = await this.loadQuillStyles();
-
         this.shadowRoot.innerHTML = `
             <style>
                 :host {
@@ -667,9 +517,6 @@ class App extends HTMLElement {
                     height: 100%;
                     font-family: Arial, sans-serif;
                 }
-                     
-                ${cssQuill}              
-
                 #container {
                     display: flex;
                     height: 100vh;
@@ -696,8 +543,6 @@ class App extends HTMLElement {
                     border-radius: 4px;
                     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                 }
-                
-                /* Quill Editor Styling */
                 .ql-container.ql-snow {
                     flex: 1;
                     overflow-y: auto;
@@ -715,7 +560,6 @@ class App extends HTMLElement {
                     z-index: 1;
                     background-color: #f9f9f9;
                 }
-                
                 #editor {
                     height: 100%;
                     overflow-y: auto;
@@ -723,29 +567,14 @@ class App extends HTMLElement {
                     border-top: none;
                     font-size: 16px;
                 }
-                
-                /* List Styling */
-                ul { 
-                    list-style: none; 
-                    padding: 0; 
-                    margin: 0; 
-                }
-                li { 
-                    padding: 8px; 
-                    cursor: pointer; 
-                    border-bottom: 1px solid #eee;
-                }
-                li:hover { 
-                    background: #f5f5f5; 
-                }
-                
-                /* Menubar Styling */
+                ul { list-style: none; padding: 0; margin: 0; }
+                li { padding: 8px; cursor: pointer; border-bottom: 1px solid #eee; }
+                li:hover { background: #f5f5f5; }
                 .menubar {
-                    display: flow;
+                    display: flex;
                     gap: 10px;
                     margin-bottom: 10px;
                 }
-
                 .menubar-button {
                     background-color: #007BFF;
                     color: white; 
@@ -756,20 +585,9 @@ class App extends HTMLElement {
                     border-radius: 4px;
                     transition: background-color 0.3s;
                 }
-
-                .menubar-button:hover {
-                    background-color: #0056b3;
-                }
-
-                .add-page-button {
-                    background-color: #28a745;
-                }
-
-                .add-page-button:hover {
-                    background-color: #1e7e34;
-                }
-
-                /* Context Menu Styling */
+                .menubar-button:hover { background-color: #0056b3; }
+                .add-page-button { background-color: #28a745; }
+                .add-page-button:hover { background-color: #1e7e34; }
                 .context-menu { 
                     position: absolute; 
                     border: 1px solid #ccc; 
@@ -779,21 +597,9 @@ class App extends HTMLElement {
                     background-color: white;
                     border-radius: 4px;
                 }
-                .context-menu ul { 
-                    list-style: none; 
-                    margin: 0; 
-                    padding: 0; 
-                }
-                .context-menu li { 
-                    padding: 8px 12px; 
-                    cursor: pointer; 
-                }
-                .context-menu li:hover { 
-                    background: #007BFF; 
-                    color: white; 
-                }
-
-                /* Special Page Content Styling */
+                .context-menu ul { list-style: none; margin: 0; padding: 0; }
+                .context-menu li { padding: 8px 12px; cursor: pointer; }
+                .context-menu li:hover { background: #007BFF; color: white; }
                 .profile-page label,
                 .friends-list-page label,
                 .network-page label,
@@ -817,8 +623,6 @@ class App extends HTMLElement {
                 .database-page h3 {
                     margin-top: 0;
                 }
-
-                /* Toggle Switch Styling */
                 .toggle-switch {
                     position: relative;
                     display: inline-block;
@@ -826,13 +630,11 @@ class App extends HTMLElement {
                     height: 34px;
                     margin-left: 10px;
                 }
-
                 .toggle-switch input {
                     opacity: 0;
                     width: 0;
                     height: 0;
                 }
-
                 .slider {
                     position: absolute;
                     cursor: pointer;
@@ -841,10 +643,9 @@ class App extends HTMLElement {
                     right: 0;
                     bottom: 0;
                     background-color: #ccc;
-                    transition: .4s;
+                    transition: 0.4s;
                     border-radius: 34px;
                 }
-
                 .slider:before {
                     position: absolute;
                     content: "";
@@ -853,23 +654,12 @@ class App extends HTMLElement {
                     left: 4px;
                     bottom: 4px;
                     background-color: white;
-                    transition: .4s;
+                    transition: 0.4s;
                     border-radius: 50%;
                 }
-
-                input:checked + .slider {
-                    background-color: #2196F3;
-                }
-
-                input:checked + .slider:before {
-                    transform: translateX(26px);
-                }
-
-                /* Profile and Friends List Field Styling */
-                .profile-field,
-                .friends-list-field {
-                    margin-bottom: 10px;
-                }
+                input:checked + .slider { background-color: #2196F3; }
+                input:checked + .slider:before { transform: translateX(26px); }
+                .profile-field, .friends-list-field { margin-bottom: 10px; }
             </style>
             <div id="container">
                 <div id="sidebar"></div>
@@ -884,58 +674,11 @@ class App extends HTMLElement {
                 </ul>
             </div>
         `;
-
-        this.initComponents();
-        this.initializeApp();
-    }
-
-    async loadQuillStyles() {
-        try {
-            const [quillSnow, quillCursors] = await Promise.all([
-                fetch('https://cdn.quilljs.com/1.3.7/quill.snow.css').then(res => res.text()),
-                fetch('https://cdn.jsdelivr.net/npm/quill-cursors@latest/dist/quill-cursors.css').then(res => res.text())
-            ]);
-            return quillSnow + '\n' + quillCursors;
-        } catch (error) {
-            console.error('Error loading Quill styles:', error);
-            return '';
-        }
-    }
-
-    initComponents() {
-        // Initialize ContextMenu first as it might be used by Sidebar
-        this.contextMenu = new ContextMenu(this.shadowRoot, this.db, this);
-
-        // Initialize Editor
+        this.contextMenu = new PageContextMenu(this.shadowRoot, this.db, this);
         this.editor = new Editor(this.shadowRoot, this.db, this.awareness.bind(this), this);
-
-        // Initialize Sidebar
         this.sidebar = new Sidebar(this.shadowRoot, this.db, this);
-    }
-
-    initializeApp() {
-        // if (this.db.pages.size === 0) {
-        //     this.db.pageNew(`page-${Date.now()}`, 'Empty', false); // Default to Private
-        // }
-        // const firstPageId = this.db.pages.keys().next().value;
-        // this.editor.viewPage(firstPageId);
-    }
-
-    shareDocument(pageId) {
-        if (!this.sharedDocuments.has(pageId)) {
-            this.net.shareDocument(pageId);
-            this.sharedDocuments.add(pageId);
-        }
-    }
-
-    unshareDocument(pageId) {
-        if (this.sharedDocuments.has(pageId)) {
-            this.net.unshareDocument(pageId);
-            this.sharedDocuments.delete(pageId);
-        }
     }
 }
 
-// Define the custom element
 customElements.define('app-root', App);
 export default App;
