@@ -1,14 +1,21 @@
+// Import necessary modules and styles
 import '/style.css';
 import DB from '/src/db.js';
 import Network from '/src/net.js';
 import MePage from './Me.js';
 
-import Quill from 'quill';
-import QuillCursors from 'quill-cursors';
-import { QuillBinding } from 'y-quill';
-import 'quill/dist/quill.snow.css';
+// Removed Quill imports as per previous instructions
+// import Quill from 'quill';
+// import QuillCursors from 'quill-cursors';
+// import { QuillBinding } from 'y-quill';
+// import 'quill/dist/quill.snow.css';
 
-Quill.register('modules/cursors', QuillCursors);
+// Import Yjs and y-webrtc for real-time collaboration
+import * as Y from 'yjs';
+import { WebrtcProvider } from 'y-webrtc';
+
+// Removed Quill registration
+// Quill.register('modules/cursors', QuillCursors);
 
 class PageContextMenu {
     constructor(shadowRoot, db, app) {
@@ -264,18 +271,22 @@ class Editor {
         this.db = db;
         this.app = app;
         this.getAwareness = getAwareness;
-        this.binding = null;
-        this.quill = null;
         this.currentPageId = null;
+        this.ydoc = null;
+        this.provider = null;
+        this.ytext = null;
+        this.updating = false; // Flag to prevent infinite loops
         this.init();
     }
 
-    async init() {
+    init() {
         this.editorContainer = this.shadowRoot.querySelector('#editor-container');
-        const cssQuill = await this.quillStyles();
+        this.renderStyles();
+    }
+
+    renderStyles() {
         const styles = document.createElement('style');
         styles.textContent = `
-            ${cssQuill}
             .editor-controls {
                 padding: 12px;
                 border-bottom: 1px solid #ddd;
@@ -352,6 +363,32 @@ class Editor {
             input:checked + .toggle-slider:before {
                 transform: translateX(24px);
             }
+            .toolbar {
+                display: flex;
+                gap: 8px;
+                padding: 8px;
+                background: #f1f1f1;
+                border-bottom: 1px solid #ccc;
+            }
+            .toolbar button {
+                background: none;
+                border: none;
+                cursor: pointer;
+                padding: 8px;
+                font-size: 16px;
+                border-radius: 4px;
+                transition: background-color 0.2s;
+            }
+            .toolbar button:hover {
+                background-color: #e0e0e0;
+            }
+            .editor {
+                flex: 1;
+                padding: 16px;
+                outline: none;
+                overflow-y: auto;
+                min-height: 300px;
+            }
         `;
         this.shadowRoot.appendChild(styles);
     }
@@ -411,7 +448,7 @@ class Editor {
             button.textContent = icon;
             button.title = title;
             button.addEventListener('click', () => {
-                console.log(`Insert ${template} template`);
+                this.insertTemplate(template);
             });
             templateButtons.appendChild(button);
         });
@@ -423,71 +460,209 @@ class Editor {
         return controls;
     }
 
-    quillStop() {
-        if (this.binding) this.binding.destroy();
-        if (this.quill) {
-            this.quill.off('text-change', this.handleTextChange);
-            this.quill = null;
+    insertTemplate(template) {
+        let html = '';
+        switch (template) {
+            case 'note':
+                html = '<h2>Note</h2><p></p>';
+                break;
+            case 'meeting':
+                html = '<h2>Meeting Notes</h2><ul><li>Agenda Item 1</li><li>Agenda Item 2</li></ul>';
+                break;
+            case 'todo':
+                html = '<h2>Todo List</h2><ul><li><input type="checkbox"> Task 1</li><li><input type="checkbox"> Task 2</li></ul>';
+                break;
+            case 'report':
+                html = '<h2>Report</h2><h3>Introduction</h3><p></p><h3>Conclusion</h3><p></p>';
+                break;
+            default:
+                break;
+        }
+        document.execCommand('insertHTML', false, html);
+    }
+
+    renderToolbar() {
+        const toolbar = document.createElement('div');
+        toolbar.classList.add('toolbar');
+
+        const buttons = [
+            { command: 'bold', icon: '𝐁', title: 'Bold' },
+            { command: 'italic', icon: '𝐼', title: 'Italic' },
+            { command: 'underline', icon: 'U', title: 'Underline' },
+            { command: 'strikeThrough', icon: 'S', title: 'Strikethrough' },
+            { command: 'insertOrderedList', icon: '1.', title: 'Ordered List' },
+            { command: 'insertUnorderedList', icon: '•', title: 'Unordered List' },
+            { command: 'insertLink', icon: '🔗', title: 'Insert Link' },
+            { command: 'insertImage', icon: '🖼️', title: 'Insert Image' },
+            { command: 'undo', icon: '↩️', title: 'Undo' },
+            { command: 'redo', icon: '↪️', title: 'Redo' },
+        ];
+
+        buttons.forEach(({ command, icon, title }) => {
+            const button = document.createElement('button');
+            button.innerHTML = icon;
+            button.title = title;
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (command === 'insertLink') {
+                    const url = prompt('Enter the URL');
+                    if (url) {
+                        document.execCommand(command, false, url);
+                    }
+                } else if (command === 'insertImage') {
+                    const url = prompt('Enter the image URL');
+                    if (url) {
+                        document.execCommand(command, false, url);
+                    }
+                } else {
+                    document.execCommand(command, false, null);
+                }
+            });
+            toolbar.appendChild(button);
+        });
+
+        return toolbar;
+    }
+
+    editorSection() {
+        const editor = document.createElement('div');
+        editor.classList.add('editor');
+        editor.contentEditable = true;
+        editor.spellcheck = true;
+        editor.addEventListener('input', () => {
+            this.saveContent();
+        });
+        editor.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key.toLowerCase()) {
+                    case 'b':
+                        e.preventDefault();
+                        document.execCommand('bold');
+                        break;
+                    case 'i':
+                        e.preventDefault();
+                        document.execCommand('italic');
+                        break;
+                    case 'u':
+                        e.preventDefault();
+                        document.execCommand('underline');
+                        break;
+                    default:
+                        break;
+                }
+            }
+        });
+        return editor;
+    }
+
+    editorStop() {
+        // Clean up Yjs bindings and providers
+        if (this.binding) {
+            this.binding.destroy();
+            this.binding = null;
+        }
+        if (this.provider) {
+            this.provider.destroy();
+            this.provider = null;
+        }
+        if (this.ydoc) {
+            this.ydoc.destroy();
+            this.ydoc = null;
         }
         this.editorContainer.innerHTML = '';
     }
 
-    quillStart() {
-        const container = this.editorContainer;
-        container.innerHTML = `<div id="editor"></div>`;
-        this.quill = new Quill(container.querySelector('#editor'), {
-            theme: 'snow',
-            modules: {
-                cursors: true,
-                toolbar: [
-                    ['bold', 'italic', 'underline', 'strike'],
-                    ['blockquote', 'code-block'],
-                    ['link', 'image', 'video', 'formula'],
-                    [{ 'header': 1 }, { 'header': 2 }],
-                    [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'list': 'check' }],
-                    [{ 'script': 'sub' }, { 'script': 'super' }],
-                    [{ 'indent': '-1' }, { 'indent': '+1' }],
-                    [{ 'direction': 'rtl' }],
-                    [{ 'size': ['small', false, 'large', 'huge'] }],
-                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                    [{ 'color': [] }, { 'background': [] }],
-                    [{ 'font': [] }],
-                    [{ 'align': [] }],
-                    ['clean']
-                ],
-                history: { userOnly: true }
-            },
-            placeholder: 'Start writing here...'
-        });
-        this.quill.on('selection-change', (range) => { this.currentSelection = range; });
-        return this.quill;
+    editorStart(content = '') {
+        const container = document.createElement('div');
+        container.classList.add('editor-wrapper');
+
+        // Create and append toolbar
+        const toolbar = this.renderToolbar();
+        container.appendChild(toolbar);
+
+        // Create and append editor
+        const editor = this.editorSection();
+        editor.innerHTML = content;
+        container.appendChild(editor);
+
+        this.editorContainer.appendChild(container);
+        this.editor = editor;
+
+        // Bind Yjs to the editor
+        this.bindYjs();
     }
 
-    handleTextChange = (delta, oldDelta, source) => {
-        if (source !== 'user') return;
-    };
+    bindYjs() {
+        if (!this.ydoc || !this.ytext) return;
 
-    async viewPage(pageId) {
+        // Initial content synchronization
+        this.updating = true;
+        this.editor.innerHTML = this.ytext.toString();
+        this.updating = false;
+
+        // Observe changes in Yjs and update the editor
+        this.ytext.observe(event => {
+            if (this.updating) return;
+            this.updating = true;
+            this.editor.innerHTML = this.ytext.toString();
+            this.updating = false;
+        });
+
+        // Listen to editor changes and update Yjs
+        this.editor.addEventListener('input', () => {
+            if (this.updating) return;
+            this.updating = true;
+            this.ytext.delete(0, this.ytext.length);
+            this.ytext.insert(0, this.editor.innerHTML);
+            this.updating = false;
+        });
+    }
+
+    saveContent() {
+        if (this.currentPageId && this.ytext) {
+            const content = this.editor.innerHTML;
+            // Save content to DB if necessary
+            // this.db.pageContent(this.currentPageId, content);
+            // Yjs handles real-time synchronization, so explicit saving might not be needed
+        }
+    }
+
+    viewPage(pageId) {
+        // If already viewing this page, do nothing
+        if (this.currentPageId === pageId) return;
+
+        // Stop any existing editor instance
+        this.editorStop();
+
         this.currentPageId = pageId;
         const page = this.db.pageContent(pageId);
         if (!page) { alert('Page not found.'); return; }
-        this.quillStop();
-        this.binding = new QuillBinding(this.db.pageContent(pageId), this.quillStart(), this.getAwareness());
-        this.quill.on('text-change', this.handleTextChange);
-        this.editorContainer.insertBefore(this.controlSection(pageId), this.editorContainer.firstChild);
-    }
 
-    async quillStyles() {
-        try {
-            const [quillSnow, quillCursors] = await Promise.all([
-                fetch('https://cdn.quilljs.com/1.3.7/quill.snow.css').then(res => res.text()),
-                fetch('https://cdn.jsdelivr.net/npm/quill-cursors@latest/dist/quill-cursors.css').then(res => res.text())
-            ]);
-            return quillSnow + '\n' + quillCursors;
-        } catch (error) {
-            console.error('Error loading Quill styles:', error);
-            return '';
+        // Create control section
+        const controls = this.controlSection(pageId);
+        this.editorContainer.appendChild(controls);
+
+        // Initialize Yjs document and provider
+        this.ydoc = new Y.Doc();
+        this.provider = new WebrtcProvider(pageId, this.ydoc, {
+            // You can specify signaling servers here if needed
+            // For simplicity, we're using the default signaling servers
+        });
+
+        // Get or create a Y.Text type for the editor content
+        this.ytext = this.ydoc.getText('content');
+
+        // If the Y.Text is empty, initialize it with existing content
+        if (this.ytext.length === 0 && page.content) {
+            this.ytext.insert(0, page.content);
         }
+
+        // Initialize editor with content from Yjs
+        this.editorStart(this.ytext.toString());
+
+        // Optionally, handle awareness (e.g., cursors) here
+        // const awareness = this.provider.awareness;
+        // Implement cursor synchronization if desired
     }
 }
 
@@ -508,7 +683,7 @@ class App extends HTMLElement {
     user() { return this.net.user(); }
     awareness() { return this.net.awareness(); }
 
-    async connectedCallback() {
+    connectedCallback() {
         this.shadowRoot.innerHTML = `
             <style>
                 :host {
@@ -542,30 +717,6 @@ class App extends HTMLElement {
                     background-color: #fff;
                     border-radius: 4px;
                     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                }
-                .ql-container.ql-snow {
-                    flex: 1;
-                    overflow-y: auto;
-                    border: none;
-                }
-                .ql-snow .ql-picker-options {
-                    background-color: #333;
-                }
-                .ql-toolbar.ql-snow { 
-                    border: 1px solid #ccc;
-                    box-sizing: border-box;
-                    padding: 8px;
-                    position: sticky;
-                    top: 0;            
-                    z-index: 1;
-                    background-color: #f9f9f9;
-                }
-                #editor {
-                    height: 100%;
-                    overflow-y: auto;
-                    border: 1px solid #ccc;
-                    border-top: none;
-                    font-size: 16px;
                 }
                 ul { list-style: none; padding: 0; margin: 0; }
                 li { padding: 8px; cursor: pointer; border-bottom: 1px solid #eee; }
