@@ -12,7 +12,7 @@
   "dependencies": {
     "jquery": "latest",
     "quill": "latest",
-    "quill-cursors": "^4.0.3",
+    "quill-cursors": "latest",
     "y-quill": "latest",
     "y-webrtc": "latest",
     "y-indexeddb": "latest",
