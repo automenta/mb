@@ -10,7 +10,6 @@ export default class Editor {
         this.app = app;
         this.getAwareness = getAwareness;
         this.currentPageId = null;
-        this.ydoc = null;
         this.provider = null;
         this.ytext = null;
         this.updatePeriodMS = 100;
@@ -65,7 +64,6 @@ export default class Editor {
         const $controls = this.controlSection(pageId);
         this.$ele.append($controls);
 
-        this.ydoc = this.db.doc;
         this.ytext = this.db.pageContent(pageId);
 
         this.editorStart(this.ytext ? this.ytext.toString() : '');
