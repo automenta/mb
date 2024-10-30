@@ -2,7 +2,6 @@ import * as Y from 'yjs';
 import {IndexeddbPersistence} from 'y-indexeddb';
 import $ from 'jquery';
 
-
 class DB {
     constructor(channel) {
         this.doc = new Y.Doc();

@@ -1,6 +1,4 @@
-// net.js
 import {WebrtcProvider} from 'y-webrtc';
-import $ from 'jquery';
 
 class Network {
     constructor(channel, db) {
@@ -20,9 +18,8 @@ class Network {
         });
 
         // Initialize user awareness
-        const userId = `User-${Math.floor(Math.random() * 10000)}`;
         this.net.awareness.setLocalStateField('user', {
-            id: userId,
+            id: `User-${Math.floor(Math.random() * 10000)}`,
             name: 'Anonymous',
             color: '#' + Math.floor(Math.random() * 16777215).toString(16),
         });
@@ -117,16 +114,13 @@ class Network {
                 data: {
                     ...data,
                     stats: this.getNetworkStats(),
-                },
-            },
+                }
+            }
         }));
     }
 
     renderNetwork(container) {
-        const updateStatus = () => {
-            $(container).empty().append('<h3>Network</h3>', '<network-visualizer></network-visualizer>')
-            // Implement or integrate a network visualizer as needed
-        };
+        const updateStatus = () => container.empty().append('<h3>Network</h3>', '<network-view></network-view>');
         this.net.on('peers', updateStatus);
         updateStatus();
     }

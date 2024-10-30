@@ -11,8 +11,8 @@
   },
   "dependencies": {
     "jquery": "latest",
-    "y-webrtc": "latest",
     "y-indexeddb": "latest",
+    "y-webrtc": "latest",
     "yjs": "latest"
   },
   "devDependencies": {

@@ -2,9 +2,15 @@ import '/style.css';
 import DB from '/src/db.js';
 import Network from '/src/net.js';
 import MePage from './Me.js';
+import $ from 'jquery';
 
-import * as Y from 'yjs';
-import {WebrtcProvider} from 'y-webrtc';
+function debounce(callback, delay) {
+    let timeout = null;
+    return function(...args) {
+        if (timeout) clearTimeout(timeout);
+        timeout = setTimeout(() => callback.apply(this, args), delay);
+    };
+}
 
 class PageContextMenu {
     constructor(shadowRoot, db, app) {
@@ -12,26 +18,27 @@ class PageContextMenu {
         this.app = app;
         this.shadowRoot = shadowRoot;
         this.selectedPageId = null;
-        this.ele = this.shadowRoot.querySelector('#context-menu');
+        this.$ele = $(this.shadowRoot).find('#context-menu');
         this.renderContextMenu();
         this.bindEvents();
     }
 
     renderContextMenu() {
-        this.ele.innerHTML = `
+        this.$ele.html(`
             <ul>
                 <li data-action="rename-page">Rename</li>
                 <li data-action="delete-page">Delete</li>
             </ul>
-        `;
+        `);
     }
 
     bindEvents() {
-        this.shadowRoot.addEventListener('click', e => {
-            if (!this.ele.contains(e.target)) this.hide();
+        $(this.shadowRoot).click(e => {
+            if (!this.$ele.has(e.target).length) this.hide();
         });
-        this.ele.addEventListener('click', e => {
-            const action = e.target.getAttribute('data-action');
+
+        this.$ele.on('click', 'li', e => {
+            const action = $(e.target).data('action');
             if (!action) return;
             if (action === 'rename-page') this.renamePage();
             else if (action === 'delete-page') this.deletePage();
@@ -50,23 +57,22 @@ class PageContextMenu {
         if (this.selectedPageId && confirm('Are you sure you want to delete this page?')) {
             this.db.pages.delete(this.selectedPageId);
             const page = this.db.page(this.selectedPageId);
-            if (page && page.isPublic) this.app.net.removeSharedDocument(this.selectedPageId);
+            if (page?.isPublic) this.app.net.removeSharedDocument(this.selectedPageId);
         }
     }
 
     showContextMenu(event, pageId) {
         event.preventDefault();
         this.selectedPageId = pageId;
-        const { clientX: x, clientY: y } = event;
-        Object.assign(this.ele.style, {
-            top: `${y}px`,
-            left: `${x}px`,
+        this.$ele.css({
+            top: event.clientY,
+            left: event.clientX,
             display: 'block'
         });
     }
 
     hide() {
-        this.ele.style.display = 'none';
+        this.$ele.hide();
     }
 }
 
@@ -79,53 +85,46 @@ class Sidebar {
     }
 
     init() {
-        this.element = this.shadowRoot.querySelector('#sidebar');
+        this.$element = $(this.shadowRoot).find('#sidebar');
         this.renderSidebar();
-        this.bindEvents();
     }
 
     renderSidebar() {
-        this.element.appendChild(this.menu());
+        this.$element.append(this.menu());
         this.renderPageList();
     }
 
     renderPageList() {
-        this.pageList = document.createElement('ul');
-        this.pageList.id = 'page-list';
-        this.element.appendChild(this.pageList);
+        this.$pageList = $('<ul>', { id: 'page-list' });
+        this.$element.append(this.$pageList);
         this.db.pages.observe(() => this.updatePageList());
         this.updatePageList();
     }
 
     menu() {
-        const menuBar = document.createElement('div');
-        menuBar.id = 'menubar';
-        menuBar.classList.add('menubar');
-
-        const addPageButton = document.createElement('button');
-        addPageButton.id = 'add-page';
-        addPageButton.classList.add('menubar-button', 'add-page-button');
-        addPageButton.textContent = '+';
-        addPageButton.title = 'Add New Page';
-        addPageButton.addEventListener('click', () => {
+        const $addPageButton = $('<button>', {
+            id: 'add-page',
+            class: 'menubar-button add-page-button',
+            text: '+',
+            title: 'Add New Page'
+        }).on('click', () => {
             const pageId = `page-${Date.now()}`;
             this.db.pageNew(pageId, 'Empty', false);
             this.app.editor.viewPage(pageId);
         });
-        menuBar.appendChild(addPageButton);
 
-        const specialPages = [
-            { id: 'profile', title: 'Me', class: MePage },
-            { id: 'friends', title: 'Friends', class: FriendsPage },
-            { id: 'network', title: 'Net', class: NetPage },
-            { id: 'database', title: 'DB', class: DBPage },
-        ];
+        const $menuBar = $('<div>', {
+            id: 'menubar',
+            class: 'menubar'
+        });
+        $menuBar.append($addPageButton);
 
-        specialPages.forEach(page => {
-            const button = document.createElement('button');
-            button.classList.add('menubar-button');
-            button.textContent = page.title;
-            button.title = `Access ${page.title}`;
+        [
+            {id: 'profile', title: 'Me', class: MePage},
+            {id: 'friends', title: 'Friends', class: FriendsPage},
+            {id: 'network', title: 'Net', class: NetPage},
+            {id: 'database', title: 'DB', class: DBPage},
+        ].forEach(page => {
             let pageInstance;
             switch (page.id) {
                 case 'profile': pageInstance = this.app.profilePage; break;
@@ -134,78 +133,86 @@ class Sidebar {
                 case 'database': pageInstance = this.app.databasePage; break;
                 default: console.warn(`No page class defined for ${page.id}`);
             }
-            button.addEventListener('click', () => pageInstance.render());
-            menuBar.appendChild(button);
+
+            $menuBar.append($('<button>', {
+                    class: 'menubar-button',
+                    text: page.title,
+                    title: `Access ${page.title}`
+                }).on('click', () => pageInstance.render()));
+
         });
 
-        return menuBar;
+        return $menuBar;
     }
 
     updatePageList() {
-        this.pageList.innerHTML = '';
+        this.$pageList.empty();
         this.db.pages.forEach((value, key) => {
-            const li = document.createElement('li');
-            li.textContent = value.title;
-            li.dataset.pageId = key;
-            li.title = `Open ${value.title}`;
-            li.classList.add('user-page-item');
+            const $li = $('<li>', {
+                text: value.title,
+                'data-page-id': key,
+                title: `Open ${value.title}`,
+                class: 'user-page-item'
+            });
+
             if (value.isPublic) {
-                const span = document.createElement('span');
-                span.textContent = ' 🌐';
-                span.title = 'Public Document';
-                li.appendChild(span);
+                $('<span>', {
+                    text: ' 🌐',
+                    title: 'Public Document'
+                }).appendTo($li);
             }
-            li.addEventListener('click', () => this.app.editor.viewPage(key));
-            li.addEventListener('contextmenu', e => {
-                e.preventDefault();
-                this.app.contextMenu.showContextMenu(e, key);
-            });
-            li.addEventListener('dblclick', () => {
-                const page = this.db.page(key);
-                if (page) {
-                    const newPrivacy = !page.isPublic;
-                    this.db.pagePrivacy(key, newPrivacy);
-                    if (newPrivacy) this.app.net.shareDocument(key);
-                    else this.app.net.unshareDocument(key);
-                    this.updatePageList();
+
+            $li.on({
+                click: () => this.app.editor.viewPage(key),
+                contextmenu: e => {
+                    e.preventDefault();
+                    this.app.contextMenu.showContextMenu(e, key);
                 }
+                // dblclick: () => {
+                //     const page = this.db.page(key);
+                //     if (page) {
+                //         const newPrivacy = !page.isPublic;
+                //         this.db.pagePrivacy(key, newPrivacy);
+                //         if (newPrivacy) this.app.net.shareDocument(key);
+                //         else this.app.net.unshareDocument(key);
+                //         this.updatePageList();
+                //     }
+                // }
             });
-            this.pageList.appendChild(li);
+
+            this.$pageList.append($li);
         });
     }
-
-    bindEvents() {}
 }
 
 class FriendsPage {
     constructor(shadowRoot, getAwareness) {
         this.shadowRoot = shadowRoot;
         this.getAwareness = getAwareness;
+        this.$container = $('<div>').addClass('friends-list-page');
     }
 
     render() {
-        const editorContainer = this.shadowRoot.querySelector('#editor-container');
-        editorContainer.innerHTML = '';
-        const container = document.createElement('div');
-        container.classList.add('friends-list-page');
-        editorContainer.appendChild(container);
-        const header = document.createElement('h3');
-        header.textContent = 'Friends';
-        container.appendChild(header);
-        const ul = document.createElement('ul');
-        container.appendChild(ul);
+        const $editorContainer = $(this.shadowRoot).find('#editor-container');
+        $editorContainer.empty().append(this.$container);
+
+        this.$container.html(`
+            <h3>Friends</h3>
+            <ul></ul>
+        `);
 
         const updateFriends = () => {
             const users = [];
             this.getAwareness().getStates().forEach(state => {
                 if (state.user) users.push(state.user);
             });
-            ul.innerHTML = '';
+
+            const $ul = this.$container.find('ul').empty();
             users.forEach(user => {
-                const li = document.createElement('li');
-                li.textContent = user.name;
-                li.style.color = user.color;
-                ul.appendChild(li);
+                $('<li>')
+                    .text(user.name)
+                    .css('color', user.color)
+                    .appendTo($ul);
             });
         };
 
@@ -215,19 +222,15 @@ class FriendsPage {
 }
 
 class NetPage {
-    constructor(shadowRoot, db) {
+    constructor(shadowRoot, net) {
         this.shadowRoot = shadowRoot;
-        this.db = db;
+        this.net = net;
+        this.$container = $('<div>').addClass('network-page');
     }
 
     render() {
-        const editorContainer = this.shadowRoot.querySelector('#editor-container');
-        editorContainer.innerHTML = '';
-        const container = document.createElement('div');
-        container.classList.add('network-page');
-        editorContainer.appendChild(container);
-        if (typeof this.db.renderNetwork === 'function') this.db.renderNetwork(container);
-        else container.innerHTML = '<p>Network feature not implemented.</p>';
+        $(this.shadowRoot).find('#editor-container').empty().append(this.$container);
+        this.net.renderNetwork(this.$container);
     }
 }
 
@@ -235,16 +238,12 @@ class DBPage {
     constructor(shadowRoot, db) {
         this.shadowRoot = shadowRoot;
         this.db = db;
+        this.$container = $('<div>').addClass('database-page');
     }
 
     render() {
-        const editorContainer = this.shadowRoot.querySelector('#editor-container');
-        editorContainer.innerHTML = '';
-        const container = document.createElement('div');
-        container.classList.add('database-page');
-        editorContainer.appendChild(container);
-        if (typeof this.db.renderDatabase === 'function') this.db.renderDatabase(container);
-        else container.innerHTML = '<p>Database feature not implemented.</p>';
+        $(this.shadowRoot).find('#editor-container').empty().append(this.$container);
+        this.db.renderDatabase(this.$container[0]);
     }
 }
 
@@ -258,22 +257,23 @@ class Editor {
         this.ydoc = null;
         this.provider = null;
         this.ytext = null;
-        this.editorContainer = this.shadowRoot.querySelector('#editor-container');
+        this.updatePeriodMS = 100;
+        this.$editorContainer = $(this.shadowRoot).find('#editor-container');
         this.renderStyles();
     }
 
     bindYjs() {
-        if (!this.editor || !this.ytext) return;
+        if (!this.$editor || !this.ytext) return;
 
         const observer = new MutationObserver(() => {
-            const content = this.editor.innerHTML;
+            const content = this.$editor.html();
             this.ytext.doc.transact(() => {
                 this.ytext.delete(0, this.ytext.length);
                 this.ytext.insert(0, content);
             });
         });
 
-        observer.observe(this.editor, {
+        observer.observe(this.$editor[0], {
             characterData: true,
             childList: true,
             subtree: true,
@@ -281,17 +281,16 @@ class Editor {
         });
 
         this.ytext.observe(event => {
-            const currentContent = this.editor.innerHTML;
+            const currentContent = this.$editor.html();
             const yContent = this.ytext.toString();
-            if (currentContent !== yContent) {
-                this.editor.innerHTML = yContent;
-            }
+            if (currentContent !== yContent)
+                this.$editor.html(yContent);
         });
     }
 
     saveContent() {
         if (!this.currentPageId || !this.ytext) return;
-        const content = this.editor.innerHTML;
+        const content = this.$editor.html();
         this.db.doc.transact(() => {
             const page = this.db.page(this.currentPageId);
             if (page) {
@@ -310,19 +309,18 @@ class Editor {
         const page = this.db.page(pageId);
         if (!page) return;
 
-        const controls = this.controlSection(pageId);
-        this.editorContainer.appendChild(controls);
+        const $controls = this.controlSection(pageId);
+        this.$editorContainer.append($controls);
 
         this.ydoc = this.db.doc;
         this.ytext = this.db.pageContent(pageId);
 
-        const content = this.ytext ? this.ytext.toString() : '';
-        this.editorStart(content);
+        this.editorStart(this.ytext ? this.ytext.toString() : '');
 
         const awareness = this.getAwareness();
         awareness.setLocalStateField('cursor', null);
 
-        this.editor.addEventListener('select', () => {
+        this.$editor.on('select', () => {
             const selection = window.getSelection();
             if (selection.rangeCount > 0) {
                 const range = selection.getRangeAt(0);
@@ -341,26 +339,133 @@ class Editor {
         }
         this.ydoc = null;
         this.ytext = null;
-        this.editorContainer.innerHTML = '';
+        this.$editorContainer.empty();
     }
 
     editorStart(content) {
-        const container = document.createElement('div');
-        container.classList.add('editor-wrapper');
-        container.appendChild(this.renderToolbar());
+        const $container = $('<div>', { class: 'editor-wrapper' });
+        $container.append(this.renderToolbar());
 
-        const editor = this.editorSection();
-        editor.innerHTML = content;
-        container.appendChild(editor);
+        this.$editor = $('<div>', {
+            class: 'editor',
+            contenteditable: true,
+            spellcheck: true,
+            html: content
+        });
 
-        this.editorContainer.appendChild(container);
-        this.editor = editor;
+        this.$editor.on('input', debounce(() => this.saveContent(), this.updatePeriodMS));
+        this.$editor.on('keydown', e => {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key.toLowerCase()) {
+                    case 'b':
+                        e.preventDefault();
+                        document.execCommand('bold');
+                        break;
+                    case 'i':
+                        e.preventDefault();
+                        document.execCommand('italic');
+                        break;
+                    case 'u':
+                        e.preventDefault();
+                        document.execCommand('underline');
+                        break;
+                }
+            }
+        });
+
+        $container.append(this.$editor);
+        this.$editorContainer.append($container);
         this.bindYjs();
     }
 
+    renderToolbar() {
+        const $toolbar = $('<div>', { class: 'toolbar' });
+
+        const buttons = [
+            { command: 'bold', icon: '𝐁', title: 'Bold' },
+            { command: 'italic', icon: '𝐼', title: 'Italic' },
+            { command: 'underline', icon: 'U', title: 'Underline' },
+            { command: 'strikeThrough', icon: 'S', title: 'Strikethrough' },
+            { command: 'insertOrderedList', icon: '1.', title: 'Ordered List' },
+            { command: 'insertUnorderedList', icon: '•', title: 'Unordered List' },
+            { command: 'insertLink', icon: '🔗', title: 'Insert Link' },
+            { command: 'insertImage', icon: '🖼️', title: 'Insert Image' },
+            { command: 'undo', icon: '↩️', title: 'Undo' },
+            { command: 'redo', icon: '↪️', title: 'Redo' },
+        ];
+
+        buttons.forEach(({ command, icon, title }) => {
+            $('<button>', {
+                html: icon,
+                title: title
+            }).on('click', e => {
+                e.preventDefault();
+                if (command === 'insertLink') {
+                    const url = prompt('Enter the URL');
+                    if (url) document.execCommand(command, false, url);
+                } else if (command === 'insertImage') {
+                    const url = prompt('Enter the image URL');
+                    if (url) document.execCommand(command, false, url);
+                } else {
+                    document.execCommand(command, false, null);
+                }
+            }).appendTo($toolbar);
+        });
+
+        return $toolbar;
+    }
+
+    controlSection(pageId) {
+        const page = this.db.page(pageId);
+
+        const $titleInput = $('<input>', {
+            type: 'text',
+            class: 'title-input',
+            value: page.title,
+            placeholder: 'Page Title'
+        }).on('change', () => this.db.pageTitle(pageId, $titleInput.val()));
+
+        const $privacyToggle = $('<div>', { class: 'privacy-toggle' }).append(
+                $('<span>').text('Public'),
+                $('<label>', { class: 'toggle-switch' }).append(
+                    $('<input>', {
+                        type: 'checkbox',
+                        checked: page.isPublic
+                    }).on('change', e => {
+                        this.db.pagePrivacy(pageId, e.target.checked);
+                        e.target.checked ?
+                            this.app.net.shareDocument(pageId) :
+                            this.app.net.unshareDocument(pageId);
+                    }),
+                    $('<span>', { class: 'toggle-slider' })
+                )
+            );
+
+        const $templateButtons = $('<div>', { class: 'template-buttons' });
+        [
+            { icon: '📝', title: 'Note Template', template: 'note' },
+            { icon: '📅', title: 'Meeting Template', template: 'meeting' },
+            { icon: '✅', title: 'Todo Template', template: 'todo' },
+            { icon: '📊', title: 'Report Template', template: 'report' }
+        ].forEach(({ icon, title, template }) => {
+            $('<button>', {
+                class: 'template-button',
+                text: icon,
+                title: title
+            }).on('click', () => this.insertTemplate(template))
+                .appendTo($templateButtons);
+        });
+
+        return $('<div>', { class: 'editor-controls' }).append($titleInput, $privacyToggle, $templateButtons);
+    }
+
+    insertTemplate(template) {
+        let html = '<TEMPLATE>';
+        document.execCommand('insertHTML', false, html);
+    }
+
     renderStyles() {
-        const styles = document.createElement('style');
-        styles.textContent = `
+        $(this.shadowRoot).append($('<style>').text(`
             .editor-controls {
                 padding: 12px;
                 border-bottom: 1px solid #ddd;
@@ -463,179 +568,26 @@ class Editor {
                 overflow-y: auto;
                 min-height: 300px;
             }
-        `;
-        this.shadowRoot.appendChild(styles);
+        `));
     }
-
-    controlSection(pageId) {
-        const page = this.db.page(pageId);
-        const controls = document.createElement('div');
-        controls.classList.add('editor-controls');
-
-        const titleInput = document.createElement('input');
-        titleInput.type = 'text';
-        titleInput.classList.add('title-input');
-        titleInput.value = page.title;
-        titleInput.placeholder = 'Page Title';
-        titleInput.addEventListener('change', () => this.db.pageTitle(pageId, titleInput.value));
-
-        const privacyToggle = document.createElement('div');
-        privacyToggle.classList.add('privacy-toggle');
-
-        const toggleLabel = document.createElement('span');
-        toggleLabel.textContent = 'Public';
-
-        const toggleSwitch = document.createElement('label');
-        toggleSwitch.classList.add('toggle-switch');
-
-        const toggleInput = document.createElement('input');
-        toggleInput.type = 'checkbox';
-        toggleInput.checked = page.isPublic;
-        toggleInput.addEventListener('change', () => {
-            this.db.pagePrivacy(pageId, toggleInput.checked);
-            toggleInput.checked ? this.app.net.shareDocument(pageId) : this.app.net.unshareDocument(pageId);
-        });
-
-        const toggleSlider = document.createElement('span');
-        toggleSlider.classList.add('toggle-slider');
-
-        toggleSwitch.appendChild(toggleInput);
-        toggleSwitch.appendChild(toggleSlider);
-        privacyToggle.appendChild(toggleLabel);
-        privacyToggle.appendChild(toggleSwitch);
-
-        const templateButtons = document.createElement('div');
-        templateButtons.classList.add('template-buttons');
-
-        const templates = [
-            { icon: '📝', title: 'Note Template', template: 'note' },
-            { icon: '📅', title: 'Meeting Template', template: 'meeting' },
-            { icon: '✅', title: 'Todo Template', template: 'todo' },
-            { icon: '📊', title: 'Report Template', template: 'report' }
-        ];
-
-        templates.forEach(({ icon, title, template }) => {
-            const button = document.createElement('button');
-            button.classList.add('template-button');
-            button.textContent = icon;
-            button.title = title;
-            button.addEventListener('click', () => this.insertTemplate(template));
-            templateButtons.appendChild(button);
-        });
-
-        controls.appendChild(titleInput);
-        controls.appendChild(privacyToggle);
-        controls.appendChild(templateButtons);
-
-        return controls;
-    }
-
-    insertTemplate(template) {
-        let html = '';
-        switch (template) {
-            case 'note':
-                html = '<h2>Note</h2><p></p>';
-                break;
-            case 'meeting':
-                html = '<h2>Meeting Notes</h2><ul><li>Agenda Item 1</li><li>Agenda Item 2</li></ul>';
-                break;
-            case 'todo':
-                html = '<h2>Todo List</h2><ul><li><input type="checkbox"> Task 1</li><li><input type="checkbox"> Task 2</li></ul>';
-                break;
-            case 'report':
-                html = '<h2>Report</h2><h3>Introduction</h3><p></p><h3>Conclusion</h3><p></p>';
-                break;
-            default:
-                break;
-        }
-        document.execCommand('insertHTML', false, html);
-    }
-
-    renderToolbar() {
-        const toolbar = document.createElement('div');
-        toolbar.classList.add('toolbar');
-
-        const buttons = [
-            { command: 'bold', icon: '𝐁', title: 'Bold' },
-            { command: 'italic', icon: '𝐼', title: 'Italic' },
-            { command: 'underline', icon: 'U', title: 'Underline' },
-            { command: 'strikeThrough', icon: 'S', title: 'Strikethrough' },
-            { command: 'insertOrderedList', icon: '1.', title: 'Ordered List' },
-            { command: 'insertUnorderedList', icon: '•', title: 'Unordered List' },
-            { command: 'insertLink', icon: '🔗', title: 'Insert Link' },
-            { command: 'insertImage', icon: '🖼️', title: 'Insert Image' },
-            { command: 'undo', icon: '↩️', title: 'Undo' },
-            { command: 'redo', icon: '↪️', title: 'Redo' },
-        ];
-
-        buttons.forEach(({ command, icon, title }) => {
-            const button = document.createElement('button');
-            button.innerHTML = icon;
-            button.title = title;
-            button.addEventListener('click', e => {
-                e.preventDefault();
-                if (command === 'insertLink') {
-                    const url = prompt('Enter the URL');
-                    if (url)
-                        document.execCommand(command, false, url);
-
-                } else if (command === 'insertImage') {
-                    const url = prompt('Enter the image URL');
-                    if (url)
-                        document.execCommand(command, false, url);
-
-                } else {
-                    document.execCommand(command, false, null);
-                }
-            });
-            toolbar.appendChild(button);
-        });
-
-        return toolbar;
-    }
-
-    editorSection() {
-        const editor = document.createElement('div');
-        editor.classList.add('editor');
-        editor.contentEditable = true;
-        editor.spellcheck = true;
-        editor.addEventListener('input', () => this.saveContent());
-        editor.addEventListener('keydown', e => {
-            if (e.ctrlKey || e.metaKey) {
-                switch (e.key.toLowerCase()) {
-                    case 'b':
-                        e.preventDefault();
-                        document.execCommand('bold');
-                        break;
-                    case 'i':
-                        e.preventDefault();
-                        document.execCommand('italic');
-                        break;
-                    case 'u':
-                        e.preventDefault();
-                        document.execCommand('underline');
-                        break;
-                    default:
-                        break;
-                }
-            }
-        });
-        return editor;
-    }
-
 }
 
 class App extends HTMLElement {
     constructor() {
         super();
+
         this.channel = 'todo';
+
         this.db = new DB(this.channel);
         this.net = new Network(this.channel, this.db);
+
         this.sharedDocuments = new Set();
+
         const root = this.attachShadow({ mode: 'open' });
-        this.profilePage = new MePage(root, this.user.bind(this), this.awareness.bind(this));
-        this.friendsListPage = new FriendsPage(root, this.awareness.bind(this));
-        this.networkPage = new NetPage(root, this.db);
+        let thisAwareness = this.awareness.bind(this);
+        this.profilePage = new MePage(root, this.user.bind(this), thisAwareness);
+        this.friendsListPage = new FriendsPage(root, thisAwareness);
+        this.networkPage = new NetPage(root, this.net);
         this.databasePage = new DBPage(root, this.db);
     }
 
@@ -643,9 +595,41 @@ class App extends HTMLElement {
     awareness() { return this.net.awareness(); }
 
     connectedCallback() {
-
+        const style = this.style();
         this.shadowRoot.innerHTML = `
             <style>
+                ${style}
+            </style>
+            <div id="container">
+                <div id="sidebar"></div>
+                <div id="main-view">
+                    <div id="editor-container"></div>
+                </div>
+            </div>
+            <div id="context-menu" class="context-menu">
+                <ul>
+                    <li data-action="rename-page">Rename</li>
+                    <li data-action="delete-page">Delete</li>
+                </ul>
+            </div>
+        `;
+        this.contextMenu = new PageContextMenu(this.shadowRoot, this.db, this);
+        this.editor = new Editor(this.shadowRoot, this.db, this.awareness.bind(this), this);
+        this.sidebar = new Sidebar(this.shadowRoot, this.db, this);
+
+        $(document).on('click', (e) => {
+            if (!$(e.target).closest('#context-menu').length) {
+                this.contextMenu.hide();
+            }
+        });
+    }
+
+    style() {
+                return `
+                :root {
+                    --primary-color: #007BFF;
+                    --background-color: #f0f0f0;
+                }
                 :host {
                     display: block;
                     width: 100%;
@@ -655,7 +639,6 @@ class App extends HTMLElement {
                 #container {
                     display: flex;
                     height: 100vh;
-                    background-color: #f0f0f0;
                 }
                 #sidebar {
                     width: 250px;
@@ -710,7 +693,7 @@ class App extends HTMLElement {
                 }
                 .context-menu ul { list-style: none; margin: 0; padding: 0; }
                 .context-menu li { padding: 8px 12px; cursor: pointer; }
-                .context-menu li:hover { background: #007BFF; color: white; }
+                .context-menu li:hover { background: var(--primary-color); color: white; }
                 .profile-page label,
                 .friends-list-page label,
                 .network-page label,
@@ -770,26 +753,8 @@ class App extends HTMLElement {
                 }
                 input:checked + .slider { background-color: #2196F3; }
                 input:checked + .slider:before { transform: translateX(26px); }
-                .profile-field, .friends-list-field { margin-bottom: 10px; }
-                
-                
-            </style>
-            <div id="container">
-                <div id="sidebar"></div>
-                <div id="main-view">
-                    <div id="editor-container"></div>
-                </div>
-            </div>
-            <div id="context-menu" class="context-menu">
-                <ul>
-                    <li data-action="rename-page">Rename</li>
-                    <li data-action="delete-page">Delete</li>
-                </ul>
-            </div>
+                .profile-field, .friends-list-field { margin-bottom: 10px; }                               
         `;
-        this.contextMenu = new PageContextMenu(this.shadowRoot, this.db, this);
-        this.editor = new Editor(this.shadowRoot, this.db, this.awareness.bind(this), this);
-        this.sidebar = new Sidebar(this.shadowRoot, this.db, this);
     }
 }
 

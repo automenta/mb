@@ -1,4 +1,4 @@
-export class NetworkVisualizer extends HTMLElement {
+export class NetView extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
@@ -8,7 +8,7 @@ export class NetworkVisualizer extends HTMLElement {
 
     connectedCallback() {
         this.render();
-        this.setupEventListeners();
+        window.addEventListener('network-activity', e => this.updateVisualization(e.detail));
     }
 
     render() {
@@ -78,12 +78,6 @@ export class NetworkVisualizer extends HTMLElement {
             </div>
         `;
     }
-
-    setupEventListeners() {
-        window.addEventListener('network-activity',
-        event => this.updateVisualization(event.detail));
-    }
-
     updateVisualization(eventData) {
         const { type, data, timestamp } = eventData;
         const stats = data.stats;
@@ -111,8 +105,7 @@ export class NetworkVisualizer extends HTMLElement {
         this.events = this.events.slice(0, this.maxEvents);
 
         // Update event log
-        const eventsContainer = this.shadowRoot.querySelector('#events');
-        eventsContainer.innerHTML = this.events.map(event => `
+        this.shadowRoot.querySelector('#events').innerHTML = this.events.map(event => `
             <div class="event-entry ${event.type}">
                 [${new Date(event.timestamp).toLocaleTimeString()}] ${event.type}
                 ${event.data.peerId ? `(Peer: ${event.data.peerId})` : ''}
@@ -122,5 +115,5 @@ export class NetworkVisualizer extends HTMLElement {
     }
 }
 
-customElements.define('network-visualizer', NetworkVisualizer);
-export default NetworkVisualizer;
+customElements.define('network-view', NetView);
+export default NetView;
