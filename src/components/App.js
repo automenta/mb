@@ -1,21 +1,10 @@
-// Import necessary modules and styles
 import '/style.css';
 import DB from '/src/db.js';
 import Network from '/src/net.js';
 import MePage from './Me.js';
 
-// Removed Quill imports as per previous instructions
-// import Quill from 'quill';
-// import QuillCursors from 'quill-cursors';
-// import { QuillBinding } from 'y-quill';
-// import 'quill/dist/quill.snow.css';
-
-// Import Yjs and y-webrtc for real-time collaboration
 import * as Y from 'yjs';
-import { WebrtcProvider } from 'y-webrtc';
-
-// Removed Quill registration
-// Quill.register('modules/cursors', QuillCursors);
+import {WebrtcProvider} from 'y-webrtc';
 
 class PageContextMenu {
     constructor(shadowRoot, db, app) {
@@ -38,10 +27,10 @@ class PageContextMenu {
     }
 
     bindEvents() {
-        this.shadowRoot.addEventListener('click', (e) => {
+        this.shadowRoot.addEventListener('click', e => {
             if (!this.ele.contains(e.target)) this.hide();
         });
-        this.ele.addEventListener('click', (e) => {
+        this.ele.addEventListener('click', e => {
             const action = e.target.getAttribute('data-action');
             if (!action) return;
             if (action === 'rename-page') this.renamePage();
@@ -132,7 +121,7 @@ class Sidebar {
             { id: 'database', title: 'DB', class: DBPage },
         ];
 
-        specialPages.forEach((page) => {
+        specialPages.forEach(page => {
             const button = document.createElement('button');
             button.classList.add('menubar-button');
             button.textContent = page.title;
@@ -167,7 +156,7 @@ class Sidebar {
                 li.appendChild(span);
             }
             li.addEventListener('click', () => this.app.editor.viewPage(key));
-            li.addEventListener('contextmenu', (e) => {
+            li.addEventListener('contextmenu', e => {
                 e.preventDefault();
                 this.app.contextMenu.showContextMenu(e, key);
             });
@@ -208,11 +197,11 @@ class FriendsPage {
 
         const updateFriends = () => {
             const users = [];
-            this.getAwareness().getStates().forEach((state) => {
+            this.getAwareness().getStates().forEach(state => {
                 if (state.user) users.push(state.user);
             });
             ul.innerHTML = '';
-            users.forEach((user) => {
+            users.forEach(user => {
                 const li = document.createElement('li');
                 li.textContent = user.name;
                 li.style.color = user.color;
@@ -237,11 +226,8 @@ class NetPage {
         const container = document.createElement('div');
         container.classList.add('network-page');
         editorContainer.appendChild(container);
-        if (typeof this.db.renderNetwork === 'function') {
-            this.db.renderNetwork(container);
-        } else {
-            container.innerHTML = '<p>Network feature not implemented.</p>';
-        }
+        if (typeof this.db.renderNetwork === 'function') this.db.renderNetwork(container);
+        else container.innerHTML = '<p>Network feature not implemented.</p>';
     }
 }
 
@@ -257,11 +243,8 @@ class DBPage {
         const container = document.createElement('div');
         container.classList.add('database-page');
         editorContainer.appendChild(container);
-        if (typeof this.db.renderDatabase === 'function') {
-            this.db.renderDatabase(container);
-        } else {
-            container.innerHTML = '<p>Database feature not implemented.</p>';
-        }
+        if (typeof this.db.renderDatabase === 'function') this.db.renderDatabase(container);
+        else container.innerHTML = '<p>Database feature not implemented.</p>';
     }
 }
 
@@ -275,13 +258,104 @@ class Editor {
         this.ydoc = null;
         this.provider = null;
         this.ytext = null;
-        this.updating = false; // Flag to prevent infinite loops
-        this.init();
-    }
-
-    init() {
         this.editorContainer = this.shadowRoot.querySelector('#editor-container');
         this.renderStyles();
+    }
+
+    bindYjs() {
+        if (!this.editor || !this.ytext) return;
+
+        const observer = new MutationObserver(() => {
+            const content = this.editor.innerHTML;
+            this.ytext.doc.transact(() => {
+                this.ytext.delete(0, this.ytext.length);
+                this.ytext.insert(0, content);
+            });
+        });
+
+        observer.observe(this.editor, {
+            characterData: true,
+            childList: true,
+            subtree: true,
+            attributes: true
+        });
+
+        this.ytext.observe(event => {
+            const currentContent = this.editor.innerHTML;
+            const yContent = this.ytext.toString();
+            if (currentContent !== yContent) {
+                this.editor.innerHTML = yContent;
+            }
+        });
+    }
+
+    saveContent() {
+        if (!this.currentPageId || !this.ytext) return;
+        const content = this.editor.innerHTML;
+        this.db.doc.transact(() => {
+            const page = this.db.page(this.currentPageId);
+            if (page) {
+                const ytext = this.db.pageContent(this.currentPageId);
+                ytext.delete(0, ytext.length);
+                ytext.insert(0, content);
+            }
+        });
+    }
+
+    viewPage(pageId) {
+        if (this.currentPageId === pageId) return;
+        this.editorStop();
+
+        this.currentPageId = pageId;
+        const page = this.db.page(pageId);
+        if (!page) return;
+
+        const controls = this.controlSection(pageId);
+        this.editorContainer.appendChild(controls);
+
+        this.ydoc = this.db.doc;
+        this.ytext = this.db.pageContent(pageId);
+
+        const content = this.ytext ? this.ytext.toString() : '';
+        this.editorStart(content);
+
+        const awareness = this.getAwareness();
+        awareness.setLocalStateField('cursor', null);
+
+        this.editor.addEventListener('select', () => {
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                awareness.setLocalStateField('cursor', {
+                    anchor: range.startOffset,
+                    head: range.endOffset
+                });
+            }
+        });
+    }
+
+    editorStop() {
+        if (this.provider) {
+            this.provider.destroy();
+            this.provider = null;
+        }
+        this.ydoc = null;
+        this.ytext = null;
+        this.editorContainer.innerHTML = '';
+    }
+
+    editorStart(content) {
+        const container = document.createElement('div');
+        container.classList.add('editor-wrapper');
+        container.appendChild(this.renderToolbar());
+
+        const editor = this.editorSection();
+        editor.innerHTML = content;
+        container.appendChild(editor);
+
+        this.editorContainer.appendChild(container);
+        this.editor = editor;
+        this.bindYjs();
     }
 
     renderStyles() {
@@ -403,9 +477,7 @@ class Editor {
         titleInput.classList.add('title-input');
         titleInput.value = page.title;
         titleInput.placeholder = 'Page Title';
-        titleInput.addEventListener('change', () => {
-            this.db.pageTitle(pageId, titleInput.value);
-        });
+        titleInput.addEventListener('change', () => this.db.pageTitle(pageId, titleInput.value));
 
         const privacyToggle = document.createElement('div');
         privacyToggle.classList.add('privacy-toggle');
@@ -447,9 +519,7 @@ class Editor {
             button.classList.add('template-button');
             button.textContent = icon;
             button.title = title;
-            button.addEventListener('click', () => {
-                this.insertTemplate(template);
-            });
+            button.addEventListener('click', () => this.insertTemplate(template));
             templateButtons.appendChild(button);
         });
 
@@ -502,18 +572,18 @@ class Editor {
             const button = document.createElement('button');
             button.innerHTML = icon;
             button.title = title;
-            button.addEventListener('click', (e) => {
+            button.addEventListener('click', e => {
                 e.preventDefault();
                 if (command === 'insertLink') {
                     const url = prompt('Enter the URL');
-                    if (url) {
+                    if (url)
                         document.execCommand(command, false, url);
-                    }
+
                 } else if (command === 'insertImage') {
                     const url = prompt('Enter the image URL');
-                    if (url) {
+                    if (url)
                         document.execCommand(command, false, url);
-                    }
+
                 } else {
                     document.execCommand(command, false, null);
                 }
@@ -529,10 +599,8 @@ class Editor {
         editor.classList.add('editor');
         editor.contentEditable = true;
         editor.spellcheck = true;
-        editor.addEventListener('input', () => {
-            this.saveContent();
-        });
-        editor.addEventListener('keydown', (e) => {
+        editor.addEventListener('input', () => this.saveContent());
+        editor.addEventListener('keydown', e => {
             if (e.ctrlKey || e.metaKey) {
                 switch (e.key.toLowerCase()) {
                     case 'b':
@@ -555,115 +623,6 @@ class Editor {
         return editor;
     }
 
-    editorStop() {
-        // Clean up Yjs bindings and providers
-        if (this.binding) {
-            this.binding.destroy();
-            this.binding = null;
-        }
-        if (this.provider) {
-            this.provider.destroy();
-            this.provider = null;
-        }
-        if (this.ydoc) {
-            this.ydoc.destroy();
-            this.ydoc = null;
-        }
-        this.editorContainer.innerHTML = '';
-    }
-
-    editorStart(content = '') {
-        const container = document.createElement('div');
-        container.classList.add('editor-wrapper');
-
-        // Create and append toolbar
-        const toolbar = this.renderToolbar();
-        container.appendChild(toolbar);
-
-        // Create and append editor
-        const editor = this.editorSection();
-        editor.innerHTML = content;
-        container.appendChild(editor);
-
-        this.editorContainer.appendChild(container);
-        this.editor = editor;
-
-        // Bind Yjs to the editor
-        this.bindYjs();
-    }
-
-    bindYjs() {
-        if (!this.ydoc || !this.ytext) return;
-
-        // Initial content synchronization
-        this.updating = true;
-        this.editor.innerHTML = this.ytext.toString();
-        this.updating = false;
-
-        // Observe changes in Yjs and update the editor
-        this.ytext.observe(event => {
-            if (this.updating) return;
-            this.updating = true;
-            this.editor.innerHTML = this.ytext.toString();
-            this.updating = false;
-        });
-
-        // Listen to editor changes and update Yjs
-        this.editor.addEventListener('input', () => {
-            if (this.updating) return;
-            this.updating = true;
-            this.ytext.delete(0, this.ytext.length);
-            this.ytext.insert(0, this.editor.innerHTML);
-            this.updating = false;
-        });
-    }
-
-    saveContent() {
-        if (this.currentPageId && this.ytext) {
-            const content = this.editor.innerHTML;
-            // Save content to DB if necessary
-            // this.db.pageContent(this.currentPageId, content);
-            // Yjs handles real-time synchronization, so explicit saving might not be needed
-        }
-    }
-
-    viewPage(pageId) {
-        // If already viewing this page, do nothing
-        if (this.currentPageId === pageId) return;
-
-        // Stop any existing editor instance
-        this.editorStop();
-
-        this.currentPageId = pageId;
-        const page = this.db.pageContent(pageId);
-        if (!page) { alert('Page not found.'); return; }
-
-        // Create control section
-        const controls = this.controlSection(pageId);
-        this.editorContainer.appendChild(controls);
-
-        // Initialize Yjs document and provider
-        this.ydoc = new Y.Doc();
-        this.provider = new WebrtcProvider(pageId, this.ydoc, {
-            // You can specify signaling servers here if needed
-            // For simplicity, we're using the default signaling servers
-        });
-
-        // Get or create a Y.Text type for the editor content
-        this.ytext = this.ydoc.getText('content');
-
-        // If the Y.Text is empty, initialize it with existing content
-        if (this.ytext.length === 0 && page.content) {
-            this.ytext.insert(0, page.content);
-        }
-
-        // Initialize editor with content from Yjs
-        this.editorStart(this.ytext.toString());
-
-        // Optionally, handle awareness (e.g., cursors) here
-        // const awareness = this.provider.awareness;
-        // Implement cursor synchronization if desired
-    }
 }
 
 class App extends HTMLElement {
