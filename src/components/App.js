@@ -8,8 +8,8 @@ import MePage from './Me.js';
          addPageButton.addEventListener('click', () => {
              const pageId = `page-${Date.now()}`;
              this.db.pageNew(pageId, 'Empty', false);
--            this.app.editor.viewPage(pageId);
-+            this.app.editor.viewPage(pageId); 
+-            this.app.editor.viewPage(pageId); 
++            this.app.editor.viewPage(pageId);
          });
          menuBar.appendChild(addPageButton);
  
@@ -17,8 +17,8 @@ import MePage from './Me.js';
              ul { list-style: none; padding: 0; margin: 0; }
              li { padding: 8px; cursor: pointer; border-bottom: 1px solid #eee; }
              li:hover { background: #f5f5f5; }
--            .menubar {
-+            .menubar { 
+-            .menubar { 
++            .menubar {
                  display: flex;
                  gap: 10px;
                  margin-bottom: 10px;
