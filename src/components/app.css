@@ -1,0 +1,13 @@
+.editor-controls {
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+  background: #f8f9fa;
+@@ -100,6 +55,7 @@
+   background-color: #e0e0e0;
+ }
+ .editor {
++  /* flex: 1; */
+   flex: 1;
+   padding: 16px;
+   outline: none;
+

@@ -11,9 +11,6 @@
   },
   "dependencies": {
     "jquery": "latest",
-    "quill": "latest",
-    "quill-cursors": "latest",
-    "y-quill": "latest",
     "y-webrtc": "latest",
     "y-indexeddb": "latest",
     "yjs": "latest"
