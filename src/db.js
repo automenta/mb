@@ -1,11 +1,11 @@
 "use strict";
 import * as Y from 'yjs';
 import {IndexeddbPersistence} from 'y-indexeddb';
+import { v4 as uuidv4 } from 'uuid';
 
 class DB {
     constructor(channel) {
         this.doc = new Y.Doc({
-            gc: true
         });
         this.pages = this.doc.getMap('pages');
 
@@ -28,11 +28,13 @@ class DB {
         this.pages.set(pageId, content);
     }
 
-    pageNew(pageId, title, isPublic = false) {
+    pageNew(title, isPublic = false) {
+        const pageId = uuidv4();
         const contentId = `content-${pageId}`;
         this.doc.getText(contentId); // Initialize Y.Text for content
         this.pageSet(pageId, { title, contentId, isPublic });
     }
+
 
     pageTitle(pageId, title) {
         const page = this.page(pageId);
@@ -44,6 +46,16 @@ class DB {
         const page = this.page(pageId);
         if (page)
             this.pageSet(pageId, { ...page, isPublic });
+    }
+
+    pageDelete(pageId) {
+        if (this.pages.has(pageId)) {
+            const page = this.pages.get(pageId);
+            if (page && page.contentId) {
+                this.doc.destroy(page.contentId); // Clean up associated Y.Text
+            }
+            this.pages.delete(pageId);
+        }
     }
 
 }

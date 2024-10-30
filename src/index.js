@@ -8,16 +8,18 @@ import '/css/index.css';
 import Editor from "./editor.js";
 import SideBar from "./sidebar.js";
 import '/css/sidebar.css';
+import Matching from "./match.js";
 
 
 class App {
     constructor() {
         this.channel = 'todo';
 
+        this.sharedDocuments = new Set();
         this.db = new DB(this.channel);
         this.net = new Network(this.channel, this.db);
 
-        this.sharedDocuments = new Set();
+        this.match = new Matching(this.db, this.net);
 
         this.ele = $('<div id="container">').append(`           
             <div id="sidebar"></div>

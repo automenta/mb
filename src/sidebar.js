@@ -2,6 +2,7 @@ import $ from "jquery";
 import MeView from "./me.view.js";
 import NetView from "./net.view.js";
 import DBView from "./db.view.js";
+import MatchView from "./match.view.js";
 
 class PageContextMenu {
     constructor(db, app) {
@@ -63,14 +64,16 @@ class PageContextMenu {
 
 
 class FriendsView {
-    constructor(ele, getAwareness) {
-        this.ele = ele;
+    constructor(root, getAwareness) {
+        this.root = root;
         this.getAwareness = getAwareness;
         this.container = $('<div>').addClass('friends-list-page');
     }
 
     render() {
-        $(this.ele).find('#main-view').empty().append(this.container);
+        this.container.empty();
+
+        this.root.find('#main-view').empty().append(this.container);
 
         this.container.html(`
             <h3>Friends</h3>
@@ -105,6 +108,7 @@ export default class Sidebar {
         this.friendsView = new FriendsView(root, thisAware);
         this.netView = new NetView(root.find('#main-view'), app.net);
         this.dbView = new DBView(root, this.db);
+        this.matchingView = new MatchView(root, app.match);
 
 
         this.app = app;
@@ -130,8 +134,7 @@ export default class Sidebar {
                 text: '+',
                 title: 'Add New Page'
             }).on('click', () => {
-                const pageId = `page-${Date.now()}`;
-                this.db.pageNew(pageId, 'Empty', false);
+                this.db.pageNew('Empty', false);
                 this.app.editor.viewPage(pageId);
             })
         );
@@ -141,6 +144,7 @@ export default class Sidebar {
             {id: 'friends',  title: 'Friends', class: FriendsView},
             {id: 'network',  title: 'Net',     class: NetView},
             {id: 'database', title: 'DB',      class: DBView},
+            {id: 'matching', title: 'Matching',class: MatchView},
         ].forEach(view => {
             let v;
             switch (view.id) {
@@ -148,6 +152,7 @@ export default class Sidebar {
                 case 'friends': v = this.friendsView; break;
                 case 'network': v = this.netView; break;
                 case 'database': v = this.dbView; break;
+                case 'matching': v = this.matchingView; break;
                 default: console.warn(`No page class defined for ${view.id}`);
             }
 
