@@ -1,9 +1,12 @@
+"use strict";
 import * as Y from 'yjs';
 import {IndexeddbPersistence} from 'y-indexeddb';
 
 class DB {
     constructor(channel) {
-        this.doc = new Y.Doc();
+        this.doc = new Y.Doc({
+            gc: true
+        });
         this.pages = this.doc.getMap('pages');
 
         this.indexedDB = new IndexeddbPersistence(channel, this.doc);

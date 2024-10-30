@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "signaling": "PORT=4444 node ./node_modules/y-webrtc/bin/server.js"
+    "signaling": "PORT=4444 node ./node_modules/y-webrtc/bin/server.js",
+    "dump": "git ls-files | xargs -I{} sh -c 'echo -e \"===== {} =====\\n\"; cat {}; echo -e \"\\n\"'\n",
+    "dumpclip": "npm run dump | xclip -i"
   },
   "dependencies": {
     "jquery": "latest",

@@ -8,18 +8,18 @@ class PageContextMenu {
         this.db = db;
         this.app = app;
         this.selectedPageId = null;
-        this.$ele = $('<div>').attr('id', 'context-menu').appendTo($('body'));
-        this.$ele.html(`
+        this.ele = $('<div>').attr('id', 'context-menu').appendTo($('body'));
+        this.ele.html(`
             <ul>
                 <li data-action="rename-page">Rename</li>
                 <li data-action="delete-page">Delete</li>
             </ul>
         `);
-        $(this.$ele).click(e => {
-            if (!this.$ele.has(e.target).length) this.hide();
+        $(this.ele).click(e => {
+            if (!this.ele.has(e.target).length) this.hide();
         });
 
-        this.$ele.on('click', 'li', e => {
+        this.ele.on('click', 'li', e => {
             const action = $(e.target).data('action');
             if (!action) return;
             if (action === 'rename-page') this.renamePage();
@@ -49,7 +49,7 @@ class PageContextMenu {
     showContextMenu(event, pageId) {
         event.preventDefault();
         this.selectedPageId = pageId;
-        this.$ele.css({
+        this.ele.css({
             top: event.clientY,
             left: event.clientX,
             display: 'block'
@@ -57,22 +57,22 @@ class PageContextMenu {
     }
 
     hide() {
-        this.$ele.hide();
+        this.ele.hide();
     }
 }
 
 
 class FriendsView {
     constructor(ele, getAwareness) {
-        this.$ele = ele;
+        this.ele = ele;
         this.getAwareness = getAwareness;
-        this.$container = $('<div>').addClass('friends-list-page');
+        this.container = $('<div>').addClass('friends-list-page');
     }
 
     render() {
-        $(this.$ele).find('#main-view').empty().append(this.$container);
+        $(this.ele).find('#main-view').empty().append(this.container);
 
-        this.$container.html(`
+        this.container.html(`
             <h3>Friends</h3>
             <ul></ul>
         `);
@@ -83,13 +83,8 @@ class FriendsView {
                 if (state.user) users.push(state.user);
             });
 
-            const $ul = this.$container.find('ul').empty();
-            users.forEach(user => {
-                $('<li>')
-                    .text(user.name)
-                    .css('color', user.color)
-                    .appendTo($ul);
-            });
+            const ul = this.container.find('ul').empty();
+            users.forEach(user => ul.append($('<li>').text(user.name).css('color', user.color)));
         };
 
         updateFriends();
@@ -99,9 +94,9 @@ class FriendsView {
 
 export default class Sidebar {
     constructor(app) {
-        const root = app.$ele;
+        const root = app.ele;
 
-        this.$ele = root.find('#sidebar');
+        this.ele = root.find('#sidebar');
 
         this.db = app.db;
 
@@ -113,13 +108,13 @@ export default class Sidebar {
 
 
         this.app = app;
-        this.$ele.append(this.menu());
+        this.ele.append(this.menu());
         this.contextMenu = new PageContextMenu(this.db, this);
         if (this.observer) {
             this.db.pages.unobserve(this.observer);
             this.observer = undefined;
         }
-        this.$ele.append(this.$pageList = $('<ul>', {id: 'page-list'}));
+        this.ele.append(this.$pageList = $('<ul>', {id: 'page-list'}));
         this.observer = this.db.pages.observe(() => this.updatePageList());
         this.updatePageList();
     }
@@ -142,10 +137,10 @@ export default class Sidebar {
         );
 
         [
-            {id: 'profile', title: 'Me', class: MeView},
-            {id: 'friends', title: 'Friends', class: FriendsView},
-            {id: 'network', title: 'Net', class: NetView},
-            {id: 'database', title: 'DB', class: DBView},
+            {id: 'profile',  title: 'Me',      class: MeView},
+            {id: 'friends',  title: 'Friends', class: FriendsView},
+            {id: 'network',  title: 'Net',     class: NetView},
+            {id: 'database', title: 'DB',      class: DBView},
         ].forEach(view => {
             let v;
             switch (view.id) {
@@ -185,17 +180,8 @@ export default class Sidebar {
                     e.preventDefault();
                     console.log('context', this.contextMenu);
                     this.contextMenu.showContextMenu(e, key);
-                }
-                // dblclick: () => {
-                //     const page = this.db.page(key);
-                //     if (page) {
-                //         const newPrivacy = !page.isPublic;
-                //         this.db.pagePrivacy(key, newPrivacy);
-                //         if (newPrivacy) this.app.net.shareDocument(key);
-                //         else this.app.net.unshareDocument(key);
-                //         this.updatePageList();
-                //     }
-                // }
+                },
+                dblclick: () => { }
             });
 
             this.$pageList.append($li);

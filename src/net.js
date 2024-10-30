@@ -1,3 +1,4 @@
+"use strict";
 import {WebrtcProvider} from 'y-webrtc';
 
 class Network {

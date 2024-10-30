@@ -19,12 +19,12 @@ class App {
 
         this.sharedDocuments = new Set();
 
-        this.$ele = $('<div id="container">').append(`           
+        this.ele = $('<div id="container">').append(`           
             <div id="sidebar"></div>
             <div id="main-view"></div>            
         `);
 
-        this.editor = new Editor(this.$ele.find('#main-view'), this.db, this.awareness.bind(this), this);
+        this.editor = new Editor(this.ele.find('#main-view'), this.db, this.awareness.bind(this), this);
         this.sidebar = new SideBar(this);
     }
 
@@ -34,4 +34,4 @@ class App {
 
 
 //MAIN
-$('body').append(new App().$ele);
+$('body').append(new App().ele);

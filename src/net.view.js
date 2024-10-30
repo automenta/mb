@@ -59,7 +59,7 @@ class BootstrapView {
 class NetViewer  {
     constructor(net) {
         this.net = net;
-        this.$ele = $('<div>');
+        this.ele = $('<div>');
         this.events = [];
         this.maxEvents = 100;
         this.bootstrap = new BootstrapView(net);
@@ -68,7 +68,7 @@ class NetViewer  {
     }
 
     render() {
-        $(this.$ele).append(`
+        $(this.ele).append(`
             <h3>Network</h3>
             <div class="stats-grid">
                 <div class="stat-box" id="messages">
@@ -97,7 +97,7 @@ class NetViewer  {
         const stats = data.stats;
 
         // Update metrics
-        let r = this.$ele[0];
+        let r = this.ele[0];
         r.querySelector('#sent').textContent = stats.messagesSent;
         r.querySelector('#received').textContent = stats.messagesReceived;
         r.querySelector('#bytes').textContent = stats.bytesTransferred;
@@ -128,13 +128,13 @@ class NetViewer  {
 
 export default class NetView {
     constructor(ele, net) {
-        this.$ele = ele;
+        this.ele = ele;
         this.net = net;
     }
 
     render() {
-        const updateStatus = () => this.$ele.empty().append(
-            new NetViewer(this.net).$ele //'<network-view></network-view>'
+        const updateStatus = () => this.ele.empty().append(
+            new NetViewer(this.net).ele //'<network-view></network-view>'
         );
         this.net.net.on('peers', updateStatus);
         updateStatus();

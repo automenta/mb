@@ -6,7 +6,7 @@ export default class DBView {
     constructor(root, db) {
         this.root = root;
         this.db = db;
-        this.$container = $('<div>').addClass('database-page');
+        this.ele = $('<div>').addClass('database-page');
         this.sortKey = 'title';
         this.sortOrder = 'asc';
         this.filterText = '';
@@ -15,9 +15,9 @@ export default class DBView {
     render() {
 
 
-        $(this.root).find('#main-view').empty().append(this.$container);
+        $(this.root).find('#main-view').empty().append(this.ele);
 
-        this.$container.html(`
+        this.ele.html(`
             <h3>Database Statistics</h3>
             <div class="db-controls">
                 <input type="text" id="filter-input" placeholder="Filter by title">
@@ -47,16 +47,16 @@ export default class DBView {
     }
 
     bindEvents() {
-        this.$container.find('#filter-input').on('input', (e) => {
+        this.ele.find('#filter-input').on('input', (e) => {
             this.filterText = $(e.target).val().toLowerCase();
             this.updateTable();
         });
 
-        this.$container.find('#sort-select').on('change', (e) => {
+        this.ele.find('#sort-select').on('change', (e) => {
             this.sortKey = $(e.target).val();
         });
 
-        this.$container.find('#sort-button').on('click', () => {
+        this.ele.find('#sort-button').on('click', () => {
             this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
             this.updateTable();
         });
@@ -65,7 +65,7 @@ export default class DBView {
     }
 
     updateTable() {
-        const $tbody = this.$container.find('tbody').empty();
+        const $tbody = this.ele.find('tbody').empty();
         let pages = Array.from(this.db.pages.entries()).map(([key, value]) => ({ pageId: key, ...value }));
 
         if (this.filterText)
