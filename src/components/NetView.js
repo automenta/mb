@@ -1,18 +1,72 @@
-export class NetView extends HTMLElement {
-    constructor() {
-        super();
-        this.attachShadow({ mode: 'open' });
-        this.events = [];
-        this.maxEvents = 100;
+import $ from 'jquery';
+
+class BootstrapView {
+    constructor(net) {
+        this.net = net;
+        this.$addButton = $('<button>').text("+"); //#add-bootstrap-node
+        this.$input = $('<input>').attr('placeholder', 'bootstrap'); //#new-bootstrap-node
+        this.$nodeList = $('<div>');//#bootstrap-node-list
+
+        this.$addButton.on('click', () => {
+            const url = this.$input.val().trim();
+            if (this.validateURL(url)) {
+                this.net.addBootstrap(url);
+                this.$input.val('');
+                this.update();
+            } else {
+                alert('Please enter a valid signaling server URL.');
+            }
+        });
+
+        this.$nodeList.on('click', '.remove-node', (e) => {
+            const url = $(e.target).data('url');
+            this.net.removeBootstrap(url);
+            this.update();
+        });
+        this.update();
     }
 
-    connectedCallback() {
+    validateURL(url) {
+        try {
+            new URL(url);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    update() {
+        const nodes = this.net.signalingServers;
+        this.$nodeList.empty();
+        nodes.forEach(url => {
+            this.$nodeList.append(`
+                <li>
+                    ${url}
+                    <button class="remove-node" data-url="${url}">Remove</button>
+                </li>
+            `);
+        });
+    }
+
+    panel() {
+        return $('<div>').append('<h2>Bootstrap Nodes</h2>', this.$nodeList, this.$input, this.$addButton);
+    }
+}
+
+
+export default class NetView  {
+    constructor(net) {
+        this.net = net;
+        this.$ele = $('<div>');
+        this.events = [];
+        this.maxEvents = 100;
+        this.bootstrap = new BootstrapView(net);
         this.render();
-        window.addEventListener('network-activity', e => this.updateVisualization(e.detail));
+        window.addEventListener('network-activity', e => this.update(e.detail));
     }
 
     render() {
-        this.shadowRoot.innerHTML = `
+        $(this.$ele).append(`
             <style>
                 :host {
                     display: block;
@@ -76,19 +130,21 @@ export class NetView extends HTMLElement {
                 <strong>Events</strong>
                 <div class="event-log" id="events"></div>
             </div>
-        `;
+        `, this.bootstrap.panel());
     }
-    updateVisualization(eventData) {
+
+    update(eventData) {
         const { type, data, timestamp } = eventData;
         const stats = data.stats;
 
         // Update metrics
-        this.shadowRoot.querySelector('#sent').textContent = stats.messagesSent;
-        this.shadowRoot.querySelector('#received').textContent = stats.messagesReceived;
-        this.shadowRoot.querySelector('#bytes').textContent = stats.bytesTransferred;
+        let r = this.$ele[0];
+        r.querySelector('#sent').textContent = stats.messagesSent;
+        r.querySelector('#received').textContent = stats.messagesReceived;
+        r.querySelector('#bytes').textContent = stats.bytesTransferred;
 
         // Update peer list
-        const peerList = this.shadowRoot.querySelector('#peers');
+        const peerList = r.querySelector('#peers');
         peerList.innerHTML = stats.awareness.map(peer => `
             <div class="peer-badge">
                 ${peer.metadata.clientID}
@@ -105,7 +161,7 @@ export class NetView extends HTMLElement {
         this.events = this.events.slice(0, this.maxEvents);
 
         // Update event log
-        this.shadowRoot.querySelector('#events').innerHTML = this.events.map(event => `
+        r.querySelector('#events').innerHTML = this.events.map(event => `
             <div class="event-entry ${event.type}">
                 [${new Date(event.timestamp).toLocaleTimeString()}] ${event.type}
                 ${event.data.peerId ? `(Peer: ${event.data.peerId})` : ''}
@@ -115,5 +171,5 @@ export class NetView extends HTMLElement {
     }
 }
 
-customElements.define('network-view', NetView);
-export default NetView;
+//customElements.define('network-view', NetView);
+
