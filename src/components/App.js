@@ -643,6 +643,7 @@ class App extends HTMLElement {
     awareness() { return this.net.awareness(); }
 
     connectedCallback() {
+
         this.shadowRoot.innerHTML = `
             <style>
                 :host {
@@ -687,7 +688,7 @@ class App extends HTMLElement {
                 }
                 .menubar-button {
                     background-color: #007BFF;
-                    color: white; 
+                    color: white;
                     border: none;
                     padding: 8px 12px;
                     cursor: pointer;
@@ -698,12 +699,12 @@ class App extends HTMLElement {
                 .menubar-button:hover { background-color: #0056b3; }
                 .add-page-button { background-color: #28a745; }
                 .add-page-button:hover { background-color: #1e7e34; }
-                .context-menu { 
-                    position: absolute; 
-                    border: 1px solid #ccc; 
-                    box-shadow: 2px 2px 6px rgba(30,30,30,0.2); 
-                    display: none; 
-                    z-index: 1000; 
+                .context-menu {
+                    position: absolute;
+                    border: 1px solid #ccc;
+                    box-shadow: 2px 2px 6px rgba(30,30,30,0.2);
+                    display: none;
+                    z-index: 1000;
                     background-color: white;
                     border-radius: 4px;
                 }
@@ -770,6 +771,8 @@ class App extends HTMLElement {
                 input:checked + .slider { background-color: #2196F3; }
                 input:checked + .slider:before { transform: translateX(26px); }
                 .profile-field, .friends-list-field { margin-bottom: 10px; }
+                
+                
             </style>
             <div id="container">
                 <div id="sidebar"></div>
