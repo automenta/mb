@@ -1,11 +1,10 @@
 import $ from 'jquery';
 
-export default class MePage {
-    constructor(shadowRoot, getUser, getAwareness) {
-        this.shadowRoot = shadowRoot;
+export default class MeView {
+    constructor(ele, getUser, getAwareness) {
         this.getUser = getUser;
         this.getAwareness = getAwareness;
-        this.$ = element => $(element, this.shadowRoot);
+        this.$ = element => $(element, ele);
     }
 
     render() {
@@ -16,7 +15,7 @@ export default class MePage {
         });
 
         // Clear and get container
-        this.$('#editor-container').empty().append(
+        this.$('#main-view').empty().append(
             $('<div/>', {
                 class: 'profile-page'
             }).append(

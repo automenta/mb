@@ -1,5 +1,7 @@
 import $ from 'jquery';
 
+import '/css/net.css';
+
 class BootstrapView {
     constructor(net) {
         this.net = net;
@@ -54,7 +56,7 @@ class BootstrapView {
 }
 
 
-export default class NetView  {
+class NetViewer  {
     constructor(net) {
         this.net = net;
         this.$ele = $('<div>');
@@ -67,50 +69,7 @@ export default class NetView  {
 
     render() {
         $(this.$ele).append(`
-            <style>
-                :host {
-                    display: block;
-                    padding: 1em;
-                }
-                .stats-grid {
-                    display: grid;
-                    grid-template-columns: repeat(2, 1fr);
-                    gap: 1em;
-                    margin-bottom: 1em;
-                }
-                .stat-box {
-                    border: 1px solid #ccc;
-                    padding: 1em;
-                    border-radius: 4px;
-                }
-                .event-log {
-                    height: 200px;
-                    overflow-y: auto;
-                    border: 1px solid #ccc;
-                    padding: 1em;
-                }
-                .peer-list {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 0.5em;
-                    margin-top: 1em;
-                }
-                .peer-badge {
-                    background: #e0e0e0;
-                    padding: 0.5em;
-                    border-radius: 4px;
-                    font-size: 0.9em;
-                }
-                .event-entry {
-                    margin: 0.5em 0;
-                    padding: 0.5em;
-                    border-left: 3px solid #ccc;
-                }
-                .peer-connected { border-left-color: #4CAF50; }
-                .peer-disconnected { border-left-color: #f44336; }
-                .message-sent { border-left-color: #2196F3; }
-                .message-received { border-left-color: #FF9800; }
-            </style>
+            <h3>Network</h3>
             <div class="stats-grid">
                 <div class="stat-box" id="messages">
                     <strong>Messages</strong>
@@ -153,11 +112,7 @@ export default class NetView  {
         `).join('');
 
         // Add event to log
-        this.events.unshift({
-            type,
-            timestamp,
-            data
-        });
+        this.events.unshift({type, timestamp, data});
         this.events = this.events.slice(0, this.maxEvents);
 
         // Update event log
@@ -171,5 +126,17 @@ export default class NetView  {
     }
 }
 
-//customElements.define('network-view', NetView);
+export default class NetView {
+    constructor(ele, net) {
+        this.$ele = ele;
+        this.net = net;
+    }
 
+    render() {
+        const updateStatus = () => this.$ele.empty().append(
+            new NetViewer(this.net).$ele //'<network-view></network-view>'
+        );
+        this.net.net.on('peers', updateStatus);
+        updateStatus();
+    }
+}

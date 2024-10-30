@@ -44,27 +44,6 @@ class DB {
             this.pageSet(pageId, { ...page, isPublic });
     }
 
-    renderDatabase(container) {
-        container.innerHTML = '<h3>Database Statistics</h3>';
-
-        const table = $('<table class="database-table"></table>');
-
-        //header row
-        table.append($('<tr></tr>').append('<th>Page ID</th>', '<th>Page Title</th>', '<th>Content (Preview)</th>', '<th>Public</th>'));
-
-        this.pages.forEach((value, key) => {
-            const contentPreview = this.pageContent(key).toString().slice(0, 100) + (this.pageContent(key).length > 100 ? '...' : '');
-            const isPublic = value.isPublic ? 'Yes' : 'No';
-            table.append($('<tr></tr>').append(
-                `<td>${key}</td>`,
-                `<td>${value.title}</td>`,
-                `<td>${contentPreview}</td>`,
-                `<td>${isPublic}</td>`
-            ));
-        });
-
-        $(container).append(table);
-    }
 }
 
 export default DB;

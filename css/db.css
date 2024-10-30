@@ -1,0 +1,45 @@
+.database-page .db-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.database-page #filter-input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.database-page #sort-select,
+.database-page #sort-button {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.database-wrapper {
+    max-height: 100%;
+    overflow: auto;
+}
+
+.database-page .database-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.database-page .database-table th,
+.database-page .database-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+.database-page .database-table th {
+    background-color: #f2f2f2;
+    cursor: pointer;
+}
+
+.database-page .database-table tr:hover {
+    background-color: #f1f1f1;
+}

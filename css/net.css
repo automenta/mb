@@ -1,0 +1,38 @@
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1em;
+    margin-bottom: 1em;
+}
+.stat-box {
+    border: 1px solid #ccc;
+    padding: 1em;
+    border-radius: 4px;
+}
+.event-log {
+    height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    padding: 1em;
+}
+.peer-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    margin-top: 1em;
+}
+.peer-badge {
+    background: #e0e0e0;
+    padding: 0.5em;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+.event-entry {
+    margin: 0.5em 0;
+    padding: 0.5em;
+    border-left: 3px solid #ccc;
+}
+.peer-connected { border-left-color: #4CAF50; }
+.peer-disconnected { border-left-color: #f44336; }
+.message-sent { border-left-color: #2196F3; }
+.message-received { border-left-color: #FF9800; }

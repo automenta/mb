@@ -1,7 +1,5 @@
 import {WebrtcProvider} from 'y-webrtc';
 
-import NetView from './components/NetView.js';
-
 class Network {
 
     constructor(channel, db) {
@@ -142,16 +140,6 @@ class Network {
             }
         }));
     }
-
-    renderNetwork(container) {
-        const updateStatus = () => container.empty().append(
-            '<h3>Network</h3>',
-            new NetView(this).$ele //'<network-view></network-view>'
-        );
-        this.net.on('peers', updateStatus);
-        updateStatus();
-    }
-
 }
 
 export default Network;
