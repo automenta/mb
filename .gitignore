@@ -26,4 +26,4 @@ dist-ssr
 dist/
 .env
 .aider*
-.idea/
+.idea/package-lock.json
