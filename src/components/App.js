@@ -1,8 +1,10 @@
-import '/style.css';
+import $ from 'jquery';
+
 import DB from '/src/db.js';
 import Network from '/src/net.js';
 import MePage from './Me.js';
-import $ from 'jquery';
+
+import '/style.css';
 
 function debounce(callback, delay) {
     let timeout = null;
@@ -56,8 +58,7 @@ class PageContextMenu {
     deletePage() {
         if (this.selectedPageId && confirm('Are you sure you want to delete this page?')) {
             this.db.pages.delete(this.selectedPageId);
-            const page = this.db.page(this.selectedPageId);
-            if (page?.isPublic) this.app.net.removeSharedDocument(this.selectedPageId);
+            if (this.db.page(this.selectedPageId)?.isPublic) this.app.net.removeSharedDocument(this.selectedPageId);
         }
     }
 
@@ -95,9 +96,12 @@ class Sidebar {
     }
 
     renderPageList() {
-        this.$pageList = $('<ul>', { id: 'page-list' });
-        this.$element.append(this.$pageList);
-        this.db.pages.observe(() => this.updatePageList());
+        if (this.observer) {
+            this.db.pages.unobserve(this.observer);
+            this.observer = undefined;
+        }
+        this.$element.append(this.$pageList = $('<ul>', { id: 'page-list' }));
+        this.observer = this.db.pages.observe(() => this.updatePageList());
         this.updatePageList();
     }
 
@@ -137,8 +141,8 @@ class Sidebar {
             $menuBar.append($('<button>', {
                     class: 'menubar-button',
                     text: page.title,
-                    title: `Access ${page.title}`
-                }).on('click', () => pageInstance.render()));
+                    title: page.title
+                }).click(() => pageInstance.render()));
 
         });
 
@@ -155,12 +159,8 @@ class Sidebar {
                 class: 'user-page-item'
             });
 
-            if (value.isPublic) {
-                $('<span>', {
-                    text: ' 🌐',
-                    title: 'Public Document'
-                }).appendTo($li);
-            }
+            if (value.isPublic)
+                $li.append($('<span>', {text: ' 🌐',  title: 'Public Document'}));
 
             $li.on({
                 click: () => this.app.editor.viewPage(key),
@@ -193,8 +193,7 @@ class FriendsPage {
     }
 
     render() {
-        const $editorContainer = $(this.shadowRoot).find('#editor-container');
-        $editorContainer.empty().append(this.$container);
+        $(this.shadowRoot).find('#editor-container').empty().append(this.$container);
 
         this.$container.html(`
             <h3>Friends</h3>
@@ -265,15 +264,13 @@ class Editor {
     bindYjs() {
         if (!this.$editor || !this.ytext) return;
 
-        const observer = new MutationObserver(() => {
+        new MutationObserver(() => {
             const content = this.$editor.html();
             this.ytext.doc.transact(() => {
                 this.ytext.delete(0, this.ytext.length);
                 this.ytext.insert(0, content);
             });
-        });
-
-        observer.observe(this.$editor[0], {
+        }).observe(this.$editor[0], {
             characterData: true,
             childList: true,
             subtree: true,
