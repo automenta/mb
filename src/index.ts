@@ -1,21 +1,29 @@
 import $ from 'jquery';
 
-import DB from './db.js';
-import Network from './net.js';
+import DB from './db';
+import Network from './net';
+import SideBar from './sidebar';
 
 import '/css/index.css';
 
-import Editor from "./editor.js";
-import SideBar from "./sidebar.js";
-import '/css/sidebar.css';
+import Editor from "./editor";
 import Matching from "./match.js";
 
 
-class App {
+
+export default class App {
+    private readonly channel: string;
+
+    readonly db: DB;
+    readonly net: Network;
+    readonly match: Matching;
+    readonly editor: Editor;
+
+    public ele: JQuery;
+
     constructor() {
         this.channel = 'todo';
 
-        this.sharedDocuments = new Set();
         this.db = new DB(this.channel);
         this.net = new Network(this.channel, this.db);
 
@@ -27,7 +35,7 @@ class App {
         `);
 
         this.editor = new Editor(this.ele.find('#main-view'), this.db, this.awareness.bind(this), this);
-        this.sidebar = new SideBar(this);
+        const sidebar = new SideBar(this);
     }
 
     user() { return this.net.user(); }

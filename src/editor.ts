@@ -1,11 +1,25 @@
 import $ from "jquery";
 
+import DB from './db'
+import App from './index'
+
 import {debounce} from "./util.js";
 
 import '/css/editor.css';
+import {YText} from "yjs/dist/src/types/YText";
 
 export default class Editor {
-    constructor(ele, db, getAwareness, app) {
+    private readonly db: DB;
+    private readonly app: App;
+    private readonly getAwareness: Function;
+    private currentPageId: string;
+    private provider: any;
+    private ele: JQuery;
+    private ytext: YText;
+    private updatePeriodMS: number;
+    private editor: JQuery;
+    
+    constructor(ele:JQuery, db:DB, getAwareness:Function, app:App) {
         this.db = db;
         this.app = app;
         this.getAwareness = getAwareness;
@@ -15,6 +29,7 @@ export default class Editor {
         this.updatePeriodMS = 100;
         this.ele = ele;
     }
+
     saveContent() {
         if (!this.currentPageId || !this.ytext) return;
         const content = this.editor.html();
@@ -28,13 +43,14 @@ export default class Editor {
         });
     }
 
-    viewPage(pageId) {
+    viewPage(pageId:string) {
         if (this.currentPageId === pageId) return;
         this.editorStop();
 
-        this.currentPageId = pageId;
         const page = this.db.page(pageId);
         if (!page) return;
+
+        this.currentPageId = pageId;
 
         this.editorStart(pageId);
 
@@ -53,7 +69,7 @@ export default class Editor {
         });
     }
 
-    editorStart(pageId) {
+    editorStart(pageId:string):void {
         this.ytext = this.db.pageContent(pageId);
 
         this.ele.append(
@@ -94,7 +110,7 @@ export default class Editor {
         this.ele.empty();
     }
 
-    renderEditor() {
+    renderEditor():JQuery {
         const content = this.ytext ? this.ytext.toString() : '';
         return $('<div>', {
             class: 'editor',
@@ -123,7 +139,7 @@ export default class Editor {
             });
     }
 
-    renderToolbar() {
+    renderToolbar():JQuery {
         const toolbar = $('<div>', { class: 'toolbar' });
         [
             {command: 'bold', icon: '𝐁', title: 'Bold'},
@@ -156,7 +172,7 @@ export default class Editor {
         return toolbar;
     }
 
-    renderControls(pageId) {
+    renderControls(pageId:string):JQuery {
         const page = this.db.page(pageId);
         return $('<div>').addClass('editor-controls').append(
             this.renderTitleInput(page, pageId),
@@ -165,18 +181,18 @@ export default class Editor {
         );
     }
 
-    renderTitleInput(page, pageId) {
-        const $titleInput = $('<input>', {
+    renderTitleInput(page, pageId:string):JQuery {
+        const titleInput = $('<input>', {
             type: 'text',
             class: 'title-input',
             value: page.title,
             placeholder: 'Page Title'
-        }).on('change', () => this.db.pageTitle(pageId, $titleInput.val()));
-        return $titleInput;
+        }).on('change', () => this.db.pageTitle(pageId, titleInput.val()));
+        return titleInput;
     }
 
-    renderPrivacyToggle(page, pageId) {
-        const $privacyToggle = $('<div>', {class: 'privacy-toggle'}).append(
+    renderPrivacyToggle(page, pageId:string) {
+        return $('<div>', {class: 'privacy-toggle'}).append(
             $('<span>').text('Public'),
             $('<label>', {class: 'toggle-switch'}).append(
                 $('<input>', {
@@ -191,10 +207,9 @@ export default class Editor {
                 $('<span>', {class: 'toggle-slider'})
             )
         );
-        return $privacyToggle;
     }
 
-    renderTemplateButtons() {
+    renderTemplateButtons():JQuery {
         const templateButtons = $('<div>', {class: 'template-buttons'});
         [
             {icon: '📝', title: 'Note Template', template: 'note'},
@@ -212,7 +227,7 @@ export default class Editor {
         return templateButtons;
     }
 
-    insertTemplate(template) {
+    insertTemplate(template:string):void {
         let html = '<TEMPLATE>';
         document.execCommand('insertHTML', false, html);
     }

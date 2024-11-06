@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
     "signaling": "PORT=4444 node ./node_modules/y-webrtc/bin/server.js",
@@ -13,12 +13,13 @@
   },
   "dependencies": {
     "jquery": "latest",
+    "uuid": "latest",
     "y-indexeddb": "latest",
     "y-webrtc": "latest",
-    "yjs": "latest",
-    "uuid": "latest"
+    "yjs": "latest"
   },
   "devDependencies": {
+    "@types/jquery": "^3.5.32",
     "vite": "latest"
   }
 }

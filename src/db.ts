@@ -1,12 +1,21 @@
 "use strict";
 import * as Y from 'yjs';
+import {Doc} from "yjs";
+import {YMap} from "yjs/dist/src/types/YMap";
 import {IndexeddbPersistence} from 'y-indexeddb';
-import { v4 as uuidv4 } from 'uuid';
+import {YText} from "yjs/dist/src/types/YText";
 
 class DB {
-    constructor(channel) {
-        this.doc = new Y.Doc({
-        });
+
+    readonly doc: Doc;
+
+    readonly pages: YMap<any>;
+
+    private readonly indexedDB: IndexeddbPersistence;
+
+    constructor(channel:string) {
+        this.doc = new Y.Doc();
+
         this.pages = this.doc.getMap('pages');
 
         this.indexedDB = new IndexeddbPersistence(channel, this.doc);
@@ -15,47 +24,40 @@ class DB {
         this.indexedDB.on('synced', () => console.log('Data synchronized with IndexedDB'));
     }
 
-    page(pageId) {
+    page(pageId:string):any {
         return this.pages.get(pageId);
     }
 
-    pageContent(pageId) {
+    pageContent(pageId: string):YText {
         const page = this.page(pageId);
         return page ? this.doc.getText(page.contentId) : null;
     }
 
-    pageSet(pageId, content) {
+    pageSet(pageId:string, content:any):void {
         this.pages.set(pageId, content);
     }
 
-    pageNew(title, isPublic = false) {
-        const pageId = uuidv4();
+    pageNew(pageId:string, title:string, isPublic = false):void {
         const contentId = `content-${pageId}`;
         this.doc.getText(contentId); // Initialize Y.Text for content
         this.pageSet(pageId, { title, contentId, isPublic });
     }
 
 
-    pageTitle(pageId, title) {
+    pageTitle(pageId:string, title:string):void {
         const page = this.page(pageId);
         if (page)
             this.pageSet(pageId, { ...page, title });
     }
 
-    pagePrivacy(pageId, isPublic) {
+    pagePrivacy(pageId:string, isPublic:boolean):void {
         const page = this.page(pageId);
         if (page)
             this.pageSet(pageId, { ...page, isPublic });
     }
 
-    pageDelete(pageId) {
-        if (this.pages.has(pageId)) {
-            const page = this.pages.get(pageId);
-            if (page && page.contentId) {
-                this.doc.destroy(page.contentId); // Clean up associated Y.Text
-            }
-            this.pages.delete(pageId);
-        }
+    pageDelete(pageId:string) {
+        throw "TODO";
     }
 
 }

@@ -1,15 +1,50 @@
 import $ from 'jquery';
 
+interface UserPresence {
+    userId: string;
+    cursor: {
+        position: number;
+        selection?: [number, number];
+    };
+    lastActive: number;
+    status: 'active' | 'idle' | 'away';
+}
+
+class PresenceManager {
+    private awareness: Y.Awareness;
+    private presenceTimeout: number = 30000; // 30 seconds
+
+    constructor(doc: Y.Doc) {
+        this.awareness = new Y.Awareness(doc);
+        this.startPresenceTracking();
+    }
+
+    private startPresenceTracking() {
+        setInterval(() => {
+            const states = this.awareness.getStates();
+            states.forEach((state, clientId) => {
+                if (Date.now() - state.lastActive > this.presenceTimeout) {
+                    this.awareness.setLocalState({ status: 'away' });
+                }
+            });
+        }, 5000);
+    }
+}
+
 export default class MeView {
-    constructor(ele, getUser, getAwareness) {
+    private getUser: Function;
+    private awareness: Function;
+    private $: (element) => JQueryStatic;
+
+    constructor(ele, getUser, awareness) {
         this.getUser = getUser;
-        this.getAwareness = getAwareness;
+        this.awareness = awareness;
         this.$ = element => $(element, ele);
     }
 
     render() {
         const user = this.getUser();
-        const listener = e => this.getAwareness().setLocalStateField('user', {
+        const listener = e => this.awareness().setLocalStateField('user', {
             ...user,
             [e.target.id.replace('user-', '')]: e.target.value
         });

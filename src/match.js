@@ -148,6 +148,7 @@ class MatchingSystem {
 
     // Coordinate processing with other nodes
     coordinated() {
+        if (!this.autoAdjustCapacity) return;
         const peers = Array.from(this.net.awareness().getStates().keys());
         const myPosition = peers.indexOf(this.net.awareness().clientID);
 
@@ -230,18 +231,7 @@ class MatchingSystem {
         console.log(`Auto-adjust capacity ${enabled ? 'enabled' : 'disabled'}`);
     }
 
-// Update the coordinated method to respect auto-adjust setting
-    coordinated() {
-        if (!this.autoAdjustCapacity) return;
 
-        const peers = Array.from(this.net.awareness().getStates().keys());
-        const myPosition = peers.indexOf(this.net.awareness().clientID);
-
-        if (myPosition === -1) return;
-
-        // Adjust work capacity based on position in peer list
-        this.setWorkerCapacity(1 / (peers.length || 1));
-    }
 
     onPagesChanged() {
         //TODO

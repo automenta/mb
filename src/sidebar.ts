@@ -1,13 +1,22 @@
 import $ from "jquery";
-import MeView from "./me.view.js";
+
+import App from './index'
+import DB from './db'
+
+import MeView from "./me.view";
 import NetView from "./net.view.js";
 import DBView from "./db.view.js";
-import MatchView from "./match.view.js";
+import MatchingView from "./match.view.js";
 
 class PageContextMenu {
-    constructor(db, app) {
+    private ele: JQuery;
+    private db: DB;
+    private sidebar: Sidebar;
+    private selectedPageId: string;
+
+    constructor(db:DB, app:Sidebar) {
         this.db = db;
-        this.app = app;
+        this.sidebar = app;
         this.selectedPageId = null;
         this.ele = $('<div>').attr('id', 'context-menu').appendTo($('body'));
         this.ele.html(`
@@ -43,7 +52,7 @@ class PageContextMenu {
     deletePage() {
         if (this.selectedPageId && confirm('Are you sure you want to delete this page?')) {
             this.db.pages.delete(this.selectedPageId);
-            if (this.db.page(this.selectedPageId)?.isPublic) this.app.net.removeSharedDocument(this.selectedPageId);
+            if (this.db.page(this.selectedPageId)?.isPublic) this.sidebar.app.net.unshareDocument(this.selectedPageId);
         }
     }
 
@@ -64,7 +73,11 @@ class PageContextMenu {
 
 
 class FriendsView {
-    constructor(root, getAwareness) {
+    private readonly root: JQuery;
+    private readonly getAwareness: Function;
+    private readonly container: JQuery;
+
+    constructor(root:JQuery, getAwareness:Function) {
         this.root = root;
         this.getAwareness = getAwareness;
         this.container = $('<div>').addClass('friends-list-page');
@@ -95,12 +108,27 @@ class FriendsView {
     }
 }
 
+import '/css/sidebar.css';
+import {v4 as uuidv4} from "uuid";
+
 export default class Sidebar {
-    constructor(app) {
+    private readonly ele: JQuery;
+    private readonly db: DB;
+    private readonly meView: MeView;
+    private readonly friendsView: FriendsView;
+    private readonly netView: NetView;
+    private readonly dbView: DBView;
+    private readonly matchingView: MatchingView;
+    app: App;
+    private contextMenu: PageContextMenu;
+    private pageList: JQuery;
+
+    constructor(app:App) {
         const root = app.ele;
 
         this.ele = root.find('#sidebar');
 
+        this.app = app;
         this.db = app.db;
 
         const thisAware = app.awareness.bind(app);
@@ -108,18 +136,13 @@ export default class Sidebar {
         this.friendsView = new FriendsView(root, thisAware);
         this.netView = new NetView(root.find('#main-view'), app.net);
         this.dbView = new DBView(root, this.db);
-        this.matchingView = new MatchView(root, app.match);
+        this.matchingView = new MatchingView(root, app.match);
 
 
-        this.app = app;
         this.ele.append(this.menu());
         this.contextMenu = new PageContextMenu(this.db, this);
-        if (this.observer) {
-            this.db.pages.unobserve(this.observer);
-            this.observer = undefined;
-        }
-        this.ele.append(this.$pageList = $('<ul>', {id: 'page-list'}));
-        this.observer = this.db.pages.observe(() => this.updatePageList());
+        this.ele.append(this.pageList = $('<ul>', {id: 'page-list'}));
+        this.db.pages.observe(() => this.updatePageList());
         this.updatePageList();
     }
 
@@ -134,17 +157,18 @@ export default class Sidebar {
                 text: '+',
                 title: 'Add New Page'
             }).on('click', () => {
-                this.db.pageNew('Empty', false);
+                const pageId = uuidv4();
+                this.db.pageNew(pageId, 'Empty', false)
                 this.app.editor.viewPage(pageId);
             })
         );
 
         [
-            {id: 'profile',  title: 'Me',      class: MeView},
-            {id: 'friends',  title: 'Friends', class: FriendsView},
-            {id: 'network',  title: 'Net',     class: NetView},
-            {id: 'database', title: 'DB',      class: DBView},
-            {id: 'matching', title: 'Matching',class: MatchView},
+            {id: 'profile',  title: 'Me'},
+            {id: 'friends',  title: 'Friends'},
+            {id: 'network',  title: 'Net'},
+            {id: 'database', title: 'DB'},
+            {id: 'matching', title: 'Matching'},
         ].forEach(view => {
             let v;
             switch (view.id) {
@@ -167,9 +191,9 @@ export default class Sidebar {
     }
 
     updatePageList() {
-        this.$pageList.empty();
+        const nextPageList = [];
         this.db.pages.forEach((value, key) => {
-            const $li = $('<li>', {
+            const li = $('<li>', {
                 text: value.title,
                 'data-page-id': key,
                 title: `Open ${value.title}`,
@@ -177,19 +201,19 @@ export default class Sidebar {
             });
 
             if (value.isPublic)
-                $li.append($('<span>', {text: ' 🌐',  title: 'Public Document'}));
+                li.append($('<span>', {text: ' 🌐',  title: 'Public Document'}));
 
-            $li.on({
+            li.on({
                 click: () => this.app.editor.viewPage(key),
                 contextmenu: e => {
                     e.preventDefault();
-                    console.log('context', this.contextMenu);
                     this.contextMenu.showContextMenu(e, key);
                 },
                 dblclick: () => { }
             });
 
-            this.$pageList.append($li);
+            nextPageList.push(li);
         });
+        this.pageList.empty().append(nextPageList);
     }
 }

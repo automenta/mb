@@ -1,9 +1,21 @@
-"use strict";
 import {WebrtcProvider} from 'y-webrtc';
+import DB from "./db";
 
 class Network {
 
-    constructor(channel, db) {
+    readonly channel: string;
+    private db: DB;
+    private docsShared: Set<string>;
+    private readonly metrics: {
+        bytesTransferred: number;
+        messagesSent: number;
+        messagesReceived: number;
+        peersConnected: Set<any>
+    };
+    private net: WebrtcProvider;
+    private signalingServers: string[];
+
+    constructor(channel:string, db:DB) {
         this.channel = channel;
         this.db = db;
 
@@ -44,7 +56,20 @@ class Network {
             name: 'Anonymous',
             color: '#' + Math.floor(Math.random() * 16777215).toString(16),
         });
-        this.setupEventListeners();
+        // Track peer connections
+        this.net.on('peers', ({added, removed}) => {
+            added.forEach(id => {
+                this.metrics.peersConnected.add(id);
+                this.emit('peer-connected', {peerId: id});
+            });
+            removed.forEach(id => {
+                this.metrics.peersConnected.delete(id);
+                this.emit('peer-disconnected', {peerId: id});
+            });
+        });
+
+        // Track awareness changes
+        this.net.awareness.on('change', changes => this.emit('awareness-update', {changes}));
     }
 
     addBootstrap(url) {
@@ -61,28 +86,6 @@ class Network {
             this.reset(); // Reinitialize with the updated list
         } else
             throw "Bootstrap not found";
-    }
-
-    setupEventListeners() {
-        // Track peer connections
-        this.net.on('peers', ({ added, removed }) => {
-            added.forEach(id => {
-                this.metrics.peersConnected.add(id);
-                this.emit('peer-connected', { peerId: id });
-            });
-
-            removed.forEach(id => {
-                this.metrics.peersConnected.delete(id);
-                this.emit('peer-disconnected', { peerId: id });
-            });
-        });
-
-        // Track awareness changes
-        this.net.awareness.on('change', changes => {
-            this.emit('awareness-update', { changes });
-        });
-
-
     }
 
     user() { return this.awareness().getLocalState().user; }
