@@ -9,7 +9,7 @@ import DBView from "./db.view.js";
 import MatchingView from "./match.view.js";
 
 class PageContextMenu {
-    private ele: JQuery;
+    readonly ele: JQuery;
     private db: DB;
     private sidebar: Sidebar;
     private selectedPageId: string;
@@ -18,13 +18,14 @@ class PageContextMenu {
         this.db = db;
         this.sidebar = app;
         this.selectedPageId = null;
-        this.ele = $('<div>').attr('id', 'context-menu').appendTo($('body'));
-        this.ele.html(`
+        this.ele = $('<div>').addClass('context-menu').html(`
             <ul>
                 <li data-action="rename-page">Rename</li>
                 <li data-action="delete-page">Delete</li>
             </ul>
         `);
+
+        //handle clicks outside the menu
         $(this.ele).click(e => {
             if (!this.ele.has(e.target).length) this.hide();
         });
@@ -86,7 +87,7 @@ class FriendsView {
     render() {
         this.container.empty();
 
-        this.root.find('#main-view').empty().append(this.container);
+        this.root.find('.main-view').empty().append(this.container);
 
         this.container.html(`
             <h3>Friends</h3>
@@ -112,7 +113,7 @@ import '/css/sidebar.css';
 import {v4 as uuidv4} from "uuid";
 
 export default class Sidebar {
-    private readonly ele: JQuery;
+    readonly ele: JQuery;
     private readonly db: DB;
     private readonly meView: MeView;
     private readonly friendsView: FriendsView;
@@ -126,7 +127,7 @@ export default class Sidebar {
     constructor(app:App) {
         const root = app.ele;
 
-        this.ele = root.find('#sidebar');
+        this.ele = $('<div>').addClass('sidebar');
 
         this.app = app;
         this.db = app.db;
@@ -134,25 +135,25 @@ export default class Sidebar {
         const thisAware = app.awareness.bind(app);
         this.meView = new MeView(root, app.user.bind(app), thisAware);
         this.friendsView = new FriendsView(root, thisAware);
-        this.netView = new NetView(root.find('#main-view'), app.net);
+        this.netView = new NetView(root.find('.main-view'), app.net);
         this.dbView = new DBView(root, this.db);
         this.matchingView = new MatchingView(root, app.match);
 
 
         this.ele.append(this.menu());
         this.contextMenu = new PageContextMenu(this.db, this);
-        this.ele.append(this.pageList = $('<ul>', {id: 'page-list'}));
+        root.append(this.contextMenu.ele);
+
+        this.ele.append(this.pageList = $('<ul>', {class: 'page-list'}));
         this.db.pages.observe(() => this.updatePageList());
         this.updatePageList();
     }
 
     menu() {
         const menuBar = $('<div>', {
-            id: 'menubar',
             class: 'menubar'
         }).append(
             $('<button>', {
-                id: 'add-page',
                 class: 'menubar-button add-page-button',
                 text: '+',
                 title: 'Add New Page'

@@ -5,20 +5,23 @@ import {YMap} from "yjs/dist/src/types/YMap";
 import {IndexeddbPersistence} from 'y-indexeddb';
 import {YText} from "yjs/dist/src/types/YText";
 
+const appID = "todo";
+
 class DB {
 
+    readonly userID: string;
     readonly doc: Doc;
 
     readonly pages: YMap<any>;
 
     private readonly indexedDB: IndexeddbPersistence;
 
-    constructor(channel:string) {
+    constructor(userID:string) {
+        this.userID = userID;
         this.doc = new Y.Doc();
+        this.indexedDB = new IndexeddbPersistence(appID + "_" + userID, this.doc);
 
         this.pages = this.doc.getMap('pages');
-
-        this.indexedDB = new IndexeddbPersistence(channel, this.doc);
 
         // Observe changes to persist data or trigger updates if needed
         this.indexedDB.on('synced', () => console.log('Data synchronized with IndexedDB'));

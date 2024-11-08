@@ -32,7 +32,7 @@ class PresenceManager {
 }
 
 export default class MeView {
-    private getUser: Function;
+    private readonly getUser: Function;
     private awareness: Function;
     private $: (element) => JQueryStatic;
 
@@ -50,7 +50,7 @@ export default class MeView {
         });
 
         // Clear and get container
-        this.$('#main-view').empty().append(
+        this.$('.main-view').empty().append(
             $('<div/>', {
                 class: 'profile-page'
             }).append(
@@ -63,7 +63,7 @@ export default class MeView {
                     }),
                     $('<input/>', {
                         type: 'text',
-                        id: 'user-name',
+                        class: 'user-name',
                         placeholder: 'Name',
                         value: user.name
                     }).on('input', listener)
@@ -75,7 +75,7 @@ export default class MeView {
                     }),
                     $('<input/>', {
                         type: 'color',
-                        id: 'user-color',
+                        class: 'user-color',
                         value: user.color
                     }).on('input', listener)
                 )

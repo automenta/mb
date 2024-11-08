@@ -23,12 +23,12 @@ h1,h2,h3 {
     margin: 0;
 }
 
-#container {
+.container {
     display: flex;
     height: 100vh;
 }
 
-#main-view {
+.main-view {
     flex: 1;
     padding: 10px;
     display: flex;

@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["es6", "dom"],
+    "types": ["node"]
+  },
+  "include": ["**/*.ts"]
+}

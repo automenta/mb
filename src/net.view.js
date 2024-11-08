@@ -59,7 +59,7 @@ class BootstrapView {
 class NetViewer  {
     constructor(net) {
         this.net = net;
-        this.ele = $('<div>');
+        this.ele = $('<div>').addClass('net-viewer');
         this.events = [];
         this.maxEvents = 100;
         this.bootstrap = new BootstrapView(net);
@@ -71,23 +71,23 @@ class NetViewer  {
         $(this.ele).append(`
             <h3>Network</h3>
             <div class="stats-grid">
-                <div class="stat-box" id="messages">
+                <div class="stat-box messages">
                     <strong>Messages</strong>
-                    <div>Sent: <span id="sent">0</span></div>
-                    <div>Received: <span id="received">0</span></div>
+                    <div>Sent: <span class="sent">0</span></div>
+                    <div>Received: <span class="received">0</span></div>
                 </div>
-                <div class="stat-box" id="bandwidth">
+                <div class="stat-box bandwidth">
                     <strong>Bandwidth</strong>
-                    <div>Total: <span id="bytes">0</span> bytes</div>
+                    <div>Total: <span class="bytes">0</span> bytes</div>
                 </div>
             </div>
             <div class="stat-box">
                 <strong>Connections</strong>
-                <div class="peer-list" id="peers"></div>
+                <div class="peers"></div>
             </div>
             <div class="stat-box">
                 <strong>Events</strong>
-                <div class="event-log" id="events"></div>
+                <div class="event-log"></div>
             </div>
         `, this.bootstrap.panel());
     }
@@ -98,12 +98,12 @@ class NetViewer  {
 
         // Update metrics
         let r = this.ele[0];
-        r.querySelector('#sent').textContent = stats.messagesSent;
-        r.querySelector('#received').textContent = stats.messagesReceived;
-        r.querySelector('#bytes').textContent = stats.bytesTransferred;
+        r.querySelector('.sent').textContent = stats.messagesSent;
+        r.querySelector('.received').textContent = stats.messagesReceived;
+        r.querySelector('.bytes').textContent = stats.bytesTransferred;
 
         // Update peer list
-        const peerList = r.querySelector('#peers');
+        const peerList = r.querySelector('.peers');
         peerList.innerHTML = stats.awareness.map(peer => `
             <div class="peer-badge">
                 ${peer.metadata.clientID}
@@ -116,7 +116,7 @@ class NetViewer  {
         this.events = this.events.slice(0, this.maxEvents);
 
         // Update event log
-        r.querySelector('#events').innerHTML = this.events.map(event => `
+        r.querySelector('.event-log').innerHTML = this.events.map(event => `
             <div class="event-entry ${event.type}">
                 [${new Date(event.timestamp).toLocaleTimeString()}] ${event.type}
                 ${event.data.peerId ? `(Peer: ${event.data.peerId})` : ''}

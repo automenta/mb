@@ -15,17 +15,17 @@ export default class DBView {
     render() {
 
 
-        $(this.root).find('#main-view').empty().append(this.ele);
+        $(this.root).find('.main-view').empty().append(this.ele);
 
         this.ele.html(`
             <h3>Database Statistics</h3>
             <div class="db-controls">
-                <input type="text" id="filter-input" placeholder="Filter by title">
-                <select id="sort-select">
+                <input type="text" class="filter-input" placeholder="Filter by title">
+                <select class="sort-select">
                     <option value="title">Title</option>
                     <option value="pageId">Page ID</option>
                 </select>
-                <button id="sort-button">Sort</button>
+                <button class="sort-button">Sort</button>
             </div>
             <div class="database-wrapper">
                 <table class="database-table">

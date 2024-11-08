@@ -7,19 +7,29 @@
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
-    "signaling": "PORT=4444 node ./node_modules/y-webrtc/bin/server.js",
+    "signal": "PORT=4444 node ./node_modules/y-webrtc/bin/server.js",
     "dump": "git ls-files | xargs -I{} sh -c 'echo -e \"===== {} =====\\n\"; cat {}; echo -e \"\\n\"'\n",
-    "dumpclip": "npm run dump | xclip -i"
+    "dumpclip": "npm run dump | xclip -i",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.1",
     "jquery": "latest",
     "uuid": "latest",
+    "ws": "^8.18.0",
     "y-indexeddb": "latest",
     "y-webrtc": "latest",
     "yjs": "latest"
   },
   "devDependencies": {
-    "@types/jquery": "^3.5.32",
-    "vite": "latest"
+    "@types/jquery": "latest",
+    "@types/node": "latest",
+    "@vitest/coverage-v8": "latest",
+    "@vitest/ui": "latest",
+    "vite": "latest",
+    "vitest": "latest"
   }
 }

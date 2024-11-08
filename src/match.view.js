@@ -128,7 +128,7 @@ class MatchingView {
 
     render() {
         this.ele.empty();
-        this.root.find('#main-view').empty().append(this.ele);
+        this.root.find('.main-view').empty().append(this.ele);
         this.ele.html(this.template());
         this.bindControls();
         this.startUpdates();

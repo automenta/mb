@@ -13,7 +13,7 @@ class Network {
         peersConnected: Set<any>
     };
     private net: WebrtcProvider;
-    private signalingServers: string[];
+    private readonly signalingServers: string[];
 
     constructor(channel:string, db:DB) {
         this.channel = channel;
@@ -52,7 +52,7 @@ class Network {
             signaling: this.signalingServers,
         });
         this.net.awareness.setLocalStateField('user', {
-            id: `User-${Math.floor(Math.random() * 10000)}`,
+            id: this.db.userID,
             name: 'Anonymous',
             color: '#' + Math.floor(Math.random() * 16777215).toString(16),
         });
