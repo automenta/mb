@@ -1,8 +1,6 @@
 import {afterEach, beforeAll, vi} from 'vitest';
-import {Doc} from 'yjs';
 import $ from 'jquery';
 
-// Mock WebRTC provider
 vi.mock('y-webrtc', () => ({
     WebrtcProvider: vi.fn().mockImplementation(() => ({
         awareness: {
@@ -16,7 +14,6 @@ vi.mock('y-webrtc', () => ({
     })),
 }));
 
-// Mock IndexedDB provider
 vi.mock('y-indexeddb', () => ({
     IndexeddbPersistence: vi.fn().mockImplementation(() => ({
         on: vi.fn(),
@@ -41,18 +38,4 @@ beforeAll(() => {
 });
 
 // Clean up after each test
-afterEach(() => {
-    vi.clearAllMocks();
-});
-
-// Helper to create a test document
-export function createTestDoc() {
-    return new Doc();
-}
-
-// Helper to simulate user events
-export function simulateUserEvent(element, eventType, data = {}) {
-    const event = new Event(eventType, { bubbles: true });
-    Object.assign(event, data);
-    element.dispatchEvent(event);
-}
+afterEach(() => vi.clearAllMocks());

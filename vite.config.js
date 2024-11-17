@@ -4,6 +4,7 @@ export default defineConfig({
     plugins: [
     ],
     build: {
+        sourcemap: true,
         target: 'esnext',
         outDir: 'dist'
     }

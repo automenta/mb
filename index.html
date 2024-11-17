@@ -12,7 +12,7 @@
     import $ from 'jquery';
     import { v4 as uuid } from 'uuid';
 
-    var userID = localStorage['userID'];
+    let userID = localStorage['userID'];
     if (!userID) {
         userID = uuid();
         localStorage['userID'] = userID;

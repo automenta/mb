@@ -1,5 +1,5 @@
-// Core processing system
-class MatchingSystem {
+export default class Matching {
+
     constructor(db, net) {
         this.db = db;
         this.net = net;
@@ -238,4 +238,3 @@ class MatchingSystem {
     }
 }
 
-export default MatchingSystem;

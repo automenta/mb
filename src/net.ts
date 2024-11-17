@@ -48,6 +48,8 @@ class Network {
         if (this.net)
             this.net.destroy();
 
+        /** https://github.com/yjs/y-webrtc
+         *  https://github.com/feross/simple-peer#peer--new-peeropts */
         this.net = new WebrtcProvider(this.channel, this.db.doc, {
             signaling: this.signalingServers,
         });
