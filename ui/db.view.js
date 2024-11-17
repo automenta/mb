@@ -1,6 +1,6 @@
 import $ from "jquery";
 
-import '/css/db.css';
+import '/ui/css/db.css';
 
 export default class DBView {
     constructor(root, db) {
@@ -56,7 +56,7 @@ export default class DBView {
             this.sortKey = $(e.target).val();
         });
 
-        this.ele.find('#sort-button').on('click', () => {
+        this.ele.find('#sort-button').click(() => {
             this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
             this.updateTable();
         });

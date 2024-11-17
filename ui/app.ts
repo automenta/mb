@@ -1,13 +1,11 @@
 import $ from 'jquery';
-
-import DB from './db';
-import Network from './net';
+import DB from '../src/db';
+import Network from '../src/net';
 import SideBar from './sidebar';
-
-import '/css/index.css';
-
 import Editor from "./editor";
-import Matching from "./match.js";
+import Matching from "../src/match.js";
+
+import '/ui/css/app.css';
 
 export default class App {
     private readonly channel: string;

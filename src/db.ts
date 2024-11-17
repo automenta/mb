@@ -1,16 +1,15 @@
 "use strict";
 import * as Y from 'yjs';
-import {Doc} from "yjs";
 import {YMap} from "yjs/dist/src/types/YMap";
-import {IndexeddbPersistence} from 'y-indexeddb';
 import {YText} from "yjs/dist/src/types/YText";
+import {IndexeddbPersistence} from 'y-indexeddb';
 
 const appID = "todo";
 
 class DB {
 
     readonly userID: string;
-    readonly doc: Doc;
+    readonly doc: Y.Doc;
 
     readonly pages: YMap<any>;
 

@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import Emitter from '../src/events';
+import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {mitt as Emitter} from '../src/events';
 
 interface TestEvents {
     foo: string;

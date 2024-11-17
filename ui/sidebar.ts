@@ -1,12 +1,14 @@
 import $ from "jquery";
 
-import App from './index'
-import DB from './db'
+import App from './app'
+import DB from '../src/db'
 
 import MeView from "./me.view";
 import NetView from "./net.view.js";
 import DBView from "./db.view.js";
 import MatchingView from "./match.view.js";
+import '/ui/css/sidebar.css';
+import {v4 as uuidv4} from "uuid";
 
 class PageContextMenu {
     readonly ele: JQuery;
@@ -26,8 +28,13 @@ class PageContextMenu {
         `);
 
         //handle clicks outside the menu
-        $(this.ele).click(e => {
-            if (!this.ele.has(e.target).length) this.hide();
+        // $(this.ele).click(e => {
+        //     if (!this.ele.has(e.target).length)
+        //         this.hide();
+        // });
+        $(document).click(e => {
+            if (!$(e.target).closest('#context-menu').length)
+                this.hide();
         });
 
         this.ele.on('click', 'li', e => {
@@ -37,12 +44,8 @@ class PageContextMenu {
             else if (action === 'delete-page') this.deletePage();
             this.hide();
         });
-
-        $(document).on('click', e => {
-            if (!$(e.target).closest('#context-menu').length)
-                this.hide();
-        });
     }
+
     renamePage() {
         if (this.selectedPageId) {
             const newName = prompt('Enter new page name:');
@@ -57,7 +60,7 @@ class PageContextMenu {
         }
     }
 
-    showContextMenu(event, pageId) {
+    showContextMenu(event:ContextMenuEvent, pageId:string) {
         event.preventDefault();
         this.selectedPageId = pageId;
         this.ele.css({
@@ -109,8 +112,7 @@ class FriendsView {
     }
 }
 
-import '/css/sidebar.css';
-import {v4 as uuidv4} from "uuid";
+import ContextMenuEvent = JQuery.ContextMenuEvent;
 
 export default class Sidebar {
     readonly ele: JQuery;
@@ -157,7 +159,7 @@ export default class Sidebar {
                 class: 'menubar-button add-page-button',
                 text: '+',
                 title: 'Add New Page'
-            }).on('click', () => {
+            }).click(() => {
                 const pageId = uuidv4();
                 this.db.pageNew(pageId, 'Empty', false)
                 this.app.editor.viewPage(pageId);

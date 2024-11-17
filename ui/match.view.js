@@ -1,5 +1,6 @@
 import $ from 'jquery';
-import '/css/match.css';
+import '/ui/css/match.css';
+import {events} from '../src/events.ts';
 
 class MatchingView {
     constructor(root, matching) {
@@ -22,8 +23,8 @@ class MatchingView {
             autoAdjustCapacity: true
         };
 
-        window.addEventListener('matching-metrics', e => this.updateMetrics(e.detail));
-        matching.on('activity', e => this.logActivity(e));
+        events.on('matching-metrics', e => this.updateMetrics(e.detail));
+        events.on('activity', e => this.logActivity(e));
     }
 
     template() {

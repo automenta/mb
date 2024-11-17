@@ -1,11 +1,11 @@
 import $ from "jquery";
 
-import DB from './db'
-import App from './index'
+import DB from '../src/db'
+import App from './app'
 
-import {debounce} from "./util.js";
+import {debounce} from "../src/util.js";
 
-import '/css/editor.css';
+import '/ui/css/editor.css';
 import {YText} from "yjs/dist/src/types/YText";
 
 export default class Editor {
@@ -58,9 +58,9 @@ export default class Editor {
         awareness.setLocalStateField('cursor', null);
 
         this.editor.on('select', () => {
-            const selection = window.getSelection();
-            if (selection.rangeCount > 0) {
-                const range = selection.getRangeAt(0);
+            const sel = window.getSelection();
+            if (sel!==null && sel.rangeCount > 0) {
+                const range = sel.getRangeAt(0);
                 awareness.setLocalStateField('cursor', {
                     anchor: range.startOffset,
                     head: range.endOffset
@@ -156,7 +156,7 @@ export default class Editor {
             $('<button>', {
                 html: icon,
                 title: title
-            }).on('click', e => {
+            }).click(e => {
                 e.preventDefault();
                 if (command === 'insertLink') {
                     const url = prompt('Enter the URL');
@@ -221,7 +221,7 @@ export default class Editor {
                 class: 'template-button',
                 text: icon,
                 title: title
-            }).on('click', () => this.insertTemplate(template))
+            }).click(() => this.insertTemplate(template))
                 .appendTo(templateButtons);
         });
         return templateButtons;
@@ -234,3 +234,89 @@ export default class Editor {
 
 
 }
+/*
+TODO
+
+import * as Y from 'yjs';
+import { Awareness } from 'y-protocols/awareness';
+
+export default class Editor {
+    // ... existing code ...
+
+    private awareness: Awareness;
+
+    constructor(ele: JQuery, db: DB, getAwareness: Function, app: App) {
+        // ... existing code ...
+        this.awareness = getAwareness();
+        this.setupAwareness();
+    }
+
+    private setupAwareness() {
+        // Listen for local cursor changes
+        this.editor.on('mouseup keyup', () => this.updateLocalCursor());
+
+        // Listen for awareness updates
+        this.awareness.on('change', () => this.renderRemoteCursors());
+    }
+
+    private updateLocalCursor() {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+            const range = sel.getRangeAt(0);
+            this.awareness.setLocalStateField('cursor', {
+                anchor: range.startOffset,
+                head: range.endOffset,
+            });
+        }
+    }
+
+    private renderRemoteCursors() {
+        const states = this.awareness.getStates();
+        states.forEach((state, clientId) => {
+            if (clientId === this.awareness.clientID) return;
+            if (state.cursor) {
+                this.renderCursor(state.cursor, state.user);
+            }
+        });
+    }
+
+    private renderCursor(cursorData, user) {
+        // Remove existing cursor elements for this user
+        this.editor.find(`.remote-cursor-${user.id}`).remove();
+
+        // Create a new cursor element
+        const cursorEle = $('<span>', {
+            class: `remote-cursor remote-cursor-${user.id}`,
+            css: {
+                position: 'absolute',
+                backgroundColor: user.color,
+                width: '2px',
+                height: '1em',
+            },
+        });
+
+        // Position the cursor in the editor
+        // (You'll need to map cursorData.anchor to a position in the DOM)
+        // For simplicity, here's a placeholder implementation:
+        const position = this.getPositionFromOffset(cursorData.anchor);
+        cursorEle.css({ left: position.left, top: position.top });
+
+        this.editor.append(cursorEle);
+    }
+
+    private getPositionFromOffset(offset: number) {
+        // Implement a method to convert text offset to x,y coordinates
+        // This can be complex depending on your editor's implementation
+        return { left: 0, top: 0 }; // Placeholder
+    }
+
+    // ... existing code ...
+}
+
+// In editor.css
+
+.remote-cursor {
+    pointer-events: none;
+    z-index: 10;
+}
+ */

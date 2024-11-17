@@ -1,6 +1,6 @@
-export function debounce(callback, delay) {
+export function debounce(callback:Function, delay:number) {
     let timeout = null;
-    return function(...args) {
+    return (...args) => {
         if (timeout) clearTimeout(timeout);
         timeout = setTimeout(() => callback.apply(this, args), delay);
     };

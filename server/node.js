@@ -1,6 +1,6 @@
 const WebSocket = await import('ws');
-import { createServer } from 'http';
-import { EventEmitter } from 'events';
+import {createServer} from 'http';
+import {EventEmitter} from 'events';
 import express from 'express';
 import cors from 'cors';
 

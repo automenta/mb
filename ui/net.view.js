@@ -1,15 +1,16 @@
 import $ from 'jquery';
+import {events} from '../src/events.ts';
 
-import '/css/net.css';
+import '/ui/css/net.css';
 
 class BootstrapView {
     constructor(net) {
         this.net = net;
-        this.$addButton = $('<button>').text("+"); //#add-bootstrap-node
-        this.$input = $('<input>').attr('placeholder', 'bootstrap'); //#new-bootstrap-node
-        this.$nodeList = $('<div>');//#bootstrap-node-list
+        this.addButton = $('<button>').text("+"); //#add-bootstrap-server
+        this.$input = $('<input>').attr('placeholder', 'bootstrap'); //#new-bootstrap-server
+        this.$nodeList = $('<div>');//#bootstrap-server-list
 
-        this.$addButton.on('click', () => {
+        this.addButton.click(() => {
             const url = this.$input.val().trim();
             if (this.validateURL(url)) {
                 this.net.addBootstrap(url);
@@ -20,7 +21,7 @@ class BootstrapView {
             }
         });
 
-        this.$nodeList.on('click', '.remove-node', (e) => {
+        this.$nodeList.on('click', '.remove-server', (e) => {
             const url = $(e.target).data('url');
             this.net.removeBootstrap(url);
             this.update();
@@ -51,7 +52,7 @@ class BootstrapView {
     }
 
     panel() {
-        return $('<div>').append('<h2>Bootstrap Nodes</h2>', this.$nodeList, this.$input, this.$addButton);
+        return $('<div>').append('<h2>Bootstrap Nodes</h2>', this.$nodeList, this.$input, this.addButton);
     }
 }
 
@@ -64,7 +65,7 @@ class NetViewer  {
         this.maxEvents = 100;
         this.bootstrap = new BootstrapView(net);
         this.render();
-        window.addEventListener('network-activity', e => this.update(e.detail));
+        events.on('networkActivity', e => this.update(e.detail));
     }
 
     render() {

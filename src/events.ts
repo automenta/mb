@@ -29,7 +29,7 @@ export interface Emitter<T extends Record<EventType, unknown>> {
     clear(): void;
 }
 
-export default function mitt<T extends Record<EventType, unknown>>(target: object = Object.create(null)): Emitter<T> {
+export function mitt<T extends Record<EventType, unknown>>(target: object = Object.create(null)): Emitter<T> {
     const handlers: WeakHandlerMap<T> = new WeakMap();
     const store = new Map<keyof T | '*' | string, EventStore<T[keyof T]>>();
     handlers.set(target, store);
@@ -109,3 +109,6 @@ export default function mitt<T extends Record<EventType, unknown>>(target: objec
         }
     };
 }
+
+/** default emitter */
+export const events = mitt();

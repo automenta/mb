@@ -1,5 +1,6 @@
 import {WebrtcProvider} from 'y-webrtc';
 import DB from "./db";
+import {events} from './events';
 
 class Network {
 
@@ -70,18 +71,17 @@ class Network {
             });
         });
 
-        // Track awareness changes
         this.net.awareness.on('change', changes => this.emit('awareness-update', {changes}));
     }
 
-    addBootstrap(url) {
+    addBootstrap(url:string) {
         if (!this.signalingServers.includes(url)) {
             this.signalingServers.push(url);
             this.reset(); // Reinitialize with the new list
         }
     }
 
-    removeBootstrap(url) {
+    removeBootstrap(url:string) {
         const index = this.signalingServers.indexOf(url);
         if (index !== -1) {
             this.signalingServers.splice(index, 1);
@@ -93,7 +93,7 @@ class Network {
     user() { return this.awareness().getLocalState().user; }
     awareness() { return this.net.awareness; }
 
-    shareDocument(pageId) {
+    shareDocument(pageId: string) {
         if (!this.docsShared.has(pageId)) {
             const page = this.db.page(pageId);
             if (page && page.isPublic) {
@@ -108,7 +108,7 @@ class Network {
         }
     }
 
-    unshareDocument(pageId) {
+    unshareDocument(pageId:string) {
         if (this.docsShared.has(pageId)) {
             // Assuming that unsharing involves removing its content from synchronization
             // Since Yjs syncs all shared content in the document, you might need to remove or isolate it
@@ -135,7 +135,7 @@ class Network {
     }
 
     emit(type, data) {
-        window.dispatchEvent(new CustomEvent('network-activity', {
+        events.emit('networkActivity', {
             detail: {
                 type,
                 timestamp: Date.now(),
@@ -144,7 +144,7 @@ class Network {
                     stats: this.getNetworkStats(),
                 }
             }
-        }));
+        });
     }
 }
 

@@ -5,7 +5,6 @@
     "types": ["node"],
     "strict": true,
     "allowJs": true,
-    "checkJs": true,
     "moduleResolution": "bundler"
   },
   "include": ["**/*.ts","**/*.js"]

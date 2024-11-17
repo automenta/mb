@@ -1,4 +1,5 @@
 import $ from 'jquery';
+import * as Y from 'yjs';
 
 interface UserPresence {
     userId: string;

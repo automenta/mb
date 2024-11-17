@@ -1,3 +1,5 @@
+import {events} from './events';
+
 export default class Matching {
 
     constructor(db, net) {
@@ -158,7 +160,7 @@ export default class Matching {
         this.workerCapacity = 1 / (peers.length || 1);
     }
 
-    // Determine if this node should process now
+    // Determine if this server should process now
     shouldProcess() {
         return Math.random() < this.workerCapacity;
     }
@@ -169,14 +171,14 @@ export default class Matching {
         this.metrics.processingTime += this.processInterval;
 
         // Emit metrics for dashboard
-        window.dispatchEvent(new CustomEvent('matching-metrics', {
+        events.emit('matching-metrics', {
             detail: {
                 ...this.metrics,
                 queueSize: this.processingQueue.size,
                 workerCapacity: this.workerCapacity,
                 peersCount: this.net.awareness().getStates().size
             }
-        }));
+        });
     }
 
     getMetrics() {
@@ -225,9 +227,9 @@ export default class Matching {
 
     setAutoAdjust(enabled) {
         this.autoAdjustCapacity = enabled;
-        if (enabled) {
+        if (enabled)
             this.coordinated(); // Immediately adjust based on peers
-        }
+
         console.log(`Auto-adjust capacity ${enabled ? 'enabled' : 'disabled'}`);
     }
 
