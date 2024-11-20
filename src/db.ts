@@ -1,67 +1,112 @@
-"use strict";
+// src/db.ts
 import * as Y from 'yjs';
-import {YMap} from "yjs/dist/src/types/YMap";
-import {YText} from "yjs/dist/src/types/YText";
 import {IndexeddbPersistence} from 'y-indexeddb';
+import NObject from "./obj";
+import {v4 as uuid} from "uuid";
 
-const appID = "todo";
+// DB: Main database interface
+export default class DB {
+    readonly doc = new Y.Doc();
+    public readonly index: Y.Map<any>;
+    private readonly storage: IndexeddbPersistence;
 
-class DB {
-
-    readonly userID: string;
-    readonly doc: Y.Doc;
-
-    readonly pages: YMap<any>;
-
-    private readonly indexedDB: IndexeddbPersistence;
-
-    constructor(userID:string) {
-        this.userID = userID;
-        this.doc = new Y.Doc();
-        this.indexedDB = new IndexeddbPersistence(appID + "_" + userID, this.doc);
-
-        this.pages = this.doc.getMap('pages');
-
-        // Observe changes to persist data or trigger updates if needed
-        this.indexedDB.on('synced', () => console.log('Data synchronized with IndexedDB'));
+    constructor(readonly userId: string) {
+        this.userId = userId;
+        this.index = this.doc.getMap('objects');
+        this.storage = new IndexeddbPersistence(`todo_${userId}`, this.doc);
+        this.storage.on('synced', () => console.log('Synced'));
     }
 
-    page(pageId:string):any {
-        return this.pages.get(pageId);
+    // Core operations
+    create(): NObject {
+        const obj = new NObject(this.doc, uuid());
+        obj.init();
+        obj.author = this.userId;
+        this.index.set(obj.id, obj.toJSON());
+        return obj;
     }
 
-    pageContent(pageId: string):YText {
-        const page = this.page(pageId);
-        return page ? this.doc.getText(page.contentId) : null;
+    get(id: string): NObject | null {
+        try { return new NObject(this.doc, id); }
+        catch { return null; }
     }
 
-    pageSet(pageId:string, content:any):void {
-        this.pages.set(pageId, content);
+    delete(id: string): boolean {
+        const obj = this.get(id);
+        if (!obj) return false;
+
+        // Cleanup references
+        this.list().forEach(other => {
+            if (other.replies.has(id)) other.removeReply(id);
+            if (other.repliesTo.has(id)) other.removeReplyTo(id);
+        });
+
+        this.doc.transact(() => this.index.delete(id));
+        return true;
     }
 
-    pageNew(pageId:string, title:string, isPublic = false):void {
-        const contentId = `content-${pageId}`;
-        this.doc.getText(contentId); // Initialize Y.Text for content
-        this.pageSet(pageId, { title, contentId, isPublic });
+    // Queries
+    list = (): NObject[] =>
+        Array.from(this.index.keys())
+            .map(id => this.get(id))
+            .filter((obj): obj is NObject => obj !== null);
+
+    listByTag = (tag: string) =>
+        this.list().filter(obj => obj.tags.includes(tag));
+
+    listByAuthor = (author: string) =>
+        this.list().filter(obj => obj.author === author);
+
+    search = (query: string): NObject[] => {
+        const q = query.toLowerCase();
+        return this.list().filter(obj =>
+            obj.name.toLowerCase().includes(q) ||
+            obj.tags.some(tag => tag.toLowerCase().includes(q))
+        );
     }
 
+    // Reply operations
+    createReply(parentId: string, name?: string): NObject | null {
+        const parent = this.get(parentId);
+        if (!parent) return null;
 
-    pageTitle(pageId:string, title:string):void {
-        const page = this.page(pageId);
+        const reply = this.create();
+        reply.name = name;
+        reply.addReplyTo(parentId);
+        parent.addReply(reply.id);
+        return reply;
+    }
+
+    getReplies = (id: string): NObject[] =>
+        Array.from(this.get(id)?.replies ?? [])
+            .map(rid => this.get(rid))
+            .filter((r): r is NObject => r !== null);
+
+    getRepliesTo = (id: string): NObject[] =>
+        Array.from(this.get(id)?.repliesTo ?? [])
+            .map(pid => this.get(pid))
+            .filter((p): p is NObject => p !== null);
+
+
+    // observe = (fn: Observer): void => this.index.observe(fn);
+    // observeObject = (id: string, fn: Observer): void =>
+    //     this.get(id)?.observe(fn);
+
+    objText(pageId: string) {
+        const page = this.get(pageId);
+        return page ? page.text : null;
+    }
+
+    objName(pageId:string, title:string):void {
+        const page = this.get(pageId);
         if (page)
-            this.pageSet(pageId, { ...page, title });
+            page.name = title;
     }
 
-    pagePrivacy(pageId:string, isPublic:boolean):void {
-        const page = this.page(pageId);
+    objPublic(pageId:string, isPublic:boolean):void {
+        const page = this.get(pageId);
         if (page)
-            this.pageSet(pageId, { ...page, isPublic });
-    }
-
-    pageDelete(pageId:string) {
-        throw "TODO";
+            page.public = isPublic;
     }
 
 }
-
-export default DB;

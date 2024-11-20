@@ -2,13 +2,13 @@ import $ from "jquery";
 
 import App from './app'
 import DB from '../src/db'
+import ObjViewMini from './obj.view.mini'
 
 import MeView from "./me.view";
 import NetView from "./net.view.js";
 import DBView from "./db.view.js";
 import MatchingView from "./match.view.js";
 import '/ui/css/sidebar.css';
-import {v4 as uuidv4} from "uuid";
 
 class PageContextMenu {
     readonly ele: JQuery;
@@ -49,14 +49,14 @@ class PageContextMenu {
     renamePage() {
         if (this.selectedPageId) {
             const newName = prompt('Enter new page name:');
-            if (newName) this.db.pageTitle(this.selectedPageId, newName);
+            if (newName) this.db.objName(this.selectedPageId, newName);
         }
     }
 
     deletePage() {
         if (this.selectedPageId && confirm('Are you sure you want to delete this page?')) {
-            this.db.pages.delete(this.selectedPageId);
-            if (this.db.page(this.selectedPageId)?.isPublic) this.sidebar.app.net.unshareDocument(this.selectedPageId);
+            this.db.delete(this.selectedPageId);
+            if (this.db.get(this.selectedPageId)?.public) this.sidebar.app.net.unshareDocument(this.selectedPageId);
         }
     }
 
@@ -122,7 +122,7 @@ export default class Sidebar {
     private readonly netView: NetView;
     private readonly dbView: DBView;
     private readonly matchingView: MatchingView;
-    app: App;
+    public app: App;
     private contextMenu: PageContextMenu;
     private pageList: JQuery;
 
@@ -147,7 +147,9 @@ export default class Sidebar {
         root.append(this.contextMenu.ele);
 
         this.ele.append(this.pageList = $('<ul>', {class: 'page-list'}));
-        this.db.pages.observe(() => this.updatePageList());
+
+        this.db.index.observe(() => this.updatePageList());
+
         this.updatePageList();
     }
 
@@ -160,9 +162,10 @@ export default class Sidebar {
                 text: '+',
                 title: 'Add New Page'
             }).click(() => {
-                const pageId = uuidv4();
-                this.db.pageNew(pageId, 'Empty', false)
-                this.app.editor.viewPage(pageId);
+                const p = this.db.create();
+                p.name = 'Empty';
+                p.public = false;
+                this.app.editor.view(p);
             })
         );
 
@@ -194,29 +197,52 @@ export default class Sidebar {
     }
 
     updatePageList() {
-        const nextPageList = [];
-        this.db.pages.forEach((value, key) => {
-            const li = $('<li>', {
-                text: value.title,
-                'data-page-id': key,
-                title: `Open ${value.title}`,
-                class: 'user-page-item'
-            });
-
-            if (value.isPublic)
-                li.append($('<span>', {text: ' 🌐',  title: 'Public Document'}));
-
-            li.on({
-                click: () => this.app.editor.viewPage(key),
-                contextmenu: e => {
-                    e.preventDefault();
-                    this.contextMenu.showContextMenu(e, key);
-                },
-                dblclick: () => { }
-            });
-
-            nextPageList.push(li);
+        const nextPageList: JQuery[] = [];
+        this.db.index.forEach((_value, key) => {
+            const obj = this.db.get(key);
+            if (obj) {
+                const v = new ObjViewMini(obj);
+                v.ele.attr('data-page-id', key)
+                    .on('contextmenu', (e: JQuery.Event) => {
+                        e.preventDefault();
+                        this.contextMenu.showContextMenu(e, key);
+                    })
+                    .on('click', ()=>{
+                        this.app.editor.view(obj);
+                    });
+                nextPageList.push(v.ele);
+            }
         });
         this.pageList.empty().append(nextPageList);
     }
+
+    // updatePageList() {
+    //     const nextPageList:JQuery[] = [];
+    //     this.db.index.forEach((_value, key) => {
+    //
+    //         const value = this.db.get(key);
+    //         let name = value.name;
+    //         const li = $('<li>', {
+    //             text: name,
+    //             'data-page-id': key,
+    //             title: `Open ${name}`,
+    //             class: 'user-page-item'
+    //         });
+    //
+    //         if (value.public)
+    //             li.append($('<span>', {text: ' 🌐',  title: 'Public Document'}));
+    //
+    //         li.on({
+    //             click: () => this.app.editor.view(this.db.get(key)),
+    //             contextmenu: e => {
+    //                 e.preventDefault();
+    //                 this.contextMenu.showContextMenu(e, key);
+    //             },
+    //             dblclick: () => { }
+    //         });
+    //
+    //         nextPageList.push(li);
+    //     });
+    //     this.pageList.empty().append(nextPageList);
+    // }
 }

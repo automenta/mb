@@ -1,10 +1,8 @@
 import $ from "jquery";
-
 import DB from '../src/db'
+import NObject from '../src/obj'
 import App from './app'
-
 import {debounce} from "../src/util.js";
-
 import '/ui/css/editor.css';
 import {YText} from "yjs/dist/src/types/YText";
 
@@ -12,18 +10,20 @@ export default class Editor {
     private readonly db: DB;
     private readonly app: App;
     private readonly getAwareness: Function;
-    private currentPageId: string;
+    private currentObjId: string;
     private provider: any;
     private ele: JQuery;
     private ytext: YText;
     private updatePeriodMS: number;
     private editor: JQuery;
-    
+    private isReadOnly: boolean;
+    private currentObject:NObject;
+
     constructor(ele:JQuery, db:DB, getAwareness:Function, app:App) {
         this.db = db;
         this.app = app;
         this.getAwareness = getAwareness;
-        this.currentPageId = null;
+        this.currentObjId = '';
         this.provider = null;
         this.ytext = null;
         this.updatePeriodMS = 100;
@@ -31,66 +31,74 @@ export default class Editor {
     }
 
     saveContent() {
-        if (!this.currentPageId || !this.ytext) return;
+        if (!this.currentObjId || !this.ytext || this.isReadOnly) return;
         const content = this.editor.html();
         this.db.doc.transact(() => {
-            const page = this.db.page(this.currentPageId);
-            if (page) {
-                const ytext = this.db.pageContent(this.currentPageId);
+            if (this.currentObject) {
+                const ytext = this.currentObject.text;
                 ytext.delete(0, ytext.length);
                 ytext.insert(0, content);
             }
         });
     }
 
-    viewPage(pageId:string) {
-        if (this.currentPageId === pageId) return;
+    view(obj:NObject) {
+        const objID = obj.id;
+        if (this.currentObjId === objID) return;
         this.editorStop();
 
-        const page = this.db.page(pageId);
-        if (!page) return;
+        this.currentObject = obj;
 
-        this.currentPageId = pageId;
+        // Check if current user is the author
+        this.isReadOnly = this.currentObject.author !== this.app.db.userId;
+        this.currentObjId = objID;
 
-        this.editorStart(pageId);
+        this.editorStart(objID);
 
         const awareness = this.getAwareness();
         awareness.setLocalStateField('cursor', null);
 
-        this.editor.on('select', () => {
-            const sel = window.getSelection();
-            if (sel!==null && sel.rangeCount > 0) {
-                const range = sel.getRangeAt(0);
-                awareness.setLocalStateField('cursor', {
-                    anchor: range.startOffset,
-                    head: range.endOffset
-                });
-            }
-        });
+        if (!this.isReadOnly) {
+            this.editor.on('select', () => {
+                const sel = window.getSelection();
+                if (sel!==null && sel.rangeCount > 0) {
+                    const range = sel.getRangeAt(0);
+                    awareness.setLocalStateField('cursor', {
+                        anchor: range.startOffset,
+                        head: range.endOffset
+                    });
+                }
+            });
+        }
     }
 
     editorStart(pageId:string):void {
-        this.ytext = this.db.pageContent(pageId);
+        this.ytext = this.db.objText(pageId);
 
         this.ele.append(
             this.renderControls(pageId),
+            this.renderMetadataPanel(),
             this.renderToolbar(),
             this.editor = this.renderEditor()
         );
 
-        if (!this.editor || !this.ytext) {
-            new MutationObserver(() => {
+        if (!this.isReadOnly && !this.editor.data('observer')) {
+            const observer = new MutationObserver(() => {
                 const content = this.editor.html();
                 this.ytext.doc.transact(() => {
                     this.ytext.delete(0, this.ytext.length);
                     this.ytext.insert(0, content);
                 });
-            }).observe(this.editor[0], {
+            });
+
+            observer.observe(this.editor[0], {
                 characterData: true,
                 childList: true,
                 subtree: true,
                 attributes: true
             });
+
+            this.editor.data('observer', observer);
         }
 
         this.ytext.observe(event => {
@@ -106,21 +114,107 @@ export default class Editor {
             this.provider.destroy();
             this.provider = null;
         }
+        if (this.editor) {
+            const observer = this.editor.data('observer');
+            if (observer) observer.disconnect();
+        }
         this.ytext = null;
         this.ele.empty();
+        this.currentObject = null;
+        this.isReadOnly = false;
+    }
+
+    renderMetadataPanel():JQuery {
+        if (!this.currentObject) return $('<div>');
+
+        return $('<div>', {
+            class: 'metadata-panel'
+        }).append(
+            $('<div>', { class: 'metadata-row' }).append(
+                $('<span>', { text: 'Created: ' }),
+                $('<span>', { text: new Date(this.currentObject.created).toLocaleString() })
+            ),
+            $('<div>', { class: 'metadata-row' }).append(
+                $('<span>', { text: 'Last Updated: ' }),
+                $('<span>', { text: new Date(this.currentObject.updated).toLocaleString() })
+            ),
+            $('<div>', { class: 'metadata-row' }).append(
+                $('<span>', { text: 'Author: ' }),
+                $('<span>', { text: this.currentObject.author })
+            ),
+            $('<div>', { class: 'metadata-tags' }).append(
+                $('<span>', { text: 'Tags: ' }),
+                this.renderTagsEditor()
+            )
+        );
+    }
+
+    renderTagsEditor():JQuery {
+        const tagsContainer = $('<div>', { class: 'tags-container' });
+
+        if (!this.isReadOnly) {
+            const addTagInput = $('<input>', {
+                type: 'text',
+                class: 'tag-input',
+                placeholder: 'Add tag...'
+            }).keypress(e => {
+                if (e.key === 'Enter') {
+                    const tag = $(e.target).val().toString().trim();
+                    if (tag) {
+                        this.currentObject.addTag(tag);
+                        $(e.target).val('');
+                        this.updateTagsDisplay(tagsContainer);
+                    }
+                }
+            });
+            tagsContainer.append(addTagInput);
+        }
+
+        this.updateTagsDisplay(tagsContainer);
+        return tagsContainer;
+    }
+
+    updateTagsDisplay(container:JQuery) {
+        const tagsDiv = container.find('.tags-list') || $('<div>', { class: 'tags-list' });
+        tagsDiv.empty();
+
+        this.currentObject.tags.forEach(tag => {
+            const tagElement = $('<span>', {
+                class: 'tag',
+                text: tag
+            });
+
+            if (!this.isReadOnly) {
+                tagElement.append(
+                    $('<button>', {
+                        class: 'remove-tag',
+                        text: '×'
+                    }).click(() => {
+                        this.currentObject.removeTag(tag);
+                        this.updateTagsDisplay(container);
+                    })
+                );
+            }
+
+            tagsDiv.append(tagElement);
+        });
+
+        if (!container.find('.tags-list').length) {
+            container.append(tagsDiv);
+        }
     }
 
     renderEditor():JQuery {
         const content = this.ytext ? this.ytext.toString() : '';
         return $('<div>', {
             class: 'editor',
-            contenteditable: true,
+            contenteditable: !this.isReadOnly,
             spellcheck: true,
             html: content
         })
             .on('input', debounce(() => this.saveContent(), this.updatePeriodMS))
             .on('keydown', e => {
-                if (e.ctrlKey || e.metaKey) {
+                if (!this.isReadOnly && (e.ctrlKey || e.metaKey)) {
                     switch (e.key.toLowerCase()) {
                         case 'b':
                             e.preventDefault();
@@ -140,6 +234,8 @@ export default class Editor {
     }
 
     renderToolbar():JQuery {
+        if (this.isReadOnly) return $('<div>');
+
         const toolbar = $('<div>', { class: 'toolbar' });
         [
             {command: 'bold', icon: '𝐁', title: 'Bold'},
@@ -149,20 +245,17 @@ export default class Editor {
             {command: 'insertOrderedList', icon: '1.', title: 'Ordered List'},
             {command: 'insertUnorderedList', icon: '•', title: 'Unordered List'},
             {command: 'insertLink', icon: '🔗', title: 'Insert Link'},
-            {command: 'insertImage', icon: '🖼️', title: 'Insert Image'},
             {command: 'undo', icon: '↩️', title: 'Undo'},
             {command: 'redo', icon: '↪️', title: 'Redo'},
         ].forEach(({ command, icon, title }) => {
             $('<button>', {
                 html: icon,
-                title: title
+                title: title,
+                disabled: this.isReadOnly
             }).click(e => {
                 e.preventDefault();
                 if (command === 'insertLink') {
                     const url = prompt('Enter the URL');
-                    if (url) document.execCommand(command, false, url);
-                } else if (command === 'insertImage') {
-                    const url = prompt('Enter the image URL');
                     if (url) document.execCommand(command, false, url);
                 } else {
                     document.execCommand(command, false, null);
@@ -173,22 +266,47 @@ export default class Editor {
     }
 
     renderControls(pageId:string):JQuery {
-        const page = this.db.page(pageId);
-        return $('<div>').addClass('editor-controls').append(
-            this.renderTitleInput(page, pageId),
-            this.renderPrivacyToggle(page, pageId),
-            this.renderTemplateButtons()
-        );
+        const page = this.db.get(pageId);
+        if (!page) return $('<div>');
+
+        const controls = $('<div>').addClass('editor-controls');
+
+        // Title input
+        controls.append(this.renderTitleInput(page, pageId));
+
+        // Only show privacy toggle and template buttons if not read-only
+        if (!this.isReadOnly) {
+            controls.append(
+                this.renderPrivacyToggle(page, pageId),
+                this.renderTemplateButtons()
+            );
+        }
+
+        // Add read-only indicator if applicable
+        if (this.isReadOnly) {
+            controls.append(
+                $('<div>', {
+                    class: 'readonly-indicator',
+                    text: 'Read Only'
+                })
+            );
+        }
+
+        return controls;
     }
 
     renderTitleInput(page, pageId:string):JQuery {
-        const titleInput = $('<input>', {
+        return $('<input>', {
             type: 'text',
             class: 'title-input',
-            value: page.title,
-            placeholder: 'Page Title'
-        }).on('change', () => this.db.pageTitle(pageId, titleInput.val()));
-        return titleInput;
+            value: page.name,
+            placeholder: 'Page Title',
+            readonly: this.isReadOnly
+        }).on('change', (e) => {
+            if (!this.isReadOnly) {
+                this.currentObject.name = $(e.target).val();
+            }
+        });
     }
 
     renderPrivacyToggle(page, pageId:string) {
@@ -197,9 +315,10 @@ export default class Editor {
             $('<label>', {class: 'toggle-switch'}).append(
                 $('<input>', {
                     type: 'checkbox',
-                    checked: page.isPublic
+                    checked: page.public,
+                    disabled: this.isReadOnly
                 }).on('change', e => {
-                    this.db.pagePrivacy(pageId, e.target.checked);
+                    this.db.objPublic(pageId, e.target.checked);
                     e.target.checked ?
                         this.app.net.shareDocument(pageId) :
                         this.app.net.unshareDocument(pageId);
@@ -210,6 +329,8 @@ export default class Editor {
     }
 
     renderTemplateButtons():JQuery {
+        if (this.isReadOnly) return $('<div>');
+
         const templateButtons = $('<div>', {class: 'template-buttons'});
         [
             {icon: '📝', title: 'Note Template', template: 'note'},
@@ -220,7 +341,8 @@ export default class Editor {
             $('<button>', {
                 class: 'template-button',
                 text: icon,
-                title: title
+                title: title,
+                disabled: this.isReadOnly
             }).click(() => this.insertTemplate(template))
                 .appendTo(templateButtons);
         });
@@ -228,11 +350,10 @@ export default class Editor {
     }
 
     insertTemplate(template:string):void {
+        if (this.isReadOnly) return;
         let html = '<TEMPLATE>';
         document.execCommand('insertHTML', false, html);
     }
-
-
 }
 /*
 TODO

@@ -17,7 +17,7 @@ describe('DB', () => {
         const page = db.page(pageId);
         expect(page).toBeDefined();
         expect(page.title).toBe(title);
-        expect(page.isPublic).toBe(false);
+        expect(page.public).toBe(false);
         expect(page.contentId).toBe(`content-${pageId}`);
     });
 
@@ -40,7 +40,7 @@ describe('DB', () => {
         db.pagePrivacy(pageId, true);
 
         const page = db.page(pageId);
-        expect(page.isPublic).toBe(true);
+        expect(page.public).toBe(true);
     });
 
     test('retrieves page content', () => {

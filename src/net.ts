@@ -55,7 +55,7 @@ class Network {
             signaling: this.signalingServers,
         });
         this.net.awareness.setLocalStateField('user', {
-            id: this.db.userID,
+            id: this.db.userId,
             name: 'Anonymous',
             color: '#' + Math.floor(Math.random() * 16777215).toString(16),
         });
@@ -95,8 +95,8 @@ class Network {
 
     shareDocument(pageId: string) {
         if (!this.docsShared.has(pageId)) {
-            const page = this.db.page(pageId);
-            if (page && page.isPublic) {
+            const page = this.db.get(pageId);
+            if (page && page.public) {
                 // Assuming that sharing a document involves ensuring its content is synced
                 // Since Yjs syncs all shared content in the document, no action is needed here
                 // However, if you have separate Y.Docs per page, initialize and connect them here

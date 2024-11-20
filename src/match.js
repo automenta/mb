@@ -17,13 +17,13 @@ export default class Matching {
         };
 
         // Start processing loop
-        setInterval(() => this.processLoop(), this.processInterval);
+        //setInterval(() => this.processLoop(), this.processInterval);
 
         // Listen for new/changed pages
-        this.db.pages.observe(() => this.onPagesChanged());
+        //this.db.index.observe(() => this.onPagesChanged());
 
         // Network coordination
-        this.net.awareness().on('change', () => this.coordinated());
+        //this.net.awareness().on('change', () => this.coordinated());
     }
 
     on(event, listener) {
@@ -46,7 +46,7 @@ export default class Matching {
         let oldest = null;
         let oldestTime = Infinity;
 
-        for (const [pageId, page] of this.db.pages.entries()) {
+        for (const [pageId, page] of this.db.index.entries()) {
             const lastTime = this.lastProcessed.get(pageId) || 0;
             if (lastTime < oldestTime && !this.processingQueue.has(pageId)) {
                 oldest = pageId;
@@ -105,7 +105,7 @@ export default class Matching {
     async findMatches(pageId, properties) {
         const matches = [];
 
-        for (const [otherId, otherPage] of this.db.pages.entries()) {
+        for (const [otherId, otherPage] of this.db.index.entries()) {
             if (otherId === pageId) continue;
 
             const otherContent = this.db.pageContent(otherId).toString();
@@ -140,12 +140,12 @@ export default class Matching {
         const page = this.db.page(pageId);
         if (!page) return;
 
-        this.db.pageSet(pageId, {
-            ...page,
-            properties,
-            matches,
-            lastProcessed: Date.now()
-        });
+        // this.db.pageSet(pageId, {
+        //     ...page,
+        //     properties,
+        //     matches,
+        //     lastProcessed: Date.now()
+        // });
     }
 
     // Coordinate processing with other nodes

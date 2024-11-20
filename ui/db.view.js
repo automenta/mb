@@ -61,12 +61,12 @@ export default class DBView {
             this.updateTable();
         });
 
-        this.db.pages.observe(() => this.updateTable());
+        this.db.index.observe(() => this.updateTable());
     }
 
     updateTable() {
         const $tbody = this.ele.find('tbody').empty();
-        let pages = Array.from(this.db.pages.entries()).map(([key, value]) => ({ pageId: key, ...value }));
+        let pages = Array.from(this.db.index.entries()).map(([key, value]) => ({ pageId: key, ...value }));
 
         if (this.filterText)
             pages = pages.filter(page => page.title.toLowerCase().includes(this.filterText));
@@ -78,8 +78,8 @@ export default class DBView {
         });
 
         pages.forEach(page => {
-            const contentPreview = this.db.pageContent(page.pageId).toString().slice(0, 100) + (this.db.pageContent(page.pageId).length > 100 ? '...' : '');
-            const isPublic = page.isPublic ? 'Yes' : 'No';
+            const contentPreview = page.text.slice(0, 100);
+            const isPublic = page.p ? 'Yes' : 'No';
             $tbody.append(`
                 <tr>
                     <td>${page.pageId}</td>
