@@ -1,12 +1,12 @@
 import $ from "jquery";
-import NObject from '../src/obj';
+import Mobject from '../src/obj';
 import {YEvent} from "yjs";
 
 export default class ObjViewMini {
     public readonly ele: JQuery;
-    private obj: NObject;
+    private obj: Mobject;
 
-    constructor(obj: NObject) {
+    constructor(obj: Mobject) {
         this.obj = obj;
         this.ele = $('<li>').addClass('obj-view-mini').css({
             display: 'flex',

@@ -5,6 +5,7 @@ import DB from '../src/db'
 import ObjViewMini from './obj.view.mini'
 
 import MeView from "./me.view";
+import FrensView from "./frens.view";
 import NetView from "./net.view.js";
 import DBView from "./db.view.js";
 import MatchingView from "./match.view.js";
@@ -75,50 +76,13 @@ class PageContextMenu {
     }
 }
 
-
-class FriendsView {
-    private readonly root: JQuery;
-    private readonly getAwareness: Function;
-    private readonly container: JQuery;
-
-    constructor(root:JQuery, getAwareness:Function) {
-        this.root = root;
-        this.getAwareness = getAwareness;
-        this.container = $('<div>').addClass('friends-list-page');
-    }
-
-    render() {
-        this.container.empty();
-
-        this.root.find('.main-view').empty().append(this.container);
-
-        this.container.html(`
-            <h3>Friends</h3>
-            <ul></ul>
-        `);
-
-        const updateFriends = () => {
-            const users = [];
-            this.getAwareness().getStates().forEach(state => {
-                if (state.user) users.push(state.user);
-            });
-
-            const ul = this.container.find('ul').empty();
-            users.forEach(user => ul.append($('<li>').text(user.name).css('color', user.color)));
-        };
-
-        updateFriends();
-        this.getAwareness().on('change', updateFriends);
-    }
-}
-
 import ContextMenuEvent = JQuery.ContextMenuEvent;
 
 export default class Sidebar {
     readonly ele: JQuery;
     private readonly db: DB;
     private readonly meView: MeView;
-    private readonly friendsView: FriendsView;
+    private readonly friendsView: FrensView;
     private readonly netView: NetView;
     private readonly dbView: DBView;
     private readonly matchingView: MatchingView;
@@ -136,7 +100,7 @@ export default class Sidebar {
 
         const thisAware = app.awareness.bind(app);
         this.meView = new MeView(root, app.user.bind(app), thisAware);
-        this.friendsView = new FriendsView(root, thisAware);
+        this.friendsView = new FrensView(root, thisAware);
         this.netView = new NetView(root.find('.main-view'), app.net);
         this.dbView = new DBView(root, this.db);
         this.matchingView = new MatchingView(root, app.match);
@@ -171,7 +135,7 @@ export default class Sidebar {
 
         [
             {id: 'profile',  title: 'Me'},
-            {id: 'friends',  title: 'Friends'},
+            {id: 'friends',  title: 'FRENS'},
             {id: 'network',  title: 'Net'},
             {id: 'database', title: 'DB'},
             {id: 'matching', title: 'Matching'},

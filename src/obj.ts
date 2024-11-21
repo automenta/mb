@@ -2,7 +2,7 @@ import * as Y from "yjs";
 
 type Observer = (events: Y.YEvent<any>[]) => void;
 
-export default class NObject {
+export default class Mobject {
     public readonly root: Y.Map<any>;
 
     constructor(private doc: Y.Doc, public id:string) {

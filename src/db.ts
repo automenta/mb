@@ -1,7 +1,7 @@
 // src/db.ts
 import * as Y from 'yjs';
 import {IndexeddbPersistence} from 'y-indexeddb';
-import NObject from "./obj";
+import Mobject from "./obj";
 import {v4 as uuid} from "uuid";
 
 // DB: Main database interface
@@ -18,16 +18,16 @@ export default class DB {
     }
 
     // Core operations
-    create(): NObject {
-        const obj = new NObject(this.doc, uuid());
+    create(): Mobject {
+        const obj = new Mobject(this.doc, uuid());
         obj.init();
         obj.author = this.userId;
         this.index.set(obj.id, obj.toJSON());
         return obj;
     }
 
-    get(id: string): NObject | null {
-        try { return new NObject(this.doc, id); }
+    get(id: string): Mobject | null {
+        try { return new Mobject(this.doc, id); }
         catch { return null; }
     }
 
@@ -46,10 +46,10 @@ export default class DB {
     }
 
     // Queries
-    list = (): NObject[] =>
+    list = (): Mobject[] =>
         Array.from(this.index.keys())
             .map(id => this.get(id))
-            .filter((obj): obj is NObject => obj !== null);
+            .filter((obj): obj is Mobject => obj !== null);
 
     listByTag = (tag: string) =>
         this.list().filter(obj => obj.tags.includes(tag));
@@ -57,7 +57,7 @@ export default class DB {
     listByAuthor = (author: string) =>
         this.list().filter(obj => obj.author === author);
 
-    search = (query: string): NObject[] => {
+    search = (query: string): Mobject[] => {
         const q = query.toLowerCase();
         return this.list().filter(obj =>
             obj.name.toLowerCase().includes(q) ||
@@ -66,7 +66,7 @@ export default class DB {
     }
 
     // Reply operations
-    createReply(parentId: string, name?: string): NObject | null {
+    createReply(parentId: string, name?: string): Mobject | null {
         const parent = this.get(parentId);
         if (!parent) return null;
 
@@ -77,15 +77,15 @@ export default class DB {
         return reply;
     }
 
-    getReplies = (id: string): NObject[] =>
+    getReplies = (id: string): Mobject[] =>
         Array.from(this.get(id)?.replies ?? [])
             .map(rid => this.get(rid))
-            .filter((r): r is NObject => r !== null);
+            .filter((r): r is Mobject => r !== null);
 
-    getRepliesTo = (id: string): NObject[] =>
+    getRepliesTo = (id: string): Mobject[] =>
         Array.from(this.get(id)?.repliesTo ?? [])
             .map(pid => this.get(pid))
-            .filter((p): p is NObject => p !== null);
+            .filter((p): p is Mobject => p !== null);
 
 
     // observe = (fn: Observer): void => this.index.observe(fn);

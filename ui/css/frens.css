@@ -1,0 +1,13 @@
+.frens-list-page {
+color: rgba(84,255,182,0.72);
+
+}
+
+.frens-list-page li:nth-child(even) {
+color: rgba(27,90,255,0.72);
+
+}
+
+.frens-list-page li:nth-child(odd) {
+color: rgba(79,48,255,0.72);
+}

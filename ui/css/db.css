@@ -24,6 +24,12 @@
     overflow: auto;
 }
 
+.database-wrapper tr:nth-child(even){
+    background-color: rgba(122,94,255,0.72);
+}
+.database-wrapper tr:nth-child(odd){
+    background-color: rgba(122,180,255,0.72);
+}
 .database-page .database-table {
     width: 100%;
     border-collapse: collapse;
@@ -41,5 +47,5 @@
 }
 
 .database-page .database-table tr:hover {
-    background-color: #f1f1f1;
+    background-color: rgba(225,255,205,0.72);
 }
