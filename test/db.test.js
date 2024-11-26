@@ -15,6 +15,7 @@ vi.mock('y-indexeddb', () => ({
 
 describe('DB', () => {
     let db;
+    let mockStorage;
 
     beforeAll(() => {
         // Ensure the mock is reset before each test suite
@@ -23,8 +24,9 @@ describe('DB', () => {
 
     beforeEach(async () => {
         db = new DB('test-user');
-        // Clear the mock database before each test - this line was the problem
-        (db.storage as any).clear(); 
+        mockStorage = (db.storage as any); // Get the mock instance
+        // Clear the mock database before each test
+        mockStorage.clear(); 
     });
 
     test('creates new object with correct structure', async () => {
@@ -87,18 +89,18 @@ describe('DB', () => {
     });
 
     test('Database error handling - create', async () => {
-        (db.storage as any).persist.mockRejectedValueOnce(new Error('Database error'));
+        mockStorage.persist.mockRejectedValueOnce(new Error('Database error'));
         await expect(db.create()).rejects.toThrow('Database error');
     });
 
     test('Database error handling - get', async () => {
-        (db.storage as any).load.mockRejectedValueOnce(new Error('Database error'));
+        mockStorage.load.mockRejectedValueOnce(new Error('Database error'));
         await expect(db.get(uuid())).rejects.toThrow('Database error');
     });
 
     test('Database error handling - delete', async () => {
         const obj = await db.create();
-        (db.storage as any).persist.mockRejectedValueOnce(new Error('Database error'));
+        mockStorage.persist.mockRejectedValueOnce(new Error('Database error'));
         await expect(db.delete(obj.id)).rejects.toThrow('Database error');
     });
 
