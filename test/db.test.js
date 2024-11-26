@@ -24,9 +24,10 @@ describe('DB', () => {
 
     beforeEach(async () => {
         db = new DB('test-user');
-        mockStorage = (db.storage as any); // Get the mock instance
+        // Access the mock instance directly without type assertion
+        mockStorage = (db.storage); 
         // Clear the mock database before each test
-        mockStorage.clear(); 
+        await mockStorage.clear(); // Added await here to ensure clear completes before proceeding
     });
 
     test('creates new object with correct structure', async () => {
