@@ -23,8 +23,8 @@ describe('DB', () => {
 
     beforeEach(async () => {
         db = new DB('test-user');
-        // Clear the mock database before each test
-        (db.storage as any).clear();
+        // Clear the mock database before each test - this line was the problem
+        (db.storage as any).clear(); 
     });
 
     test('creates new object with correct structure', async () => {
@@ -61,11 +61,24 @@ describe('DB', () => {
         expect(obj.name).toBe(newTitle);
     });
 
-    // ... other tests ...
+    test('delete object', async () => {
+        const obj = await db.create();
+        expect(await db.delete(obj.id)).toBe(true);
+        expect(await db.get(obj.id)).toBeNull();
+    });
 
     test('delete object - handles non-existent object', async () => {
         const nonExistentId = uuid();
         await expect(db.delete(nonExistentId)).resolves.toBe(false);
+    });
+
+    test('createReply', async () => {
+        const parent = await db.create();
+        const reply = await db.createReply(parent.id, 'Reply Title');
+        expect(reply).toBeDefined();
+        expect(reply?.name).toBe('Reply Title');
+        expect(parent.replies.has(reply?.id)).toBe(true);
+        expect(reply?.repliesTo.has(parent.id)).toBe(true);
     });
 
     test('createReply - handles non-existent parent', async () => {
@@ -74,10 +87,21 @@ describe('DB', () => {
     });
 
     test('Database error handling - create', async () => {
-        //(db.storage as any).create.mockRejectedValue(new Error('Database error'));
+        (db.storage as any).persist.mockRejectedValueOnce(new Error('Database error'));
         await expect(db.create()).rejects.toThrow('Database error');
     });
 
+    test('Database error handling - get', async () => {
+        (db.storage as any).load.mockRejectedValueOnce(new Error('Database error'));
+        await expect(db.get(uuid())).rejects.toThrow('Database error');
+    });
+
+    test('Database error handling - delete', async () => {
+        const obj = await db.create();
+        (db.storage as any).persist.mockRejectedValueOnce(new Error('Database error'));
+        await expect(db.delete(obj.id)).rejects.toThrow('Database error');
+    });
+
+
     // Add more tests for error handling in other methods (get, delete, etc.)
 });
-
