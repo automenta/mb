@@ -1,65 +1,58 @@
 import express from 'express';
 import http from 'http';
-import { Server as SocketIOServer } from 'socket.io';
-import { createServer as createViteServer } from 'vite';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import {Server as wsServer, Socket} from 'socket.io';
+import {createServer as viteServer} from 'vite';
 
 const PORT = 3000;
 
 (async () => {
-    // Initialize Express app
     const app = express();
 
-    // Create Vite server and integrate it with Express
-    const vite = await createViteServer({
-        server: { middlewareMode: 'html' },
-        root: path.resolve('../'),//path.dirname(new URL(import.meta.url).pathname), '../ui'),
-    });
+    app.use((await viteServer({
+        server: {
+            middlewareMode: 'html'
+        },
+        root: path.resolve('../'),
+    })).middlewares);
 
-    // Use Vite's connect instance as middleware
-    app.use(vite.middlewares);
-
-    // Create HTTP server
     const httpServer = http.createServer(app);
 
-    // Initialize Socket.IO for signaling
-    const io = new SocketIOServer(httpServer, {
+    const io = new wsServer(httpServer, {
         cors: {
             origin: '*', // Update this to specify the allowed origins for better security
         },
     });
 
-    // Define WebRTC signaling events
-    io.on('connection', (socket) => {
-        console.log('User connected:', socket.id);
+    function wsConnect(s:Socket) {
+        console.log('User connected:', s.id);
 
         // Relay signaling messages between clients
-        socket.on('signal', (message) => {
-            const { target, data } = message;
-            console.log(`Relaying message from ${socket.id} to ${target}`);
-            io.to(target).emit('signal', { sender: socket.id, data });
+        s.on('signal', message => {
+            const {target, data} = message;
+            console.log(`Relaying message from ${s.id} to ${target}`);
+            io.to(target).emit('signal', {sender: s.id, data});
         });
 
         // Handle room joining
-        socket.on('join', (roomId) => {
-            socket.join(roomId);
-            console.log(`${socket.id} joined room: ${roomId}`);
-            socket.to(roomId).emit('user-joined', { userId: socket.id });
+        s.on('join', roomId => {
+            s.join(roomId);
+            console.log(`${s.id} joined room: ${roomId}`);
+            s.to(roomId).emit('user-joined', {userId: s.id});
         });
 
         // Handle disconnect
-        socket.on('disconnect', () => {
-            console.log('User disconnected:', socket.id);
+        s.on('disconnect', () => {
+            console.log('User disconnected:', s.id);
         });
-    });
+    }
+    io.on('connection', socket => wsConnect(socket, io));
 
     // Define HTTP routes
     app.get('/status', (req, res) => {
         res.json({ status: 'OK', timestamp: new Date() });
     });
 
-    // Start the server
     httpServer.listen(PORT, () => {
         console.log(`Signaling server is running at http://localhost:${PORT}`);
     });
