@@ -22,7 +22,7 @@ export default class FrensView {
             <ul></ul>
         `);
 
-        const updateFrens = () => {
+        const   updateFrens = () => {
             const users: any[] = [];
             this.getAwareness().getStates().forEach((state: { user: any; }) => {
                 if (state.user) users.push(state.user);
