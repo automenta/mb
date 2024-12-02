@@ -3,11 +3,13 @@ import http from 'http';
 import path from 'path';
 import {Server as wsServer, Socket} from 'socket.io';
 import {createServer as viteServer} from 'vite';
+import {OutgoingHttpHeaders} from "node:http";
 
 const PORT = 3000;
 
 (async () => {
     const app = express();
+
 
     app.use((await viteServer({
         server: {
