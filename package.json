@@ -15,18 +15,16 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@rollup/rollup-darwin-arm64": "^4.28.0",
-    "cors": "^2.8.5",
-    "express": "^4.21.1",
+    "cors": "latest",
+    "express": "latest",
     "jquery": "latest",
     "socket.io": "latest",
     "uuid": "latest",
     "vite": "latest",
-    "ws": "^8.18.0",
+    "ws": "latest",
     "y-indexeddb": "latest",
     "y-webrtc": "latest",
-    "yjs": "latest",
-    "rollup": "latest"
+    "yjs": "latest"
   },
   "devDependencies": {
     "@types/jquery": "latest",

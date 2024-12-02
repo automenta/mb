@@ -2,15 +2,15 @@ import * as Y from "yjs";
 
 type Observer = (events: Y.YEvent<any>[]) => void;
 
-export default class Mobject {
-    public readonly root: Y.Map<any>;
+export default class NObject {
+    private readonly root: Y.Map<any>;
 
     constructor(private doc: Y.Doc, public id:string) {
         this.id = id;
         this.root = doc.getMap(id);
     }
 
-    public init(): void {
+    public init(author:string): void {
         const now = Date.now();
         this.doc.transact(() => {
             this.root.set('content', new Y.Text());
@@ -26,7 +26,7 @@ export default class Mobject {
             meta.set('created', now);
             meta.set('updated', now);
             meta.set('public', false);
-            meta.set('author', '');
+            meta.set('author', author);
             meta.set('tags', new Y.Array());
             this.root.set('metadata', meta);
         });

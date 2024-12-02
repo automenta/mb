@@ -20,8 +20,7 @@ export default class DB {
     // Core operations
     create(): Mobject {
         const obj = new Mobject(this.doc, uuid());
-        obj.init();
-        obj.author = this.userId;
+        obj.init(this.userId);
         this.index.set(obj.id, obj.toJSON());
         return obj;
     }

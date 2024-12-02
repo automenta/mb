@@ -6,7 +6,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const PORT = 3000;
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 (async () => {
     // Initialize Express app
@@ -15,7 +14,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
     // Create Vite server and integrate it with Express
     const vite = await createViteServer({
         server: { middlewareMode: 'html' },
-        root: path.resolve(path.dirname(new URL(import.meta.url).pathname), '../ui'),
+        root: path.resolve('../'),//path.dirname(new URL(import.meta.url).pathname), '../ui'),
     });
 
     // Use Vite's connect instance as middleware
