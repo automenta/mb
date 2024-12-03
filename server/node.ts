@@ -9,44 +9,20 @@ import { bootstrap } from '@libp2p/bootstrap';
 import { kadDHT } from '@libp2p/kad-dht';
 import { gossipsub } from '@chainsafe/libp2p-gossipsub';
 
-import {Server as wsServer, Socket} from 'socket.io';
-import {createServer as viteServer} from 'vite';
+import express from 'express';
+import http from 'http';
+import path from 'path';
+import { Server as wsServer, Socket } from 'socket.io';
+import { createServer as viteServer } from 'vite';
+import P2P from './p2p';
 
 const PORT = 3000;
-const LIBP2P_ENABLED = process.env.LIBP2P_ENABLED === 'true';
 
 (async () => {
     const app = express();
 
-    let libp2p;
-    if (LIBP2P_ENABLED) {
-        libp2p = await createLibp2p({
-            addresses: {
-                listen: ['/ip4/0.0.0.0/tcp/0']
-            },
-            transports: [webSockets()],
-            connectionEncryption: [noise()],
-            streamMuxers: [mplex()],
-            peerDiscovery: [
-                bootstrap({
-                    list: ['/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN']
-                })
-            ],
-            dht: kadDHT(),
-            pubsub: gossipsub()
-        });
-
-        libp2p.addEventListener('peer:discovery', (evt) => {
-            const peerId = evt.detail.id.toString();
-            console.log(`Discovered peer: ${peerId}`);
-            //TODO: connect to discovered peer
-        });
-
-        await libp2p.start();
-        console.log(`Libp2p started with peer ID: ${libp2p.peerId.toString()}`);
-    }
-
-
+    const p2p = new P2P();
+    await p2p.start();
 
     app.use((await viteServer({
         server: {
@@ -66,26 +42,9 @@ const LIBP2P_ENABLED = process.env.LIBP2P_ENABLED === 'true';
     function wsConnect(s:Socket) {
         console.log('User connected:', s.id);
 
-        // Relay signaling messages between clients
-        s.on('signal', message => {
-            const {target, data} = message;
-            console.log(`Relaying message from ${s.id} to ${target}`);
-            io.to(target).emit('signal', {sender: s.id, data});
-        });
+        p2p.handleSocketConnection(socket);
+    });
 
-        // Handle room joining
-        s.on('join', roomId => {
-            s.join(roomId);
-            console.log(`${s.id} joined room: ${roomId}`);
-            s.to(roomId).emit('user-joined', {userId: s.id});
-        });
-
-        // Handle disconnect
-        s.on('disconnect', () => {
-            console.log('User disconnected:', s.id);
-        });
-    }
-    io.on('connection', socket => wsConnect(socket, io));
 
     // Define HTTP routes
     app.get('/status', (req, res) => {
