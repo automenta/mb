@@ -1,6 +1,6 @@
 import $ from "jquery";
 import DB from '../src/db'
-import Mobject from '../src/obj'
+import NObject from '../src/obj'
 import App from './app'
 import {debounce} from "../src/util.js";
 import '/ui/css/editor.css';
@@ -17,7 +17,7 @@ export default class Editor {
     private updatePeriodMS: number;
     private editor: JQuery;
     private isReadOnly: boolean;
-    private currentObject:Mobject;
+    private currentObject:NObject;
 
     constructor(ele:JQuery, db:DB, getAwareness:Function, app:App) {
         this.db = db;
@@ -42,7 +42,7 @@ export default class Editor {
         });
     }
 
-    view(obj:Mobject) {
+    view(obj:NObject) {
         const objID = obj.id;
         if (this.currentObjId === objID) return;
         this.editorStop();
