@@ -7,7 +7,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UI Elements</title>
     <link id="theme-stylesheet" rel="stylesheet" href="../css/light-mode.css">
+    <script src="../../node_modules/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript">
+        function open_modal(){
+            $("#modal1").show();
+        }
+        function close_modal(){
+            $("#modal1").hide();
+        }
 
+    </script>
 </head>
 <body>
 
@@ -118,15 +127,18 @@ Here's a comprehensive list of user interface components found in modern web bro
 
 
 <h2>12. Modal Dialog (Custom)</h2>
+<button onclick="open_modal();">Open</button>
 
-<div class="modal">
+<div id="modal1" class="modal">
     <div class="modal-content">
         <p>Modal content goes here.</p>
-        <button>Close</button>
+        <button onclick="close_modal();">Close</button>
     </div>
 
 </div>
 </br>
 <script src="theme-toggle.js"></script>
+
+
 </body>
 </html>
