@@ -1,0 +1,68 @@
+/* Dark Mode */
+:root {
+    --background-color: #1e293b;
+    --text-color: #e5e7eb;
+    --primary-color: #89c9b8;
+    --hover-color: #74b5a2;
+    --border-color: #3b4355;
+    --input-bg: #2c3e50;
+    --button-text: #ffffff;
+    --table-header-bg: #34495e;
+}
+
+/* General Body Styling */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+}
+
+/* Inputs */
+input[type="text"], input[type="password"], input[type="search"], input[type="email"], textarea {
+    width: 300px;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: var(--input-bg);
+    font-size: 16px;
+    color: var(--text-color);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+input:focus, textarea:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+/* Buttons */
+button {
+    background-color: var(--primary-color);
+    color: var(--button-text);
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+button:hover {
+    background-color: var(--hover-color);
+}
+
+/* Select Dropdown */
+select {
+    width: 300px;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+}
+
+/* Other Elements */
+input[type="checkbox"], input[type="radio"], input[type="range"], progress, input[type="file"], table, .modal-content {
+    background-color: var(--input-bg);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
