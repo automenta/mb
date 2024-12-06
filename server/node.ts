@@ -1,53 +1,88 @@
 import express from 'express';
 import http from 'http';
 import path from 'path';
-import {Server as wsServer, Socket} from 'socket.io';
-import {createServer as viteServer} from 'vite';
+import { Server as SocketIOServer, Socket } from 'socket.io';
+import { createServer as viteServer } from 'vite';
+import { Plugin } from './Plugin';
+
+
+// Dynamic imports for plugins
+async function loadPlugin(pluginName: string): Promise<Plugin> {
+    const module = await import(`./${pluginName}Plugin`);
+    return new module.default();
+}
+
+interface AppConfig {
+    plugins: { [pluginName: string]: any };
+}
+
+function loadConfig(): AppConfig {
+    // ... (Implementation to load config from file or environment)
+    // Placeholder for demonstration
+    return {
+        plugins: {
+            P2P: { enabled: true, /* ... other P2P options */ }
+        }
+    };
+}
 
 const PORT = 3000;
 
 (async () => {
     const app = express();
 
-
     app.use((await viteServer({
-        server: {
-            middlewareMode: 'html'
-        },
+        server: { middlewareMode: 'html' },
         root: path.resolve('../'),
     })).middlewares);
 
     const httpServer = http.createServer(app);
 
-    const io = new wsServer(httpServer, {
-        cors: {
-            origin: '*', // Update this to specify the allowed origins for better security
-        },
+    const io = new SocketIOServer(httpServer, {
+        cors: { origin: '*' },
     });
 
-    function wsConnect(s:Socket) {
+    const appConfig = loadConfig();
+    const plugins: { [pluginName: string]: Plugin } = {};
+
+    for (const pluginName in appConfig.plugins) {
+        if (appConfig.plugins[pluginName].enabled) {
+            const plugin = await loadPlugin(pluginName);
+            plugins[pluginName] = plugin;
+            await plugin.init(io, appConfig.plugins[pluginName]);
+            await plugin.start();
+        }
+    }
+
+    function wsConnect(s: Socket) {
         console.log('User connected:', s.id);
 
-        // Relay signaling messages between clients
-        s.on('signal', message => {
-            const {target, data} = message;
+        s.on('signal', (message) => {
+            const { target, data } = message;
             console.log(`Relaying message from ${s.id} to ${target}`);
-            io.to(target).emit('signal', {sender: s.id, data});
+            io.to(target).emit('signal', { sender: s.id, data });
         });
 
-        // Handle room joining
-        s.on('join', roomId => {
+        s.on('join', (roomId) => {
             s.join(roomId);
             console.log(`${s.id} joined room: ${roomId}`);
-            s.to(roomId).emit('user-joined', {userId: s.id});
+            s.to(roomId).emit('user-joined', { userId: s.id });
         });
 
-        // Handle disconnect
         s.on('disconnect', () => {
             console.log('User disconnected:', s.id);
         });
+
+        // Generic plugin message handler
+        s.on('plugin-message', async (pluginName, topic, message) => {
+            if (plugins[pluginName] && plugins[pluginName].handleMessage) {
+                await plugins[pluginName].handleMessage(topic, message);
+            }
+        });
     }
-    io.on('connection', socket => wsConnect(socket, io));
+
+    io.on('connection', (socket) => wsConnect(socket));
+
 
     // Define HTTP routes
     app.get('/status', (req, res) => {
