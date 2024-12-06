@@ -1,7 +1,7 @@
 import { Node } from 'libp2p';
 import { createLibp2p } from 'libp2p';
 import { bootstrap } from '@libp2p/bootstrap';
-import { KadDHT } from '@libp2p/kad-dht';
+import { kadDHT } from '@libp2p/kad-dht';
 import { webRTCStar } from '@libp2p/webrtc-star';
 import { GossipSub } from '@chainsafe/libp2p-gossipsub';
 import { multiaddr } from 'multiaddr';
@@ -51,7 +51,7 @@ class P2PNode extends EventEmitter {
             peerDiscovery: [
                 new bootstrap({ list: bs })
             ],
-            dht: new KadDHT(),
+            dht: new kadDHT(),
             pubsub: new GossipSub(),
         });
         }
