@@ -5,7 +5,6 @@ import { KadDHT } from '@libp2p/kad-dht';
 import { webRTCStar } from '@libp2p/webrtc-star';
 import { GossipSub } from '@chainsafe/libp2p-gossipsub';
 import { multiaddr } from 'multiaddr';
-import { KadDHT } from '@libp2p/kad-dht';
 import { MainlineDHT } from 'bittorrent-dht';
 import { EventEmitter } from 'events';
 import { noise } from '@chainsafe/libp2p-noise';
