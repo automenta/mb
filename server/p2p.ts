@@ -1,58 +1,107 @@
-import { Plugin } from './Plugin';
-import P2PNode from './P2PNode'; // Assuming P2PNode is now in its own file
-import { Server as SocketIOServer } from 'socket.io';
-// ... other imports
+import { Node } from 'libp2p';
+import { createLibp2p } from 'libp2p';
+import { bootstrap } from '@libp2p/bootstrap';
+import { KadDHT } from '@libp2p/kad-dht';
+import { webRTCStar } from '@libp2p/webrtc-star';
+import { GossipSub } from '@chainsafe/libp2p-gossipsub';
+//import { multiaddr } from 'multiaddr';
+import { MainlineDHT } from 'bittorrent-dht';
+import { EventEmitter } from 'events';
+import { noise } from '@chainsafe/libp2p-noise';
+import { mplex } from '@libp2p/mplex';
+import { PeerId } from '@libp2p/interface-peer-id';
 
-interface P2PConfig {
-    enabled: boolean;
-    // ... other config options
+interface P2PNodeOptions {
+    peerId: PeerId;
+    bootstrapList?: string[];
 }
 
-export default class P2PPlugin implements Plugin {
-    name = 'P2P';
-    private p2pNode: P2PNode | null = null;
-    private io: SocketIOServer | null = null;
-    private config: P2PConfig | null = null;
+class P2PNode extends EventEmitter {
+    private node: Node;
+    private dht: any;
 
+    constructor(options: P2PNodeOptions) {
+        super();
+        this.node = this.createLibp2pNode(options);
+        this.dht = new MainlineDHT();
+    }
 
-    async init(io: SocketIOServer, config: P2PConfig): Promise<void> {
-        this.io = io;
-        this.config = config;
-        if (this.config.enabled) {
-            await this.start();
+    private createLibp2pNode(options: P2PNodeOptions): Node {
+        const bs = options.bootstrapList || [
+            "/dns4/bootstrap.libp2p.io/tcp/443/wss/p2p-webrtc-star/",
+            "/dns4/bootstrap.libp2p.io/tcp/443/wss/p2p-webrtc-star/"
+        ];
+
+        return createLibp2p({
+            peerId: options.peerId,
+            addresses: {
+                listen: [
+                    '/dns4/localhost/tcp/0/ws',
+                ]
+            },
+            transports: [
+                new webRTCStar()
+            ],
+            connectionEncryption: [
+                new noise()
+            ],
+            streamMuxers: [
+                new mplex()
+            ],
+            peerDiscovery: [
+                new bootstrap({ list: bs })
+            ],
+            dht: new KadDHT(),
+            pubsub: new GossipSub(),
+        });
+        }
+
+    async start() {
+        await this.node.start();
+        this.setupEventListeners();
+        this.dht.listen(6881, () => console.log('Mainline DHT listening on port 6881'));
+    }
+
+    async stop() {
+        await this.node.stop();
+        this.dht.destroy();
+        }
+
+    private setupEventListeners() {
+        this.node.connectionManager.addEventListener('peer:connect', e => {
+            const connection = e.detail;
+            console.log('Connected to:', connection.remotePeer.toString());
+            this.emit('peer:connect', connection);
+        });
+
+        this.node.pubsub.addEventListener('message', e => {
+            const msg = e.detail;
+            console.log('Received message:', msg.data.toString());
+            this.emit('message', msg);
+        });
+
+        this.dht.on('peer', peer => {
+            console.log('Found peer:', peer);
+            this.emit('dht:peer', peer);
+        });
+    }
+
+    async sendGossipMessage(topic: string, message: string) {
+        await this.node.pubsub.publish(topic, Buffer.from(message));
+        }
+
+    async getPeers() {
+        return this.node.peerStore.getPeers();
+    }
+
+    async findNode(id: string) {
+        return new Promise((resolve, reject) => {
+            this.dht.lookup(id, (err, res) => {
+                if (err) reject(err);
+                resolve(res);
+            });
+        });
         }
     }
 
-    async start(): Promise<void> {
-        if (!this.io || !this.config) {
-            throw new Error("Plugin not initialized. Call 'init' first.");
-        }
-
-        // ... existing startP2P logic, using this.io for events
-        // Example:
-        // this.p2pNode = new P2PNode({ /* ... config */ });
-        // await this.p2pNode.start();
-        // this.p2pNode.on('peer:connect', (connection) => {
-        //     this.io?.emit('p2p:peer-connected', connection.remotePeer.toString());
-        // });
-    }
-
-    async stop(): Promise<void> {
-        if (this.p2pNode) {
-            await this.p2pNode.stop();
-            this.p2pNode = null;
-        }
-    }
-
-    sendMessage(topic: string, message: string): void {
-        if (this.p2pNode) {
-            this.p2pNode.sendGossipMessage(topic, message);
-        }
-    }
-
-    async handleMessage(topic: string, message: any): void {
-        if (topic === 'p2p:send-message') {
-            this.sendMessage('global', message); // Or handle other topics
-        }
-    }
-}
+export default P2PNode;
