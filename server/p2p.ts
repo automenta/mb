@@ -10,6 +10,7 @@ import { EventEmitter } from 'events';
 import { noise } from '@chainsafe/libp2p-noise';
 import { mplex } from '@libp2p/mplex';
 import { PeerId } from '@libp2p/interface-peer-id';
+import { logger } from 'libp2p';
 
 interface P2PNodeOptions {
     peerId: PeerId;
@@ -52,7 +53,9 @@ class P2PNode extends EventEmitter {
                 new bootstrap({ list: bs })
             ],
             dht: new kadDHT(),
-            pubsub: new GossipSub(),
+            pubsub: new GossipSub({
+                logger: logger
+            }),
         });
         }
 
