@@ -1,4 +1,3 @@
-import { Node } from 'libp2p';
 import { createLibp2p } from 'libp2p';
 import { bootstrap } from '@libp2p/bootstrap';
 import { kadDHT } from '@libp2p/kad-dht';
@@ -10,7 +9,8 @@ import { EventEmitter } from 'events';
 import { noise } from '@chainsafe/libp2p-noise';
 import { mplex } from '@libp2p/mplex';
 import { PeerId } from '@libp2p/interface-peer-id';
-import { logger } from 'libp2p';
+
+import { logger } from 'libp2p'; //TODO ComponentLogger??
 
 interface P2PNodeOptions {
     peerId: PeerId;

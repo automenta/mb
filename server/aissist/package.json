@@ -2,28 +2,28 @@
   "name": "aissist",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/index.js",
+  "main": "index.html",
+  "chromium-args": "--mixed-context --enable-node-worker",
   "scripts": {
-    "start": "tsc ; electron . --no-sandbox",
-    "build": "tsc"
+    "start": "npx nw . --enable-devtools"
   },
   "dependencies": {
+    "@evgenys91/active-win": "latest",
     "axios": "latest",
     "desktop-screenshot": "latest",
     "dotenv": "latest",
-    "electron": "latest",
     "form-data": "latest",
+    "graphlib": "latest",
     "node-fetch": "latest",
     "node-global-key-listener": "latest",
     "sharp": "latest",
     "systeminformation": "latest",
-    "tesseract.js": "latest",
-    "@evgenys91/active-win": "latest"
+    "node-tesseract-ocr": "latest"
   },
   "devDependencies": {
-    "@types/electron": "latest",
     "@types/node": "latest",
     "@types/screenshot-desktop": "latest",
+    "nw": "^0.94.0-sdk",
     "typescript": "latest"
   },
   "private": true

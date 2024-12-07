@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>NW.js Screenshot Analyzer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        #status {
+            font-weight: bold;
+            color: green;
+        }
+        #data {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #fff;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        pre {
+            overflow: auto;
+            max-width: 100%;
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        #query-section {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        #query-section h3 {
+            margin-top: 0;
+        }
+        label {
+            display: inline-block;
+            width: 100px;
+        }
+        input[type="datetime-local"] {
+            width: 250px;
+        }
+        button {
+            padding: 5px 10px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        #query-results {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #fff;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        #notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #444;
+            color: #fff;
+            padding: 15px;
+            border-radius: 4px;
+            opacity: 0.9;
+            display: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+<h1>NW.js Screenshot Analyzer</h1>
+<p>Status: <span id="status">Running</span></p>
+<div id="data">
+    <p>No data collected yet.</p>
+</div>
+
+<div id="query-section">
+    <h3>Query Snapshots by Time Range</h3>
+    <label for="start">Start Time:</label>
+    <input type="datetime-local" id="start" name="start">
+    <br><br>
+    <label for="end">End Time:</label>
+    <input type="datetime-local" id="end" name="end">
+    <br><br>
+    <button id="query-btn">Query</button>
+    <div id="query-results">
+        <p>No query results.</p>
+    </div>
+</div>
+
+<div id="notification"></div>
+
+<script>
+    // Import required modules
+    const { Graph } = require('graphlib');
+    const axios = require('axios');
+    const screenshotDesktop = require('screenshot-desktop');
+    const sharp = require('sharp');
+    const si = require('systeminformation');
+    const activeWin = require('@evgenys91/active-win');
+    const crypto = require('crypto');
+
+    const Utils = {
+        delay: (ms) => new Promise(resolve => setTimeout(resolve, ms)),
+        getEnvNumber: (key, defaultValue) => {
+            const value = parseInt(process.env[key] || '');
+            return isNaN(value) ? defaultValue : value;
+        },
+        getEnvString: (key, defaultValue) => {
+            return process.env[key] || defaultValue;
+        },
+        showNotification: (title, message) => {
+            const notification = document.getElementById('notification');
+            notification.innerText = `${title}: ${message}`;
+            notification.style.display = 'block';
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 5000);
+        }
+    };
+
+    class ActivityGraph {
+        constructor() {
+            this.graph = new Graph({ directed: true });
+        }
+
+        addSnapshot(snapshot) {
+            const nodeId = snapshot.timestamp.toISOString();
+            const serializedSnapshot = {
+                ...snapshot,
+                timestamp: snapshot.timestamp.toISOString()
+            };
+            this.graph.setNode(nodeId, serializedSnapshot);
+
+            // Create 'next' relationship with the previous snapshot
+            const nodes = this.graph.nodes();
+            const index = nodes.indexOf(nodeId);
+            if (index > 0) {
+                const previousNodeId = nodes[index - 1];
+                this.graph.setEdge(previousNodeId, nodeId, { type: 'next' });
+            }
+        }
+
+        queryByTimeRange(start, end) {
+            const snapshots = [];
+            this.graph.nodes().forEach(nodeId => {
+                const snapshot = this.graph.node(nodeId);
+                const snapshotDate = new Date(snapshot.timestamp);
+                if (snapshotDate >= start && snapshotDate <= end) {
+                    snapshots.push({
+                        ...snapshot,
+                        timestamp: snapshotDate
+                    });
+                }
+            });
+            snapshots.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+            return snapshots;
+        }
+    }
+
+    class ProcessCollector {
+        constructor(topN = 5) {
+            this.topN = topN;
+        }
+
+        async collect() {
+            const procs = await si.processes();
+            const byCPU = procs.list.sort((a, b) => b.cpu - a.cpu).slice(0, this.topN);
+            const byMem = procs.list.sort((a, b) => b.memRss - a.memRss).slice(0, this.topN);
+            const combined = [...byCPU, ...byMem];
+            const unique = Array.from(
+                new Map(
+                    combined.map(p => [
+                        p.pid,
+                        {
+                            pid: p.pid,
+                            name: p.name,
+                            cpu: parseFloat(p.cpu.toFixed(2)),
+                            memory: parseFloat((p.memRss / (1024 * 1024)).toFixed(2))
+                        }
+                    ])
+                ).values()
+            );
+            return unique;
+        }
+    }
+
+    class WindowCollector {
+        async collect() {
+            try {
+                const win = await activeWin();
+                if (!win) {
+                    return { title: 'Unknown', owner: 'Unknown', processId: -1 };
+                } else {
+                    return {
+                        title: win.title || 'No Title',
+                        owner: win.owner?.name || 'Unknown',
+                        processId: win.id || -1
+                    };
+                }
+            } catch (error) {
+                console.error('Error collecting active window:', error);
+                return { title: 'Error', owner: 'Error', processId: -1 };
+            }
+        }
+    }
+
+    const fs = require('fs').promises;
+    const path = require('path');
+    const tesseract = require('node-tesseract-ocr');
+
+    class OCRCollector {
+        constructor() {
+            // Tesseract configuration options
+            // Adjust these as needed (e.g., changing psm, lang, etc.)
+            this.config = {
+                lang: 'eng',
+                oem: 1,
+                psm: 3
+            };
+        }
+
+        async collect(imageBuffer) {
+            const tempDir = process.cwd();
+            const tempFileName = `ocr_input_${Date.now()}.png`;
+            const tempFilePath = path.join(tempDir, tempFileName);
+
+            try {
+                // Write the image buffer to a temporary file
+                await fs.writeFile(tempFilePath, imageBuffer);
+
+                // Perform OCR
+                const text = await tesseract.recognize(tempFilePath, this.config);
+                const trimmedText = text.trim();
+
+                return {
+                    text: trimmedText,
+                    confidence: 0 // node-tesseract-ocr doesn't return confidence directly
+                };
+            } catch (error) {
+                console.error('OCR error:', error);
+                return { text: '', confidence: 0 };
+            } finally {
+                // Clean up the temporary file
+                try {
+                    await fs.unlink(tempFilePath);
+                } catch (cleanupError) {
+                    console.warn(`Failed to remove temp file ${tempFilePath}:`, cleanupError);
+                }
+            }
+        }
+    }
+
+
+    class DuplicateDetector {
+        constructor() {
+            this.previousHash = null;
+        }
+
+        computeHash(buffer) {
+            return crypto.createHash('sha256').update(buffer).digest('hex');
+        }
+
+        isDuplicate(buffer) {
+            const currentHash = this.computeHash(buffer);
+            if (this.previousHash === currentHash) return true;
+            this.previousHash = currentHash;
+            return false;
+        }
+    }
+
+    class SnapshotManager {
+        constructor(topNProcesses = 5, subRegion) {
+            this.topNProcesses = topNProcesses;
+            this.subRegion = subRegion;
+            this.processCollector = new ProcessCollector(this.topNProcesses);
+            this.windowCollector = new WindowCollector();
+            this.ocrCollector = new OCRCollector();
+            this.duplicateDetector = new DuplicateDetector();
+            this.activityGraph = new ActivityGraph();
+        }
+
+        async captureScreenshot() {
+            const screenshotBuffer = await screenshotDesktop({ format: 'png' });
+            if (this.subRegion) {
+                const { x, y, width, height } = this.subRegion;
+                return sharp(screenshotBuffer)
+                    .extract({ left: x, top: y, width, height })
+                    .png()
+                    .toBuffer();
+            }
+            return screenshotBuffer;
+        }
+
+        async createSnapshot() {
+            try {
+                const screenshotBuffer = await this.captureScreenshot();
+                const isDuplicate = this.duplicateDetector.isDuplicate(screenshotBuffer);
+                const timestamp = new Date();
+
+                if (isDuplicate) {
+                    const duplicateSnapshot = {
+                        timestamp,
+                        processes: [],
+                        activeWindow: { title: '', owner: '', processId: -1 },
+                        screenshot: screenshotBuffer,
+                        ocrResult: { text: '', confidence: 0 },
+                        llmAnalysis: { content: '' },
+                        isDuplicate: true
+                    };
+                    this.activityGraph.addSnapshot(duplicateSnapshot);
+                    return duplicateSnapshot;
+                }
+
+                const [processes, activeWindow, ocrResult] = await Promise.all([
+                    this.processCollector.collect(),
+                    this.windowCollector.collect(),
+                    this.ocrCollector.collect(screenshotBuffer)
+                ]);
+
+                const snapshot = {
+                    timestamp,
+                    processes,
+                    activeWindow,
+                    screenshot: screenshotBuffer,
+                    ocrResult,
+                    llmAnalysis: { content: '' },
+                    isDuplicate: false
+                };
+
+                this.activityGraph.addSnapshot(snapshot);
+                return snapshot;
+            } catch (error) {
+                console.error('Error creating snapshot:', error);
+                throw error;
+            }
+        }
+
+        querySnapshotsByTimeRange(start, end) {
+            return this.activityGraph.queryByTimeRange(start, end);
+        }
+    }
+
+    class ScreenshotAnalyzer {
+        constructor(config) {
+            this.visionOllamaUrl = config.visionOllamaUrl;
+            this.visionModel = config.visionModel;
+            this.nonVisionOllamaUrl = config.nonVisionOllamaUrl;
+            this.nonVisionModel = config.nonVisionModel;
+            this.historyLimit = config.historyLimit;
+            this.analysisInterval = config.analysisInterval;
+            this.intentInferenceInterval = config.intentInferenceInterval;
+            this.snapshotManager = config.snapshotManager;
+
+            this.history = [];
+            this.isPaused = false;
+        }
+
+        async analyzeSnapshot(snapshot) {
+            if (snapshot.isDuplicate) return;
+            const base64Image = snapshot.screenshot.toString('base64');
+            try {
+                const response = await axios.post(this.visionOllamaUrl, {
+                    model: this.visionModel,
+                    messages: [
+                        {
+                            role: 'user',
+                            content: 'Analyze the screenshot and provided context.',
+                            images: [base64Image]
+                        }
+                    ],
+                    stream: false
+                });
+                if (response.data?.message?.content) {
+                    snapshot.llmAnalysis.content = response.data.message.content;
+                } else {
+                    snapshot.llmAnalysis.content = 'Invalid response structure.';
+                    console.error('Invalid response structure from vision LLM:', response.data);
+                }
+            } catch (error) {
+                console.error('Error analyzing snapshot with vision LLM:', error);
+                snapshot.llmAnalysis.content = 'Analysis failed.';
+            }
+        }
+
+        async reasonUserActivity(prompt) {
+            try {
+                const response = await axios.post(this.nonVisionOllamaUrl, {
+                    model: this.nonVisionModel,
+                    messages: [{ role: 'user', content: prompt }],
+                    stream: false
+                });
+                if (response.data?.message?.content) {
+                    return response.data.message.content;
+                } else {
+                    console.error('Invalid response structure from non-vision LLM:', response.data);
+                    return 'Invalid response from reasoning LLM.';
+                }
+            } catch (error) {
+                console.error('Error reasoning user activity:', error);
+                return 'Reasoning failed.';
+            }
+        }
+
+        async inferUserIntentions() {
+            const prompts = this.history
+                .filter(s => !s.isDuplicate)
+                .map((s, i) => `Snapshot ${i + 1}:\n${s.llmAnalysis.content}`)
+                .join('\n\n');
+            const combinedPrompt = `Infer user intentions given the following analyses:\n\n${prompts}\n\nUser Intentions:`;
+            return await this.reasonUserActivity(combinedPrompt);
+        }
+
+        async run(onDataUpdate, onNotification) {
+            while (true) {
+                if (!this.isPaused) {
+                    try {
+                        const snapshot = await this.snapshotManager.createSnapshot();
+                        if (!snapshot.isDuplicate) {
+                            await this.analyzeSnapshot(snapshot);
+                        }
+                        this.history.push(snapshot);
+                        if (this.history.length > this.historyLimit) this.history.shift();
+                        onDataUpdate(snapshot);
+
+                        if (this.history.length > 0 && this.history.length % this.intentInferenceInterval === 0) {
+                            const intentions = await this.inferUserIntentions();
+                            onNotification('Intentions', intentions);
+                        }
+                    } catch (error) {
+                        console.error('Error during analysis loop:', error);
+                        onNotification('Error', `Error during analysis loop: ${error.message || error}`);
+                    }
+                }
+                await Utils.delay(this.analysisInterval);
+            }
+        }
+
+        pause(onNotification) {
+            if (!this.isPaused) {
+                this.isPaused = true;
+                onNotification('Paused', 'Data collection paused.');
+            }
+        }
+
+        resume(onNotification) {
+            if (this.isPaused) {
+                this.isPaused = false;
+                onNotification('Resumed', 'Data collection resumed.');
+            }
+        }
+    }
+
+    class Config {
+        constructor() {
+            this.visionOllamaUrl = Utils.getEnvString('VISION_OLLAMA_URL', 'http://localhost:11434/api/chat');
+            this.visionModel = Utils.getEnvString('VISION_MODEL', 'llava:7b');
+            this.nonVisionOllamaUrl = Utils.getEnvString('NON_VISION_OLLAMA_URL', 'http://localhost:11434/api/chat');
+            this.nonVisionModel = Utils.getEnvString('NON_VISION_MODEL', 'llava:7b');
+            this.historyLimit = Utils.getEnvNumber('HISTORY_LIMIT', 20);
+            this.analysisInterval = Utils.getEnvNumber('ANALYSIS_INTERVAL', 10000);
+            this.intentInferenceInterval = Utils.getEnvNumber('INTENT_INFERENCE_INTERVAL', 5);
+            this.subRegion = {
+                x: Utils.getEnvNumber('SUB_REGION_X', 0),
+                y: Utils.getEnvNumber('SUB_REGION_Y', 0),
+                width: Utils.getEnvNumber('SUB_REGION_WIDTH', 640),
+                height: Utils.getEnvNumber('SUB_REGION_HEIGHT', 480)
+            };
+            this.snapshotManager = new SnapshotManager(5, this.subRegion);
+        }
+    }
+
+    const config = new Config();
+    const analyzer = new ScreenshotAnalyzer(config);
+
+    function updateStatus(message, color = 'green') {
+        const statusElem = document.getElementById('status');
+        statusElem.innerText = message;
+        statusElem.style.color = color;
+    }
+
+    function updateData(snapshot) {
+        const dataDiv = document.getElementById('data');
+        dataDiv.innerHTML = `<pre>${JSON.stringify(snapshot, printableReplacer, 2)}</pre>`;
+    }
+
+    function displayNotification(type, message) {
+        Utils.showNotification(type, message);
+        if (type === 'Paused') {
+            updateStatus('Paused', 'red');
+        } else if (type === 'Resumed') {
+            updateStatus('Running', 'green');
+        } else if (type === 'Intentions') {
+            updateStatus(`Intentions Inferred`, 'blue');
+        } else if (type === 'Error') {
+            updateStatus(`Error: ${message}`, 'red');
+        }
+    }
+
+    function printableReplacer(key, value) {
+        if (key === 'screenshot') return '[Buffer]';
+        return value;
+    }
+
+    document.getElementById('query-btn').addEventListener('click', async () => {
+        const startInput = document.getElementById('start').value;
+        const endInput = document.getElementById('end').value;
+
+        if (!startInput || !endInput) {
+            alert('Please provide both start and end times.');
+            return;
+        }
+
+        const startDate = new Date(startInput);
+        const endDate = new Date(endInput);
+
+        if (startDate > endDate) {
+            alert('Start time must be before end time.');
+            return;
+        }
+
+        const snapshots = config.snapshotManager.querySnapshotsByTimeRange(startDate, endDate);
+        const resultsDiv = document.getElementById('query-results');
+        resultsDiv.innerHTML = '';
+
+        if (snapshots.length === 0) {
+            resultsDiv.innerHTML = '<p>No snapshots found in the specified time range.</p>';
+            return;
+        }
+
+        snapshots.forEach((snapshot, index) => {
+            const pre = document.createElement('pre');
+            pre.textContent = `Snapshot ${index + 1}:\n` + JSON.stringify(snapshot, printableReplacer, 2);
+            resultsDiv.appendChild(pre);
+        });
+    });
+
+    function initializeTray() {
+        try {
+            const trayIconPath = '/home/me/d/doom.png'; // Ensure this path exists
+            const fs = require('fs');
+            if (!fs.existsSync(trayIconPath)) {
+                throw new Error(`Tray icon not found at path: ${trayIconPath}`);
+            }
+
+            let tray = new nw.Tray({ icon: trayIconPath });
+
+            let menu = new nw.Menu();
+            menu.append(new nw.MenuItem({
+                label: 'Open',
+                click: () => {
+                    mainWindow.show();
+                }
+            }));
+
+            let isPaused = false;
+            let pauseResumeItem = new nw.MenuItem({
+                label: 'Pause Analysis',
+                click: () => {
+                    if (isPaused) {
+                        analyzer.resume(displayNotification);
+                        pauseResumeItem.label = 'Pause Analysis';
+                    } else {
+                        analyzer.pause(displayNotification);
+                        pauseResumeItem.label = 'Resume Analysis';
+                    }
+                    isPaused = !isPaused;
+                }
+            });
+            menu.append(pauseResumeItem);
+
+            menu.append(new nw.MenuItem({
+                label: 'Exit',
+                click: () => {
+                    nw.App.quit();
+                }
+            }));
+
+            tray.menu = menu;
+
+            tray.on('click', () => {
+                if (mainWindow.visible) {
+                    mainWindow.hide();
+                } else {
+                    mainWindow.show();
+                }
+            });
+        } catch (error) {
+            console.error('Error initializing Tray:', error);
+            Utils.showNotification('Error', `Tray Initialization Failed: ${error.message}`);
+            nw.App.quit();
+        }
+    }
+
+    const mainWindow = nw.Window.get();
+    mainWindow.on('close', function () {
+        this.hide();
+        this.focus();
+        this.preventDefault();
+    });
+
+    initializeTray();
+    analyzer.run(updateData, displayNotification);
+</script>
+</body>
+</html>
