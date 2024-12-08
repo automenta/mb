@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>NW.js Screenshot Analyzer</title>
+    <title>Electron Screenshot Analyzer</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -96,8 +96,16 @@
 </div>
 
 <div id="notification"></div>
-
 <script>
+    const { ipcRenderer } = require('electron');
+
+    // Update status based on main process events
+    ipcRenderer.on('update-status', (event, status) => {
+        const statusElem = document.getElementById('status');
+        statusElem.innerText = status;
+        statusElem.style.color = status === 'Paused' ? 'red' : 'green';
+    });
+
     // Import required modules
     const { Graph } = require('graphlib');
     const axios = require('axios');
@@ -212,6 +220,21 @@
         }
     }
 
+    // const Tesseract = require('tesseract.js');
+    // class OCRCollector {
+    //     async collect(imageBuffer) {
+    //         console.log('OCR');
+    //         try {
+    //             const { data } = await Tesseract.recognize(imageBuffer, 'eng', { logger: () => {} });
+    //             console.log(data);
+    //             return { text: data.text.trim(), confidence: data.confidence };
+    //         } catch (error) {
+    //             console.error('OCR error:', error);
+    //             return { text: '', confidence: 0 };
+    //         }
+    //     }
+    // }
+
     const fs = require('fs').promises;
     const path = require('path');
     const tesseract = require('node-tesseract-ocr');
@@ -223,7 +246,8 @@
             this.config = {
                 lang: 'eng',
                 oem: 1,
-                psm: 3
+                psm: 3,
+                debug: true
             };
         }
 
@@ -236,9 +260,11 @@
                 // Write the image buffer to a temporary file
                 await fs.writeFile(tempFilePath, imageBuffer);
 
+
                 // Perform OCR
                 const text = await tesseract.recognize(tempFilePath, this.config);
                 const trimmedText = text.trim();
+                console.log(text);
 
                 return {
                     text: trimmedText,
@@ -541,72 +567,6 @@
             resultsDiv.appendChild(pre);
         });
     });
-
-    function initializeTray() {
-        try {
-            const trayIconPath = '/home/me/d/doom.png'; // Ensure this path exists
-            const fs = require('fs');
-            if (!fs.existsSync(trayIconPath)) {
-                throw new Error(`Tray icon not found at path: ${trayIconPath}`);
-            }
-
-            let tray = new nw.Tray({ icon: trayIconPath });
-
-            let menu = new nw.Menu();
-            menu.append(new nw.MenuItem({
-                label: 'Open',
-                click: () => {
-                    mainWindow.show();
-                }
-            }));
-
-            let isPaused = false;
-            let pauseResumeItem = new nw.MenuItem({
-                label: 'Pause Analysis',
-                click: () => {
-                    if (isPaused) {
-                        analyzer.resume(displayNotification);
-                        pauseResumeItem.label = 'Pause Analysis';
-                    } else {
-                        analyzer.pause(displayNotification);
-                        pauseResumeItem.label = 'Resume Analysis';
-                    }
-                    isPaused = !isPaused;
-                }
-            });
-            menu.append(pauseResumeItem);
-
-            menu.append(new nw.MenuItem({
-                label: 'Exit',
-                click: () => {
-                    nw.App.quit();
-                }
-            }));
-
-            tray.menu = menu;
-
-            tray.on('click', () => {
-                if (mainWindow.visible) {
-                    mainWindow.hide();
-                } else {
-                    mainWindow.show();
-                }
-            });
-        } catch (error) {
-            console.error('Error initializing Tray:', error);
-            Utils.showNotification('Error', `Tray Initialization Failed: ${error.message}`);
-            nw.App.quit();
-        }
-    }
-
-    const mainWindow = nw.Window.get();
-    mainWindow.on('close', function () {
-        this.hide();
-        this.focus();
-        this.preventDefault();
-    });
-
-    initializeTray();
     analyzer.run(updateData, displayNotification);
 </script>
 </body>
