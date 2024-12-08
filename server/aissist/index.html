@@ -183,7 +183,7 @@
             const byCPU = procs.list.sort((a, b) => b.cpu - a.cpu).slice(0, this.topN);
             const byMem = procs.list.sort((a, b) => b.memRss - a.memRss).slice(0, this.topN);
             const combined = [...byCPU, ...byMem];
-            const unique = Array.from(
+            return Array.from(
                 new Map(
                     combined.map(p => [
                         p.pid,
@@ -196,7 +196,6 @@
                     ])
                 ).values()
             );
-            return unique;
         }
     }
 
@@ -469,19 +468,6 @@
             }
         }
 
-        pause(onNotification) {
-            if (!this.isPaused) {
-                this.isPaused = true;
-                onNotification('Paused', 'Data collection paused.');
-            }
-        }
-
-        resume(onNotification) {
-            if (this.isPaused) {
-                this.isPaused = false;
-                onNotification('Resumed', 'Data collection resumed.');
-            }
-        }
     }
 
     class Config {

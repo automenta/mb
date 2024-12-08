@@ -1,6 +1,5 @@
 const { app, BrowserWindow, Tray, Menu } = require('electron');
 const path = require('path');
-const Worker = require("worker-loader");
 
 let mainWindow;
 let tray;
@@ -13,8 +12,8 @@ function createWindow() {
         height: 900,
         webPreferences: {
             nodeIntegration: true, // Enable Node.js integration
-            contextIsolation: false // Allow direct access to Node.js modules
-            ,nodeIntegrationInWorker: true,
+            contextIsolation: false, // Allow direct access to Node.js modules
+            nodeIntegrationInWorker: true,
             devTools:true
         }
     });
@@ -52,6 +51,7 @@ function createTray() {
             label: 'Exit',
             click: () => {
                 app.quit();
+                app.exit(0);
             }
         }
     ]);

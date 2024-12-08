@@ -9,7 +9,7 @@
   "dependencies": {
     "@evgenys91/active-win": "latest",
     "axios": "latest",
-    "desktop-screenshot": "latest",
+    "screenshot-desktop": "latest",
     "dotenv": "latest",
     "form-data": "latest",
     "graphlib": "latest",
