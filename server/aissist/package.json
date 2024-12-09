@@ -9,16 +9,17 @@
   "dependencies": {
     "@evgenys91/active-win": "latest",
     "axios": "latest",
-    "screenshot-desktop": "latest",
     "dotenv": "latest",
     "form-data": "latest",
     "graphlib": "latest",
+    "level": "latest",
     "node-fetch": "latest",
     "node-global-key-listener": "latest",
     "node-tesseract-ocr": "latest",
+    "screenshot-desktop": "latest",
     "sharp": "latest",
     "systeminformation": "latest",
-    "tesseract.js": "^5.1.1"
+    "tesseract.js": "latest"
   },
   "devDependencies": {
     "@types/node": "latest",
