@@ -3,28 +3,6 @@ import http from 'http';
 import path from 'path';
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { createServer as viteServer } from 'vite';
-import { Plugin } from './Plugin';
-
-
-// Dynamic imports for plugins
-async function loadPlugin(pluginName: string): Promise<Plugin> {
-    const module = await import(`./${pluginName}Plugin`);
-    return new module.default();
-}
-
-interface AppConfig {
-    plugins: { [pluginName: string]: any };
-}
-
-function loadConfig(): AppConfig {
-    // ... (Implementation to load config from file or environment)
-    // Placeholder for demonstration
-    return {
-        plugins: {
-            P2P: { enabled: true, /* ... other P2P options */ }
-        }
-    };
-}
 
 const PORT = 3000;
 
@@ -42,17 +20,16 @@ const PORT = 3000;
         cors: { origin: '*' },
     });
 
-    const appConfig = loadConfig();
-    const plugins: { [pluginName: string]: Plugin } = {};
-
-    for (const pluginName in appConfig.plugins) {
-        if (appConfig.plugins[pluginName].enabled) {
-            const plugin = await loadPlugin(pluginName);
-            plugins[pluginName] = plugin;
-            await plugin.init(io, appConfig.plugins[pluginName]);
-            await plugin.start();
-        }
-    }
+    // const appConfig = { }
+    // const plugins: { [pluginName: string]: Plugin } = {};
+    // for (const pluginName in appConfig.plugins) {
+    //     if (appConfig.plugins[pluginName].enabled) {
+    //         const plugin = await loadPlugin(pluginName);
+    //         plugins[pluginName] = plugin;
+    //         await plugin.init(io, appConfig.plugins[pluginName]);
+    //         await plugin.start();
+    //     }
+    // }
 
     function wsConnect(s: Socket) {
         console.log('User connected:', s.id);
@@ -73,12 +50,12 @@ const PORT = 3000;
             console.log('User disconnected:', s.id);
         });
 
-        // Generic plugin message handler
-        s.on('plugin-message', async (pluginName, topic, message) => {
-            if (plugins[pluginName] && plugins[pluginName].handleMessage) {
-                await plugins[pluginName].handleMessage(topic, message);
-            }
-        });
+        // // Generic plugin message handler
+        // s.on('plugin-message', async (pluginName, topic, message) => {
+        //     if (plugins[pluginName] && plugins[pluginName].handleMessage) {
+        //         await plugins[pluginName].handleMessage(topic, message);
+        //     }
+        // });
     }
 
     io.on('connection', (socket) => wsConnect(socket));

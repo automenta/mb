@@ -6,6 +6,7 @@ import Editor from "./editor";
 import Matching from "../src/match.js";
 
 import '/ui/css/app.css';
+import {IndexeddbPersistence} from "y-indexeddb";
 
 export default class App {
     private readonly channel: string;
