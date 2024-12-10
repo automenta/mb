@@ -9,19 +9,23 @@ export default class DB {
     readonly doc: Y.Doc;
     public readonly index: Y.Map<any>;
 
-    constructor(readonly userId: string, provider?: IndexeddbPersistence | LeveldbPersistence) {
+    constructor(readonly userID: string, provider?: IndexeddbPersistence | LeveldbPersistence) {
+        this.userID = userID;
         this.doc = new Y.Doc();
-        if (provider) {
+
+        if (!provider)
+            provider = new IndexeddbPersistence('todo_' + userID, this.doc);
+        else
             provider.bindState(this.doc.name, this.doc);
-            provider.on('synced', () => console.log('Synced'));
-        }
-        this.userId = userId;
+
+        provider.on('synced', () => console.log('Synced'));
+
         this.index = this.doc.getMap('objects');
     }
 
     create(): NObject {
         const obj = new NObject(this.doc, uuid());
-        obj.init(this.userId);
+        obj.init(this.userID);
         this.index.set(obj.id, obj.toJSON());
         return obj;
     }
