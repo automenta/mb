@@ -381,21 +381,19 @@ async function loadTimeline(count=50) {
         div.style.fontSize = '12px';
 
         // Choose an icon based on top process
-        const topProc = snap.processes?.[0]?.name || 'generic';
-        let icon = '🖼️';
-        if (topProc.toLowerCase().includes('chrome')) icon = '🌐';
-        else if (topProc.toLowerCase().includes('code')) icon = '💻';
-        else if (topProc.toLowerCase().includes('word')) icon = '📝';
-
+        // const topProc = snap.processes?.[0]?.name || 'generic';
+        // let icon = '🖼️';
+        // if (topProc.toLowerCase().includes('chrome')) icon = '🌐';
+        // else if (topProc.toLowerCase().includes('code')) icon = '💻';
+        // else if (topProc.toLowerCase().includes('word')) icon = '📝';
         // const iconElem = document.createElement('div');
         // iconElem.textContent = icon;
         // iconElem.style.fontSize = '24px';
         // div.appendChild(iconElem);
 
-        const imgPath = path.join('db/images', snap.screenshotRef);
-        const imgData = await fs.readFile(imgPath);
-        const blob = new Blob([imgData], { type: 'image/jpeg' });
-        const url = URL.createObjectURL(blob);
+        const url = URL.createObjectURL(new Blob([await fs.readFile(
+            path.join('db/images', snap.screenshotRef)
+        )], {type: 'image/jpeg'}));
 
         const imgElem = document.createElement('img');
         imgElem.src = url;
@@ -403,13 +401,13 @@ async function loadTimeline(count=50) {
         div.appendChild(imgElem);
 
         const timeElem = document.createElement('div');
-        const dt = new Date(snap.timestamp);
-        timeElem.textContent = dt.toLocaleTimeString();
+        timeElem.textContent = new Date(snap.timestamp).toLocaleTimeString();
         div.appendChild(timeElem);
 
         div.addEventListener('click', () => {
-            const details = document.getElementById('timeline-details-content');
-            details.innerHTML = `<pre>${JSON.stringify(snap,(k,v)=>k==='screenshotRef'?`[Stored as ${snap.screenshotRef}]`:v,2)}</pre>`;
+            document.getElementById('timeline-details-content').innerHTML =
+                `<pre>${JSON.stringify(snap,(k, v)=>
+                    k==='screenshotRef'?`[Stored as ${snap.screenshotRef}]`:v,2)}</pre>`;
         });
 
         timeline.appendChild(div);
@@ -421,6 +419,6 @@ loadTimeline();
 // Periodic refresh of timeline to animate changes
 setInterval(() => {
     loadTimeline();
-}, 2000);
+}, 10000);
 
 analyzer.run(updateData,displayNotification);

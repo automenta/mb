@@ -1,6 +1,6 @@
 // src/db.ts
 import * as Y from 'yjs';
-import {IndexeddbPersistence} from 'y-indexeddb';
+import {IndexeddbPersistence} from "y-indexeddb";
 import NObject from "./obj";
 import {v4 as uuid} from "uuid";
 
