@@ -11,13 +11,12 @@ export default class DB {
 
     constructor(readonly userId: string, provider?: IndexeddbPersistence | LeveldbPersistence) {
         this.doc = new Y.Doc();
-        this.userId = userId;
-        this.index = this.doc.getMap('objects');
-
         if (provider) {
             provider.bindState(this.doc.name, this.doc);
             provider.on('synced', () => console.log('Synced'));
         }
+        this.userId = userId;
+        this.index = this.doc.getMap('objects');
     }
 
     create(): NObject {
