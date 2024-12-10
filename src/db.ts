@@ -1,19 +1,23 @@
 // src/db.ts
 import * as Y from 'yjs';
-import {IndexeddbPersistence} from "y-indexeddb";
-import NObject from "./obj";
-import {v4 as uuid} from "uuid";
+import { IndexeddbPersistence } from 'y-indexeddb';
+import { LeveldbPersistence } from 'y-leveldb';
+import NObject from './obj';
+import { v4 as uuid } from 'uuid';
 
 export default class DB {
-    readonly doc = new Y.Doc();
+    readonly doc: Y.Doc;
     public readonly index: Y.Map<any>;
-    private readonly storage: IndexeddbPersistence;
 
-    constructor(readonly userId: string) {
+    constructor(readonly userId: string, provider?: IndexeddbPersistence | LeveldbPersistence) {
+        this.doc = new Y.Doc();
         this.userId = userId;
         this.index = this.doc.getMap('objects');
-        this.storage = new IndexeddbPersistence(`todo_${userId}`, this.doc);
-        this.storage.on('synced', () => console.log('Synced'));
+
+        if (provider) {
+            provider.bindState(this.doc.name, this.doc);
+            provider.on('synced', () => console.log('Synced'));
+        }
     }
 
     create(): NObject {

@@ -1,3 +1,5 @@
+import { LeveldbPersistence } from 'y-leveldb';
+import DB from '../../src/db'; // Import the DB class
 const { ipcRenderer } = require('electron');
 const { Graph } = require('graphlib');
 const axios = require('axios');
@@ -48,9 +50,13 @@ if (!fssync.existsSync(imagesDir)) {
     fssync.mkdirSync(imagesDir, { recursive: true });
 }
 
-const db = new Level(dbPath, { valueEncoding: 'json' });
+// ... (Existing code)
 
-async function storeSnapshotInDB(snapshot) {
+const provider = new LeveldbPersistence(dbPath); // Use dbPath from existing code
+const db = new DB('aissist_user', provider); // Use a dedicated user ID for aissist
+
+
+async function storeSnapshotInDB(snapshot) { //Consider removing this function if no longer needed.
     const tsKey = snapshot.timestamp.toISOString();
     // Save the image as a file
     const imgHash = Utils.hashBuffer(snapshot.screenshot);
