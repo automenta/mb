@@ -1,6 +1,5 @@
 const {LeveldbPersistence} = require('y-leveldb');
-//import DB from "../../src/db.js";
-const {DB} = require("../../src/db.js");
+const { DB } = require('../../src/db'); // .js extension is optional here, Node will resolve it
 const { ipcRenderer } = require('electron');
 const { Graph } = require('graphlib');
 const axios = require('axios');
