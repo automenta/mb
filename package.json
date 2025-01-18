@@ -7,7 +7,7 @@
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
-    "signal": "PORT=4444 server ./node_modules/y-webrtc/bin/server.js",
+    "signal": "PORT=4444 node ./node_modules/y-webrtc/bin/server.js",
     "dump": "git ls-files | xargs -I{} sh -c 'echo -e \"===== {} =====\\n\"; cat {}; echo -e \"\\n\"'",
     "dumpclip": "npm run dump | xclip -i",
     "test": "vitest",
@@ -27,21 +27,22 @@
     "cors": "latest",
     "express": "latest",
     "jquery": "latest",
-    "libp2p": "^2.3.1",
+    "libp2p": "latest",
     "socket.io": "latest",
     "uuid": "latest",
     "vite": "latest",
     "ws": "latest",
     "y-indexeddb": "latest",
+    "y-leveldb": "latest",
     "y-webrtc": "latest",
     "yjs": "latest"
   },
   "devDependencies": {
+    "@types/express": "latest",
     "@types/jquery": "latest",
     "@types/node": "latest",
     "@vitest/coverage-v8": "latest",
     "@vitest/ui": "latest",
-    "happy-dom": "^15.11.7",
     "vite": "latest",
     "vitest": "latest"
   }

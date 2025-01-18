@@ -1,5 +1,4 @@
 const {LeveldbPersistence} = require('y-leveldb');
-const { DB } = require('../../src/db'); // .js extension is optional here, Node will resolve it
 const { ipcRenderer } = require('electron');
 const { Graph } = require('graphlib');
 const axios = require('axios');
@@ -51,7 +50,9 @@ if (!fssync.existsSync(imagesDir)) {
 }
 
 
-const db = new DB('aissist_user', new LeveldbPersistence(dbPath)); // Use a dedicated user ID for aissist
+//const { DB } = require('../../src/db.js');
+//const db = new DB('aissist_user', new LeveldbPersistence(dbPath)); // Use a dedicated user ID for aissist
+const db = new LeveldbPersistence(dbPath);
 
 
 async function storeSnapshotInDB(snapshot) { //Consider removing this function if no longer needed.

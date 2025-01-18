@@ -5,7 +5,7 @@ import { LeveldbPersistence } from 'y-leveldb';
 import NObject from './obj';
 import { v4 as uuid } from 'uuid';
 
-export default class DB {
+class DB {
     readonly doc: Y.Doc;
     public readonly index: Y.Map<any>;
 
@@ -112,3 +112,4 @@ export default class DB {
     }
 
 }
+export default DB;

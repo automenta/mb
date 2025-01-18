@@ -16,11 +16,20 @@
         #query-results { margin-top: 20px; max-height: 300px; overflow-y: auto; background: #fff; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
         #notification { position: fixed; top: 20px; right: 20px; background: #444; color: #fff; padding: 15px; border-radius: 4px; opacity: 0.9; display: none; z-index: 1000; }
     </style>
+
 </head>
 <body>
-<h1>Awesome Screenshot Analyzer</h1>
 <p>Status: <span id="status">Running</span></p>
 <div id="data"><p>No data collected yet.</p></div>
+
+<h2>Timeline</h2>
+<div id="timeline" style="display:flex; overflow-x:auto; border:1px solid #ccc; padding:10px; gap:10px;">
+    <!-- Timeline items inserted dynamically -->
+</div>
+<div id="timeline-details" style="margin-top:20px;">
+    <h3>Details</h3>
+    <div id="timeline-details-content"></div>
+</div>
 
 <div id="query-section">
     <h3>Query Snapshots by Time Range</h3>
@@ -32,14 +41,7 @@
     <div id="query-results"><p>No query results.</p></div>
 </div>
 
-<h2>Timeline</h2>
-<div id="timeline" style="display:flex; overflow-x:auto; border:1px solid #ccc; padding:10px; gap:10px;">
-    <!-- Timeline items inserted dynamically -->
-</div>
-<div id="timeline-details" style="margin-top:20px;">
-    <h3>Details</h3>
-    <div id="timeline-details-content"></div>
-</div>
+
 
 <div id="notification"></div>
 <script src="./renderer.js"></script>

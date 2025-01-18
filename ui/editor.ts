@@ -50,7 +50,7 @@ export default class Editor {
         this.currentObject = obj;
 
         // Check if current user is the author
-        this.isReadOnly = this.currentObject.author !== this.app.db.userId;
+        this.isReadOnly = this.currentObject.author !== this.app.db.userID;
         this.currentObjId = objID;
 
         this.editorStart(objID);

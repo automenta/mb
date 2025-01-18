@@ -5,7 +5,7 @@ import DB from '../src/db'
 import ObjViewMini from './obj.view.mini'
 
 import MeView from "./me.view";
-import FrensView from "./frens.view";
+import FriendsView from "./Friends.view";
 import NetView from "./net.view.js";
 import DBView from "./db.view.js";
 import MatchingView from "./match.view.js";
@@ -82,7 +82,7 @@ export default class Sidebar {
     readonly ele: JQuery;
     private readonly db: DB;
     private readonly meView: MeView;
-    private readonly friendsView: FrensView;
+    private readonly friendsView: FriendsView;
     private readonly netView: NetView;
     private readonly dbView: DBView;
     private readonly matchingView: MatchingView;
@@ -100,7 +100,7 @@ export default class Sidebar {
 
         const thisAware = app.awareness.bind(app);
         this.meView = new MeView(root, app.user.bind(app), thisAware);
-        this.friendsView = new FrensView(root, thisAware);
+        this.friendsView = new FriendsView(root, thisAware);
         this.netView = new NetView(root.find('.main-view'), app.net);
         this.dbView = new DBView(root, this.db);
         this.matchingView = new MatchingView(root, app.match);
@@ -135,7 +135,7 @@ export default class Sidebar {
 
         [
             {id: 'profile',  title: 'Me'},
-            {id: 'friends',  title: 'FRENS'},
+            {id: 'friends',  title: 'Friends'},
             {id: 'network',  title: 'Net'},
             {id: 'database', title: 'DB'},
             {id: 'matching', title: 'Matching'},

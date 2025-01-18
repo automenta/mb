@@ -55,7 +55,7 @@ class Network {
             signaling: this.signalingServers,
         });
         this.net.awareness.setLocalStateField('user', {
-            id: this.db.userId,
+            id: this.db.userID,
             name: 'Anonymous',
             color: '#' + Math.floor(Math.random() * 16777215).toString(16),
         });

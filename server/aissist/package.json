@@ -7,6 +7,7 @@
     "start": "npx electron . --no-sandbox"
   },
   "dependencies": {
+    "mb2": "../../",
     "@evgenys91/active-win": "latest",
     "axios": "latest",
     "dotenv": "latest",

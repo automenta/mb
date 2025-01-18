@@ -1,7 +1,7 @@
 import $ from "jquery";
-import '/ui/css/frens.css';
+import '/ui/css/Friends.css';
 
-export default class FrensView {
+export default class FriendsView {
     private readonly root: JQuery;
     private readonly getAwareness: Function;
     private readonly container: JQuery;
@@ -9,7 +9,7 @@ export default class FrensView {
     constructor(root:JQuery, getAwareness:Function) {
         this.root = root;
         this.getAwareness = getAwareness;
-        this.container = $('<div>').addClass('frens-list-page');
+        this.container = $('<div>').addClass('Friends-list-page');
     }
 
     render() {
@@ -18,11 +18,11 @@ export default class FrensView {
         this.root.find('.main-view').empty().append(this.container);
 
         this.container.html(`
-            <h3>FRENS</h3>
+            <h3>Friends</h3>
             <ul></ul>
         `);
 
-        const   updateFrens = () => {
+        const   updateFriends = () => {
             const users: any[] = [];
             this.getAwareness().getStates().forEach((state: { user: any; }) => {
                 if (state.user) users.push(state.user);
@@ -30,15 +30,15 @@ export default class FrensView {
 
             const ul = this.container.find('ul').empty();
 
-            this.fren_item(users, ul);
+            this.item(users, ul);
             //users.forEach(user => ul.append($('<li>').text(user.name).css('color', user.color)));
         };
 
-        updateFrens();
-        this.getAwareness().on('change', updateFrens);
+        updateFriends();
+        this.getAwareness().on('change', updateFriends);
     }
 
-    private fren_item(users: any[], ul: JQuery<HTMLUListElement>) {
+    private item(users: any[], ul: JQuery<HTMLUListElement>) {
         users.forEach(user => ul.append($('<li>').text(user.name)));
     }
 }
