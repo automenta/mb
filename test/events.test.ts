@@ -45,6 +45,18 @@ describe('mitt', () => {
             expect(spy).not.toHaveBeenCalled();
         });
 
+        it('should remove all handlers on clear()', () => {
+            e.on('foo', spy);
+            e.on('bar', spy);
+            e.on('*', spy);
+            e.clear();
+
+            e.emit('foo', 'test');
+            e.emit('bar', 42);
+
+            expect(spy).not.toHaveBeenCalled();
+        });
+
         it('should support cleanup function from on()', () => {
             const off = e.on('foo', spy);
             e.emit('foo', 'test1');

@@ -65,6 +65,10 @@ class P2PNode extends EventEmitter {
         this.dht.listen(6881, () => console.log('Mainline DHT listening on port 6881'));
     }
 
+    isStarted() {
+        return this.node.isStarted();
+    }
+
     async stop() {
         await this.node.stop();
         this.dht.destroy();
