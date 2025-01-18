@@ -29,6 +29,26 @@ beforeAll(() => {
         clear: vi.fn(),
     };
 
+    // Mock IndexedDB
+    global.indexedDB = {
+        open: vi.fn().mockReturnValue({
+            onupgradeneeded: vi.fn(),
+            onsuccess: vi.fn(),
+            onerror: vi.fn(),
+        }),
+        deleteDatabase: vi.fn().mockReturnValue({
+            onsuccess: vi.fn(),
+            onerror: vi.fn(),
+        }),
+    };
+
+    // Mock localStorage
+    global.localStorage = {
+        getItem: vi.fn(),
+        setItem: vi.fn(),
+        clear: vi.fn(),
+    };
+
     // Mock WebRTC connections
     global.RTCPeerConnection = vi.fn();
     global.RTCSessionDescription = vi.fn();
