@@ -6,7 +6,7 @@
   - Through user editing and automatic data analysis processes, actionable input evolves into autonomous agents that can achieve results 
   - Stores private user and public community data in the browser (IndexedDB)
   - Private objects are not shared (new objects are, by default, private)
-
+  - 'Supernode' Node.JS server bundles services and serves the Web app.  In this mode, more capabilities are available, as plugins.
 
 ## Search Paradigm
   + Shared objects can be matched, and these matches return as notifications to the user and are organized as replies-to the source object
@@ -31,13 +31,13 @@
 
 # Implementation & Dependencies
  * Language: TypeScript/JavaScript (ES6+), object-oriented architecture
- * User-interface: jQuery + HTML Web Components (only ONE dynamically-generated page)
+ * User-interface: Single dynamically-generated page managed by jQuery, HTML Web Components
  * Uses 'yjs' for realtime CRDT WebRTC data synchronization
  * Build: 'vite'
  * Testing: 'vitest'
 
 # Coding
- * Keep the code clear and compact.
- * Use comments sparingly, prefering self-documenting code.  Use the latest Javascript language features.  Involve no more than a few helpful common utility libraries.
- * Where possible, explore ways to generate and minimize the necessary code through clever object-oriented design and metaprogramming.
-
+ * Code clearly, compactly, completely, and correctly.
+ * Write self-documenting code with few comments.
+ * Use the latest Javascript language features.
+ * If possible, explore ways to generate and minimize the necessary code through clever object-oriented design and metaprogramming.

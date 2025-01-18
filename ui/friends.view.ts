@@ -1,5 +1,5 @@
 import $ from "jquery";
-import '/ui/css/Friends.css';
+import '/ui/css/friends.css';
 
 export default class FriendsView {
     private readonly root: JQuery;

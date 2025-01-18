@@ -10,7 +10,7 @@
     "signal": "PORT=4444 node ./node_modules/y-webrtc/bin/server.js",
     "dump": "git ls-files | xargs -I{} sh -c 'echo -e \"===== {} =====\\n\"; cat {}; echo -e \"\\n\"'",
     "dumpclip": "npm run dump | xclip -i",
-    "test": "vitest",
+    "test": "vitest --run",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage"
   },
@@ -23,6 +23,7 @@
     "@libp2p/mplex": "latest",
     "@libp2p/peer-id-factory": "latest",
     "@libp2p/webrtc-star": "latest",
+    "@testing-library/dom": "^10.4.0",
     "bittorrent-dht": "latest",
     "cors": "latest",
     "express": "latest",

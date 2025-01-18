@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "outDir": "./dist",
     "target": "ESNext",
     "lib": ["ESNext", "dom"],
     "types": ["node"],

@@ -3,11 +3,14 @@ import * as Y from "yjs";
 type Observer = (events: Y.YEvent<any>[]) => void;
 
 export default class NObject {
-    private readonly root: Y.Map<any>;
 
-    constructor(private doc: Y.Doc, public id:string) {
-        this.id = id;
-        this.root = doc.getMap(id);
+
+    constructor(public readonly id:string, private doc: Y.Doc, private root:Y.Map<any>) {
+
+    }
+
+    static create(doc: Y.Doc, id:string):NObject {
+        return new NObject(id, doc, doc.getMap(id));
     }
 
     public init(author:string): void {

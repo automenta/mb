@@ -5,7 +5,7 @@ import DB from '../src/db'
 import ObjViewMini from './obj.view.mini'
 
 import MeView from "./me.view";
-import FriendsView from "./Friends.view";
+import FriendsView from "./friends.view";
 import NetView from "./net.view.js";
 import DBView from "./db.view.js";
 import MatchingView from "./match.view.js";

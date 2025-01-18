@@ -52,9 +52,9 @@ describe('Network', () => {
 
     it('should emit network activity events', () => {
         const emitSpy = vi.spyOn(net, 'emit');
-        net.emit('test-event', {  'test-data' });
+        net.emit('test-event', { x: 'test-data' });
         expect(emitSpy).toHaveBeenCalledWith('test-event', {
-             'test-data',
+            x: 'test-data',
             stats: net.getNetworkStats(),
         });
     });

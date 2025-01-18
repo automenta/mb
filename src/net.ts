@@ -134,7 +134,7 @@ class Network {
         };
     }
 
-    emit(type, data) {
+    emit(type:string, data:any) {
         events.emit('networkActivity', {
             detail: {
                 type,

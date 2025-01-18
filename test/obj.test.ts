@@ -8,7 +8,7 @@ describe('NObject', () => {
 
     beforeEach(() => {
         doc = new Y.Doc();
-        obj = new NObject(doc, 'test-id');
+        obj = NObject.create(doc, 'test-id');
         obj.init('testuser');
     });
 
@@ -37,8 +37,7 @@ describe('NObject', () => {
     });
 
     it('should set and get text', () => {
-        const text = new Y.Text('Test text');
-        obj.setText(text);
+        obj.setText('Test text');
         expect(obj.text.toString()).toEqual('Test text');
     });
 

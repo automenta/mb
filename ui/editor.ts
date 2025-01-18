@@ -4,7 +4,7 @@ import NObject from '../src/obj'
 import App from './app'
 import {debounce} from "../src/util.js";
 import '/ui/css/editor.css';
-import {YText} from "yjs/dist/src/types/YText";
+import * as Y from 'yjs';
 
 export default class Editor {
     private readonly db: DB;
@@ -13,7 +13,7 @@ export default class Editor {
     private currentObjId: string;
     private provider: any;
     private ele: JQuery;
-    private ytext: YText;
+    private ytext: Y.Text | null;
     private updatePeriodMS: number;
     private editor: JQuery;
     private isReadOnly: boolean;
@@ -101,7 +101,7 @@ export default class Editor {
             this.editor.data('observer', observer);
         }
 
-        this.ytext.observe(event => {
+        this.ytext.observe(() => {
             const currentContent = this.editor.html();
             const yContent = this.ytext.toString();
             if (currentContent !== yContent)
@@ -309,7 +309,7 @@ export default class Editor {
         });
     }
 
-    renderPrivacyToggle(page, pageId:string) {
+    renderPrivacyToggle(page: NObject, pageId:string) {
         return $('<div>', {class: 'privacy-toggle'}).append(
             $('<span>').text('Public'),
             $('<label>', {class: 'toggle-switch'}).append(
@@ -318,8 +318,9 @@ export default class Editor {
                     checked: page.public,
                     disabled: this.isReadOnly
                 }).on('change', e => {
-                    this.db.objPublic(pageId, e.target.checked);
-                    e.target.checked ?
+                    let checked = e.target.checked;
+                    this.db.objPublic(pageId, checked);
+                    checked ?
                         this.app.net.shareDocument(pageId) :
                         this.app.net.unshareDocument(pageId);
                 }),

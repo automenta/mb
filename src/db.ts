@@ -1,40 +1,63 @@
 // src/db.ts
 import * as Y from 'yjs';
 import { IndexeddbPersistence } from 'y-indexeddb';
-import { LeveldbPersistence } from 'y-leveldb';
 import NObject from './obj';
-import { v4 as uuid } from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 
 class DB {
     readonly doc: Y.Doc;
-    public readonly index: Y.Map<any>;
+    public readonly index: Y.Map<NObject>;
 
-    constructor(readonly userID: string, provider?: IndexeddbPersistence | LeveldbPersistence) {
-        this.userID = userID;
+    constructor(
+        readonly userID: string,
+        provider: IndexeddbPersistence// | LeveldbPersistence
+    ) {
         this.doc = new Y.Doc();
 
-        if (!provider)
-            provider = new IndexeddbPersistence('todo_' + userID, this.doc);
-        else
-            provider.bindState(this.doc.name, this.doc);
-
-        provider.on('synced', () => console.log('Synced'));
-
-        this.index = this.doc.getMap('objects');
+        this.initializeProvider(provider);
+        this.index = this.doc.getMap<NObject>('objects');
     }
 
+    /**
+     * Initializes the persistence provider.
+     * @param provider The persistence provider to bind.
+     */
+    private initializeProvider(provider: IndexeddbPersistence /*| LeveldbPersistence*/): void {
+        // if (!provider) {
+        //     provider = new IndexeddbPersistence(`todo_${this.userID}`, this.doc);
+        // } else {
+            //provider.bindState(this.doc.name, this.doc);
+        // }
+
+        provider.on('synced', () => console.log('Synced'));
+    }
+
+    /**
+     * Creates a new NObject and adds it to the index.
+     * @returns The created NObject.
+     */
     create(): NObject {
-        const obj = new NObject(this.doc, uuid());
+        const obj = NObject.create(this.doc, uuidv4());
         obj.init(this.userID);
         this.index.set(obj.id, obj.toJSON());
         return obj;
     }
 
+    /**
+     * Retrieves an NObject by ID.
+     * @param id The ID of the object.
+     * @returns The NObject if found, otherwise null.
+     */
     get(id: string): NObject | null {
-        try { return new NObject(this.doc, id); }
-        catch { return null; }
+        const m = this.doc.share.get(id);
+        return m ? new NObject(id, this.doc, m) : null;
     }
 
+    /**
+     * Deletes an NObject by ID.
+     * @param id The ID of the object to delete.
+     * @returns True if deletion was successful, else false.
+     */
     delete(id: string): boolean {
         const obj = this.get(id);
         if (!obj) return false;
@@ -49,31 +72,57 @@ class DB {
         return true;
     }
 
-    list = (): NObject[] =>
-        Array.from(this.index.keys())
+    /**
+     * Filters the list of NObjects based on a predicate.
+     * @param predicate The predicate function to filter objects.
+     * @returns An array of filtered NObjects.
+     */
+    filterList(predicate: (obj: NObject) => boolean): NObject[] {
+        return Array.from(this.index.keys())
             .map(id => this.get(id))
-            .filter((obj): obj is NObject => obj !== null);
+            .filter((obj): obj is NObject => obj !== null && predicate(obj));
+    }
 
-    listByTag = (tag: string) =>
-        this.list().filter(obj => obj.tags.includes(tag));
+    list = (): NObject[] => this.filterList(() => true);
 
-    listByAuthor = (author: string) =>
-        this.list().filter(obj => obj.author === author);
+    listByTag = (tag: string): NObject[] => this.filterList(obj => obj.tags.includes(tag));
 
-    search = (query: string): NObject[] => {
+    listByAuthor = (author: string): NObject[] => this.filterList(obj => obj.author === author);
+
+    /**
+     * Searches for NObjects matching the query.
+     * @param query The search query string.
+     * @returns An array of matching NObjects.
+     */
+    search(query: string): NObject[] {
         const q = query.toLowerCase();
-        return this.list().filter(obj =>
+        return this.filterList(obj =>
             obj.name.toLowerCase().includes(q) ||
             obj.tags.some(tag => tag.toLowerCase().includes(q))
         );
     }
 
+    /**
+     * Creates a reply to an existing NObject.
+     * @param parentId The ID of the parent object.
+     * @param name Optional name for the reply.
+     * @returns The created reply NObject if successful, else null.
+     */
     createReply(parentId: string, name?: string): NObject | null {
+        if (!parentId || typeof parentId !== 'string') {
+            console.error('Invalid parentId:', parentId);
+            return null;
+        }
+        if (name !== undefined && typeof name !== 'string') {
+            console.error('Invalid name:', name);
+            return null;
+        }
+
         const parent = this.get(parentId);
         if (!parent) return null;
 
         const reply = this.create();
-        reply.name = name;
+        reply.name = name || 'Untitled';
         reply.addReplyTo(parentId);
         parent.addReply(reply.id);
         return reply;
@@ -89,27 +138,42 @@ class DB {
             .map(pid => this.get(pid))
             .filter((p): p is NObject => p !== null);
 
-
+    // Uncomment if observation needed
     // observe = (fn: Observer): void => this.index.observe(fn);
     // observeObject = (id: string, fn: Observer): void =>
     //     this.get(id)?.observe(fn);
 
-    objText(pageId: string) {
+    /**
+     * Retrieves the text of an object by its page ID.
+     * @param pageId The ID of the page.
+     * @returns The text of the object if found, else null.
+     */
+    objText(pageId: string): Y.Text | null {
         const page = this.get(pageId);
         return page ? page.text : null;
     }
 
-    objName(pageId:string, title:string):void {
+    /**
+     * Sets the name of an object.
+     * @param pageId The ID of the page.
+     * @param title The new title.
+     */
+    objName(pageId: string, title: string): void {
         const page = this.get(pageId);
         if (page)
             page.name = title;
     }
 
-    objPublic(pageId:string, isPublic:boolean):void {
+    /**
+     * Sets the public status of an object.
+     * @param pageId The ID of the page.
+     * @param isPublic The public status.
+     */
+    objPublic(pageId: string, isPublic: boolean): void {
         const page = this.get(pageId);
         if (page)
             page.public = isPublic;
     }
-
 }
+
 export default DB;
