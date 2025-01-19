@@ -26,7 +26,8 @@ class DB {
          if (!provider) {
             provider = new IndexeddbPersistence(`todo_${this.userID}`, this.doc);
         } else {
-            provider.bindState(this.doc.name, this.doc);
+             if (provider.bindState)
+                provider.bindState(this.doc.name, this.doc);
         }
 
         provider.on('synced', () => console.log('Synced'));
