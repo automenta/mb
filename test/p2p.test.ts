@@ -8,8 +8,8 @@ describe('P2PNode', () => {
     let peerId1: PeerId, peerId2: PeerId;
 
     beforeAll(async () => {
-        peerId1 = createEd25519PeerId();
-        peerId2 = createEd25519PeerId();
+        peerId1 = await createEd25519PeerId() as PeerId;
+        peerId2 = await createEd25519PeerId() as PeerId;
     });
 
     it('should discover each other and log connection', async () => {

@@ -2,13 +2,52 @@
   "compilerOptions": {
     "outDir": "./dist",
     "target": "ESNext",
-    "lib": ["ESNext", "dom"],
+    "module": "ESNext",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "types": ["node"],
-    "strict": true,
+    "moduleResolution": "Bundler",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
     "allowJs": true,
+
+    /* Strict Type-Checking Options */
+//    "strict": true,
+//    "noImplicitAny": true,
+//    "strictNullChecks": true,
+//    "strictFunctionTypes": true,
+//    "strictBindCallApply": true,
+//    "strictPropertyInitialization": true,
+//    "noImplicitThis": true,
+//    "useUnknownInCatchVariables": true,
+//    "alwaysStrict": true,
+
+    /* Additional Checks */
+//    "noUnusedLocals": true,
+//    "noUnusedParameters": true,
+//    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+
+    /* Source Map Options */
+    "sourceMap": true,
     "inlineSources": true,
-    "inlineSourceMap": true,
-    "moduleResolution": "bundler"
+    "inlineSourceMap": false,
+
+    /* Experimental Options */
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
   },
-  "include": ["**/*.ts","**/*.js"]
+  "include": [
+    "src/**/*.ts",
+    "server/**/*.ts",
+    "ui/**/*.ts",
+    "test/**/*.ts",
+    "**/*.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

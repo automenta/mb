@@ -45,6 +45,8 @@
     "@types/express": "latest",
     "@types/jquery": "latest",
     "@types/node": "latest",
+    "@types/ws": "latest",
+    "@types/uuid": "latest",
     "@vitest/coverage-v8": "latest",
     "@vitest/ui": "latest",
     "vite": "latest",
