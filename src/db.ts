@@ -49,7 +49,7 @@ class DB {
      * @returns The NObject if found, otherwise null.
      */
     get(id: string): NObject | null {
-        const m = this.doc.share.get(id);
+        const m = this.doc.getMap(id);
         return m ? new NObject(id, this.doc, m) : null;
     }
 
