@@ -21,7 +21,6 @@ export async function startServer() {
         cors: {origin: '*'},
     });
 
-
     function wsConnect(s: Socket) {
         console.log('User connected:', s.id);
 
@@ -70,8 +69,6 @@ export async function startServer() {
     return {server: httpServer, io};
 }
 
-// @ts-ignore
-if (import.meta.url === `file://${process.argv[1]}`) {
-    // Start server if not running in a test environment
-    startServer();
-}
+
+// Start server if not running in a test environment
+/* @ts-ignore */ if (import.meta.url === `file://${process.argv[1]}`) startServer();

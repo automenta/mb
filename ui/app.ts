@@ -4,7 +4,7 @@ import Network from '../src/net';
 import SideBar from './sidebar';
 import Editor from "./editor";
 import Matching from "../src/match.js";
-import { io } from "socket.io-client";
+import {io} from "socket.io-client";
 
 import '/ui/css/app.css';
 

@@ -1,13 +1,13 @@
-import { createLibp2p } from 'libp2p';
-import { bootstrap } from '@libp2p/bootstrap';
-import { kadDHT } from '@libp2p/kad-dht';
-import { webRTCStar } from '@libp2p/webrtc-star';
-import { GossipSub } from '@chainsafe/libp2p-gossipsub';
-import { MainlineDHT } from 'bittorrent-dht';
-import { EventEmitter } from 'events';
-import { noise } from '@chainsafe/libp2p-noise';
-import { mplex } from '@libp2p/mplex';
-import { PeerId } from '@libp2p/interface-peer-id';
+import {createLibp2p} from 'libp2p';
+import {bootstrap} from '@libp2p/bootstrap';
+import {kadDHT} from '@libp2p/kad-dht';
+import {webRTCStar} from '@libp2p/webrtc-star';
+import {GossipSub} from '@chainsafe/libp2p-gossipsub';
+import {MainlineDHT} from 'bittorrent-dht';
+import {EventEmitter} from 'events';
+import {noise} from '@chainsafe/libp2p-noise';
+import {mplex} from '@libp2p/mplex';
+import {PeerId} from '@libp2p/interface-peer-id';
 
 
 interface P2PNodeOptions {

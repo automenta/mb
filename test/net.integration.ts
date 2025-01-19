@@ -1,15 +1,15 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { Server as SocketIOServer, Socket } from 'socket.io';
-import { Server as HTTPServer } from 'http';
-import { io as Client, Socket as ClientSocket } from 'socket.io-client';
-import { createLibp2p, Libp2p } from 'libp2p';
-import { createEd25519PeerId, Ed25519PeerId } from '@libp2p/peer-id-factory';
-import { webSockets } from '@libp2p/websockets';
-import { noise } from '@chainsafe/libp2p-noise';
-import { mplex } from '@libp2p/mplex';
-import { bootstrap } from '@libp2p/bootstrap';
-import { AddressInfo } from 'net';
-import { startServer} from "../server/server"; // Import startServer
+import {afterAll, beforeAll, describe, expect, it} from 'vitest';
+import {Server as SocketIOServer, Socket} from 'socket.io';
+import {Server as HTTPServer} from 'http';
+import {io as Client, Socket as ClientSocket} from 'socket.io-client';
+import {createLibp2p, Libp2p} from 'libp2p';
+import {createEd25519PeerId, Ed25519PeerId} from '@libp2p/peer-id-factory';
+import {webSockets} from '@libp2p/websockets';
+import {noise} from '@chainsafe/libp2p-noise';
+import {mplex} from '@libp2p/mplex';
+import {bootstrap} from '@libp2p/bootstrap';
+import {AddressInfo} from 'net';
+import {startServer} from "../server/server"; // Import startServer
 import P2PNode from '../server/p2p';
 
 describe('End-to-End Tests', () => {

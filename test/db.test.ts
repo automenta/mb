@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { IndexeddbPersistence } from 'y-indexeddb';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
+import {IndexeddbPersistence} from 'y-indexeddb';
 import * as Y from 'yjs';
 import DB from '../src/db';
 import NObject from '../src/obj';
@@ -35,11 +35,11 @@ describe('DB', () => {
         const obj1 = db.create();
         const obj2 = db.create();
         obj1.addReply(obj2.id);
-        expect(obj1.replies.has(obj2.id)).toBe(true);
+        expect(obj1.replies.toArray().includes(obj2.id)).toBe(true);
 
         db.delete(obj2.id);
         expect(db.get(obj2.id)).toBeNull();
-        expect(obj1.replies.has(obj2.id)).toBe(false);
+        expect(obj1.replies.toArray().includes(obj2.id)).toBe(false);
     });
 
     it('should list objects', () => {
@@ -81,7 +81,7 @@ describe('DB', () => {
         const reply = db.createReply(obj.id, 'Test Reply');
         if (reply === null) throw new Error('Reply creation failed');
         expect(reply).toBeInstanceOf(NObject);
-        expect(obj.replies.has(reply.id)).toBe(true);
+        expect(obj.replies.toArray().includes(reply.id)).toBe(true);
         expect(JSON.stringify(db.getReplies(obj.id))).toEqual(JSON.stringify([reply]));
     });
 
@@ -142,18 +142,18 @@ describe('DB', () => {
         const obj1 = db.create();
         const obj2 = db.create();
         obj1.addReply(obj2.id);
-        expect(obj1.replies.has(obj2.id)).toBe(true);
+        expect(obj1.replies.toArray().includes(obj2.id)).toBe(true);
         obj1.removeReply(obj2.id);
-        expect(obj1.replies.has(obj2.id)).toBe(false);
+        expect(obj1.replies.toArray().includes(obj2.id)).toBe(false);
     });
 
     it('should add and remove replyTo', () => {
         const obj1 = db.create();
         const obj2 = db.create();
         obj2.addReplyTo(obj1.id);
-        expect(obj2.repliesTo.has(obj1.id)).toBe(true);
+        expect(obj2.repliesTo.toArray().includes(obj1.id)).toBe(true);
         obj2.removeReplyTo(obj1.id);
-        expect(obj2.repliesTo.has(obj1.id)).toBe(false);
+        expect(obj2.repliesTo.toArray().includes(obj1.id)).toBe(false);
     });
 
     // New tests for error handling and edge cases

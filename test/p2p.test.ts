@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeAll } from 'vitest';
-import { waitFor } from '@testing-library/dom';
+import {beforeAll, describe, expect, it} from 'vitest';
+import {waitFor} from '@testing-library/dom';
 import P2PNode from '../server/p2p';
-import { createEd25519PeerId } from '@libp2p/peer-id-factory';
-import { PeerId } from '@libp2p/interface-peer-id';
+import {createEd25519PeerId} from '@libp2p/peer-id-factory';
+import {PeerId} from '@libp2p/interface-peer-id';
 
 describe('P2PNode', () => {
     let peerId1: PeerId, peerId2: PeerId;

@@ -1,8 +1,7 @@
 // src/db.ts
 import * as Y from 'yjs';
-import { IndexeddbPersistence } from 'y-indexeddb';
+import {IndexeddbPersistence} from 'y-indexeddb';
 import NObject from './obj';
-import { v4 as uuidv4 } from 'uuid';
 
 class DB {
     readonly doc: Y.Doc;
@@ -41,9 +40,9 @@ class DB {
      * Creates a new NObject and adds it to the index.
      * @returns The created NObject.
      */
-    create(): NObject {
-        const obj = NObject.create(this.doc, uuidv4());
-        obj.init(this.userID);
+    create(id?: string): NObject {
+        const obj = new NObject(this.doc, id);
+        obj.author = this.userID;
         this.index.set(obj.id, obj.toJSON());
         return obj;
     }
@@ -57,8 +56,7 @@ class DB {
         const indexed = this.index.get(id);
         if (!indexed) return null;
 
-        const m = this.doc.getMap(id);
-        return m ? new NObject(id, this.doc, m) : null;
+        return new NObject(this.doc, id);
     }
 
     /**
@@ -70,14 +68,17 @@ class DB {
         const obj = this.get(id);
         if (!obj) return false;
 
-        // Cleanup references
-        this.list().forEach(other => {
-            if (other.replies.has(id)) other.removeReply(id);
-            if (other.repliesTo.has(id)) other.removeReplyTo(id);
-        });
-
         this.doc.transact(() => {
+            // Cleanup references in other objects
+            this.list().forEach(other => {
+                if (other.replies.toArray().includes(id)) other.removeReply(id);
+                if (other.repliesTo.toArray().includes(id)) other.removeReplyTo(id);
+            });
+
+            // Delete the object itself
             this.index.delete(id);
+            this.doc.share.delete(id);
+            // TODO any other cleanup?
         });
         return true;
     }
@@ -95,7 +96,7 @@ class DB {
 
     list = (): NObject[] => this.filterList(() => true);
 
-    listByTag = (tag: string): NObject[] => this.filterList(obj => obj.tags.includes(tag));
+    listByTag = (tag: string): NObject[] => this.filterList(obj => obj.tags.toArray().includes(tag));
 
     listByAuthor = (author: string): NObject[] => this.filterList(obj => obj.author === author);
 
@@ -108,7 +109,7 @@ class DB {
         const q = query.toLowerCase();
         return this.filterList(obj =>
             obj.name.toLowerCase().includes(q) ||
-            obj.tags.some(tag => tag.toLowerCase().includes(q))
+            obj.tags.toArray().some(tag => tag.toLowerCase().includes(q))
         );
     }
 
@@ -118,7 +119,7 @@ class DB {
      * @param name Optional name for the reply.
      * @returns The created reply NObject if successful, else null.
      */
-    createReply(parentId: string, name: string): NObject | null {
+    createReply(parentId: string, name: string): NObject {
         // if (!parentId) {
         //     console.error('Invalid parentId:', parentId);
         //     return null;
@@ -129,7 +130,7 @@ class DB {
         // }
 
         const parent = this.get(parentId);
-        if (!parent) return null;
+        //if (!parent) return null;
 
         const reply = this.create();
         reply.name = name;
@@ -139,12 +140,12 @@ class DB {
     }
 
     getReplies = (id: string): NObject[] =>
-        Array.from(this.get(id)?.replies ?? [])
+        Array.from(this.get(id)?.replies?.toArray() ?? [])
             .map(rid => this.get(rid))
             .filter((r): r is NObject => r !== null);
 
     getRepliesTo = (id: string): NObject[] =>
-        Array.from(this.get(id)?.repliesTo ?? [])
+        Array.from(this.get(id)?.repliesTo?.toArray() ?? [])
             .map(pid => this.get(pid))
             .filter((p): p is NObject => p !== null);
 

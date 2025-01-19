@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import {beforeEach, describe, expect, it} from 'vitest';
 import * as Y from 'yjs';
 import NObject from '../src/obj';
 
@@ -8,8 +8,8 @@ describe('NObject', () => {
 
     beforeEach(() => {
         doc = new Y.Doc();
-        obj = NObject.create(doc, 'test-id');
-        obj.init('testuser');
+        obj = new NObject(doc, 'test-id');
+        obj.author = 'testuser';
     });
 
     it('should initialize with default values', () => {
@@ -17,8 +17,8 @@ describe('NObject', () => {
         expect(obj.public).toBe(false);
         expect(obj.author).toEqual('testuser');
         expect(obj.tags.length).toEqual(0);
-        expect(obj.replies.size).toEqual(0);
-        expect(obj.repliesTo.size).toEqual(0);
+        expect(obj.replies.length).toEqual(0);
+        expect(obj.repliesTo.length).toEqual(0);
     });
 
     it('should set and get name', () => {
@@ -44,30 +44,30 @@ describe('NObject', () => {
     it('should add and remove tags', () => {
         obj.addTag('tag1');
         obj.addTag('tag2');
-        expect(obj.tags).toEqual(['tag1', 'tag2']);
+        expect(obj.tags.toArray()).toEqual(['tag1', 'tag2']);
 
         obj.removeTag('tag1');
-        expect(obj.tags).toEqual(['tag2']);
+        expect(obj.tags.toArray()).toEqual(['tag2']);
     });
 
     it('should add and remove replies', () => {
         obj.addReply('reply1');
         obj.addReply('reply2');
-        expect(obj.replies.has('reply1')).toBe(true);
-        expect(obj.replies.has('reply2')).toBe(true);
+        expect(obj.replies.toArray().includes('reply1'));
+        expect(obj.replies.toArray().includes('reply2'));
 
         obj.removeReply('reply1');
-        expect(obj.replies.has('reply1')).toBe(false);
+        expect(!obj.replies.toArray().includes('reply1'));
     });
 
     it('should add and remove repliesTo', () => {
         obj.addReplyTo('replyTo1');
         obj.addReplyTo('replyTo2');
-        expect(obj.repliesTo.has('replyTo1')).toBe(true);
-        expect(obj.repliesTo.has('replyTo2')).toBe(true);
+        expect(obj.repliesTo.toArray()).toContain('replyTo1');
+        expect(obj.repliesTo.toArray()).toContain('replyTo2');
 
         obj.removeReplyTo('replyTo1');
-        expect(obj.repliesTo.has('replyTo1')).toBe(false);
+        expect(obj.repliesTo.toArray()).not.toContain('replyTo1');
     });
 
     it('should convert to JSON', () => {

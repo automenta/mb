@@ -1,126 +1,116 @@
-import * as Y from "yjs";
-
-type Observer = (events: Y.YEvent<any>[]) => void;
+import * as Y from 'yjs';
+import {uuidv4} from "lib0/random";
 
 export default class NObject {
+    public readonly id: string;
+    private readonly doc: Y.Doc;
+    public readonly root: Y.Map<any>;
+    private readonly metadata: Y.Map<any>;
+    private readonly links: Y.Map<Y.Array<string>>;
 
+    constructor(doc: Y.Doc, id?: string) {
+        this.doc = doc;
+        this.id = id || uuidv4();
+        this.root = doc.getMap(this.id);
+        this.metadata = this.getOrInitSubMap('metadata', [
+            ['id', this.id],
+            ['name', '?'],
+            ['created', Date.now()],
+            ['updated', Date.now()],
+            ['public', false],
+            ['author', ''],
+            ['tags', new Y.Array<string>()]
+        ]);
+        this.links = this.getOrInitSubMap('links', [
+            ['reply', new Y.Array<string>()],
+            ['replyTo', new Y.Array<string>()]
+        ]);
 
-    constructor(public readonly id:string, private doc: Y.Doc, private root:Y.Map<any>) {
-
-    }
-
-    static create(doc: Y.Doc, id:string):NObject {
-        return new NObject(id, doc, doc.getMap(id));
-    }
-
-    public init(author:string): void {
-        const now = Date.now();
-        this.doc.transact(() => {
+        if (!this.root.has('content'))
             this.root.set('content', new Y.Text());
+    }
+    private getOrInitSubMap(key: string, initialData: [string, any][] = []): Y.Map<any> {
+        let subMap = this.root.get(key);
+        if (!subMap) {
+            subMap = new Y.Map<any>(initialData);
+            this.root.set(key, subMap);
+        }
+        return subMap;
+    }
 
-            const links = new Y.Map();
-            links.set('reply', new Y.Array());
-            links.set('replyTo', new Y.Array());
-            this.root.set('links', links);
-
-            const meta = new Y.Map();
-            meta.set('id', this.id);
-            meta.set('name', '?');
-            meta.set('created', now);
-            meta.set('updated', now);
-            meta.set('public', false);
-            meta.set('author', author);
-            meta.set('tags', new Y.Array());
-            this.root.set('metadata', meta);
+    // Helper to update metadata within a transaction
+    private updateMetadata(updates: { [key: string]: any }) {
+        this.doc.transact(() => {
+            for (const key in updates) {
+                this.metadata.set(key, updates[key]);
+            }
+            this.metadata.set('updated', Date.now());
         });
     }
 
-    // Transactional property access
-    private transact<T>(fn: () => T): T {
-        return this.doc.transact(() => {
-            const result = fn();
-            this.root.get('metadata').set('updated', Date.now());
-            return result;
-        });
-    }
+    // Getters
+    get created(): number { return this.metadata.get('created'); }
+    get updated(): number { return this.metadata.get('updated'); }
+    get name(): string { return this.metadata.get('name'); }
+    get public(): boolean { return this.metadata.get('public'); }
+    get author(): string { return this.metadata.get('author'); }
+    get text(): Y.Text { return this.root.get('content'); }
+    get tags(): Y.Array<string> { return this.metadata.get('tags'); }
+    get replies(): Y.Array<string> { return this.links.get('reply'); }
+    get repliesTo(): Y.Array<string> { return this.links.get('replyTo'); }
 
-    get created():number { return this.root.get('metadata').get('created'); }
-    get updated():number { return this.root.get('metadata').get('updated'); }
+    // Setters
+    set name(v: string) { this.updateMetadata({ name: v }); }
+    set public(v: boolean) { this.updateMetadata({ public: v }); }
+    set author(v: string) { this.updateMetadata({ author: v }); }
 
-    get name():string { return this.root.get('metadata').get('name'); }
-    set name(v: string) { this.transact(() => this.root.get('metadata').set('name', v)); }
-
-    get public():boolean { return this.root.get('metadata').get('public'); }
-    set public(v: boolean) { this.transact(() => this.root.get('metadata').set('public', v)); }
-
-    get author():string { return this.root.get('metadata').get('author'); }
-    set author(v: string) { this.transact(() => this.root.get('metadata').set('author', v)); }
-
-    get text():Y.Text { return this.root.get('content'); }
     setText(newText: string | Y.Text) {
-        this.transact(() => {
+        this.doc.transact(() => {
             const t = this.text;
             t.delete(0, t.length);
             t.insert(0, newText.toString());
+            this.updateMetadata({}); // Just to update 'updated'
         });
     }
 
-    // Collections with automatic transactions
-    get tags():Array<string> { return this.root.get('metadata').get('tags').toArray(); }
-    get replies():Set<string> { return new Set(this.root.get('links').get('reply')); }
-    get repliesTo():Set<string> { return new Set(this.root.get('links').get('replyTo')); }
-
-    private updateCollection(type: 'tags' | 'reply' | 'replyTo', value: string, add: boolean) {
-        this.transact(() => {
-            let arr = type === 'tags'
-                ? this.root.get('metadata').get('tags')
-                : this.root.get('links').get(type);
-
-            if (add) {
-                arr.push([value]);
-            } else if (!add) {
-                const n = arr.length;
-                for (let i = 0; i < n; i++)
-                    if (arr.get(i) === value) {
-                        arr.delete(i);
-                        break;
-                    }
+    // Helper method for adding to Y.Array
+    private addToArray(arr: Y.Array<string>, item: string) {
+        this.doc.transact(() => {
+            if (!arr.toArray().includes(item)) {
+                arr.push([item]);
+                this.updateMetadata({}); // Just to update 'updated'
             }
         });
     }
 
-    // Collection operations
-    addTag = (tag: string) => this.updateCollection('tags', tag, true);
-    removeTag = (tag: string) => this.updateCollection('tags', tag, false);
-    addReply = (id: string) => this.updateCollection('reply', id, true);
-    removeReply = (id: string) => this.updateCollection('reply', id, false);
-    addReplyTo = (id: string) => this.updateCollection('replyTo', id, true);
-    removeReplyTo = (id: string) => this.updateCollection('replyTo', id, false);
-
-    toJSON(): any {
-        return {
-            metadata: {
-                id: this.id,
-                name: this.name,
-                created: this.created,
-                updated: this.updated,
-                public: this.public,
-                author: this.author,
-                tags: this.tags
-            },
-            text: this.text.toString(),
-            links: {
-                reply: this.replies,
-                replyTo: this.repliesTo
+    // Helper method for removing from Y.Array
+    private removeFromArray(arr: Y.Array<string>, item: string) {
+        this.doc.transact(() => {
+            const index = arr.toArray().indexOf(item);
+            if (index > -1) {
+                arr.delete(index, 1);
+                this.updateMetadata({}); // Just to update 'updated'
             }
-        };
+        });
     }
 
-    observe(fn: Observer) {
+    // Methods using the helpers
+    addTag(tag: string) { this.addToArray(this.tags, tag); }
+    removeTag(tag: string) { this.removeFromArray(this.tags, tag); }
+    addReply(id: string) { this.addToArray(this.replies, id); }
+    removeReply(id: string) { this.removeFromArray(this.replies, id); }
+    addReplyTo(id: string) { this.addToArray(this.repliesTo, id); }
+    removeReplyTo(id: string) { this.removeFromArray(this.repliesTo, id); }
+
+    observe(fn: (events: Y.YEvent<any>[]) => void) {
         this.root.observeDeep(fn);
     }
 
-    unobserve(fn: Observer) {
+    unobserve(fn: (events: Y.YEvent<any>[]) => void) {
         this.root.unobserveDeep(fn);
+    }
+
+    toJSON(): any {
+        return this.root.toJSON();
     }
 }

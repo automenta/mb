@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { WebrtcProvider } from 'y-webrtc';
+import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {WebrtcProvider} from 'y-webrtc';
 import DB from '../src/db';
 import Network from '../src/net';
-import { IndexeddbPersistence } from 'y-indexeddb';
+import {IndexeddbPersistence} from 'y-indexeddb';
 import * as Y from 'yjs';
 
 describe('Network', () => {
