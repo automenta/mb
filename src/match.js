@@ -138,14 +138,14 @@ export default class Matching {
     // Store processing results
     storeResults(pageId, properties, matches) {
         const page = this.db.page(pageId);
-        if (!page) return;
-
-        // this.db.pageSet(pageId, {
-        //     ...page,
-        //     properties,
-        //     matches,
-        //     lastProcessed: Date.now()
-        // });
+        if (page) {
+            // this.db.pageSet(pageId, {
+            //     ...page,
+            //     properties,
+            //     matches,
+            //     lastProcessed: Date.now()
+            // });
+        }
     }
 
     // Coordinate processing with other nodes

@@ -50,6 +50,9 @@ class DB {
      * @returns The NObject if found, otherwise null.
      */
     get(id: string): NObject | null {
+        var indexed = this.index.get(id);
+        if (!indexed) return null;
+
         const m = this.doc.getMap(id);
         return m ? new NObject(id, this.doc, m) : null;
     }
@@ -69,7 +72,9 @@ class DB {
             if (other.repliesTo.has(id)) other.removeReplyTo(id);
         });
 
-        this.doc.transact(() => this.index.delete(id));
+        this.doc.transact(() => {
+            this.index.delete(id);
+        });
         return true;
     }
 
@@ -109,21 +114,21 @@ class DB {
      * @param name Optional name for the reply.
      * @returns The created reply NObject if successful, else null.
      */
-    createReply(parentId: string, name?: string): NObject | null {
-        if (!parentId || typeof parentId !== 'string') {
-            console.error('Invalid parentId:', parentId);
-            return null;
-        }
-        if (name !== undefined && typeof name !== 'string') {
-            console.error('Invalid name:', name);
-            return null;
-        }
+    createReply(parentId: string, name: string): NObject | null {
+        // if (!parentId) {
+        //     console.error('Invalid parentId:', parentId);
+        //     return null;
+        // }
+        // if (name !== undefined) {
+        //     console.error('Invalid name:', name);
+        //     return null;
+        // }
 
         const parent = this.get(parentId);
         if (!parent) return null;
 
         const reply = this.create();
-        reply.name = name || 'Untitled';
+        reply.name = name;
         reply.addReplyTo(parentId);
         parent.addReply(reply.id);
         return reply;

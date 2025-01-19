@@ -5,9 +5,6 @@ import Network from '../src/net';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import * as Y from 'yjs';
 
-vi.mock('y-webrtc');
-vi.mock('y-indexeddb');
-
 describe('Network', () => {
     let db: DB;
     let net: Network;
@@ -18,7 +15,7 @@ describe('Network', () => {
         ydoc = new Y.Doc();
         db = new DB('testuser', new IndexeddbPersistence('testdb', ydoc));
         net = new Network('test-channel', db);
-        provider = new WebrtcProvider('test-channel', ydoc);
+        provider = net.net;//new WebrtcProvider('test-channel', ydoc);
     });
 
     it('should initialize with default values', () => {

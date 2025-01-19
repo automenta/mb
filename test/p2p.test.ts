@@ -1,15 +1,15 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { waitFor } from '@testing-library/dom';
 import P2PNode from '../server/p2p';
-import { createFromJSON } from '@libp2p/peer-id-factory';
+import { createEd25519PeerId } from '@libp2p/peer-id-factory';
 import { PeerId } from '@libp2p/interface-peer-id';
 
 describe('P2PNode', () => {
     let peerId1: PeerId, peerId2: PeerId;
 
     beforeAll(async () => {
-        peerId1 = await createFromJSON(require('./peer-id1.json'));
-        peerId2 = await createFromJSON(require('./peer-id2.json'));
+        peerId1 = createEd25519PeerId();
+        peerId2 = createEd25519PeerId();
     });
 
     it('should discover each other and log connection', async () => {

@@ -13,7 +13,7 @@ class Network {
         messagesReceived: number;
         peersConnected: Set<any>
     };
-    private net: WebrtcProvider;
+    net: WebrtcProvider;
     private readonly signalingServers: string[];
 
     constructor(channel:string, db:DB) {
@@ -54,11 +54,13 @@ class Network {
         this.net = new WebrtcProvider(this.channel, this.db.doc, {
             signaling: this.signalingServers,
         });
+
         this.net.awareness.setLocalStateField('user', {
             id: this.db.userID,
             name: 'Anonymous',
             color: '#' + Math.floor(Math.random() * 16777215).toString(16),
         });
+
         // Track peer connections
         this.net.on('peers', ({added, removed}) => {
             added.forEach(id => {
