@@ -10,7 +10,7 @@ class DB {
 
     constructor(
         readonly userID: string,
-        provider: IndexeddbPersistence// | LeveldbPersistence
+        provider?: IndexeddbPersistence// | LeveldbPersistence
     ) {
         this.doc = new Y.Doc();
 
@@ -22,12 +22,12 @@ class DB {
      * Initializes the persistence provider.
      * @param provider The persistence provider to bind.
      */
-    private initializeProvider(provider: IndexeddbPersistence /*| LeveldbPersistence*/): void {
-        // if (!provider) {
-        //     provider = new IndexeddbPersistence(`todo_${this.userID}`, this.doc);
-        // } else {
-            //provider.bindState(this.doc.name, this.doc);
-        // }
+    private initializeProvider(provider?: IndexeddbPersistence /*| LeveldbPersistence*/): void {
+         if (!provider) {
+            provider = new IndexeddbPersistence(`todo_${this.userID}`, this.doc);
+        } else {
+            provider.bindState(this.doc.name, this.doc);
+        }
 
         provider.on('synced', () => console.log('Synced'));
     }
