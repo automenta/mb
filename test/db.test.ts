@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import * as Y from 'yjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IndexeddbPersistence } from 'y-indexeddb';
+import * as Y from 'yjs';
 import DB from '../src/db';
 import NObject from '../src/obj';
 
@@ -24,7 +24,11 @@ describe('DB', () => {
     it('should create and retrieve an object', () => {
         const obj = db.create();
         expect(obj).toBeInstanceOf(NObject);
-        expect(db.get(obj.id).root).toEqual(obj.root);
+        const retrievedObj = db.get(obj.id);
+        expect(retrievedObj).not.toBeNull();
+        if (retrievedObj !== null) {
+            expect(retrievedObj.toJSON()).toEqual(obj.toJSON());
+        }
     });
 
     it('should delete an object and its references', () => {
@@ -51,7 +55,7 @@ describe('DB', () => {
         const obj2 = db.create();
         obj1.addTag('test');
         const list = db.listByTag('test');
-        const s = list.map(x=>JSON.stringify(x)).toString();
+        const s = list.map(x => JSON.stringify(x)).toString();
         expect(s.indexOf(obj2.id)).equals(-1); //expect(list).not.toContain(obj2);
         expect(s.indexOf(obj1.id)).not.equals(-1); //expect(list).toContain(obj1);
     });
@@ -124,7 +128,7 @@ describe('DB', () => {
         const text = new Y.Text('Test text');
         obj.setText(text);
         const objTextValue = db.objText(obj.id);
-        if (objTextValue === null || objTextValue.toString().length===0) throw new Error('Object text is null');
+        if (objTextValue === null || objTextValue.toString().length === 0) throw new Error('Object text is null');
         expect(objTextValue.toString()).toEqual('Test text');
     });
 
@@ -186,6 +190,38 @@ describe('DB', () => {
         expect(obj.text.toString()).toEqual(longText.toString());
     });
 
+    // New tests for provider initialization
+    it('should initialize provider and sync', async () => {
+        const provider = new IndexeddbPersistence('testdb', ydoc);
+        const db = new DB('testuser', provider);
+        await provider.whenSynced;
+        expect(true).toBeTruthy(); // If whenSynced resolves, the provider is initialized
+    });
+
+    it('should bind provider to document', async () => {
+        const provider = new IndexeddbPersistence('testdb', ydoc);
+        new DB('testuser', provider);
+        await provider.whenSynced;
+        expect(provider.doc).toBe(ydoc);
+    });
+
+    it('should log synced event', () => {
+        const provider = new IndexeddbPersistence('testdb', ydoc);
+        const db = new DB('testuser', provider);
+        const consoleSpy = vi.spyOn(console, 'log');
+        provider.emit('synced', []);
+        expect(consoleSpy).toHaveBeenCalledWith('Synced');
+    });
+
+    // New test for error handling in createReply
+    it('should log error for invalid name in createReply', () => {
+        const obj = db.create();
+        const consoleSpy = vi.spyOn(console, 'error');
+        const reply = db.createReply(obj.id, 123 as any);
+        expect(consoleSpy).toHaveBeenCalledWith('Invalid name:', 123);
+        expect(reply).toBeNull();
+    });
+
     // New test for filterList method
     it('should filter objects by a given predicate', () => {
         const obj1 = db.create();
@@ -196,6 +232,19 @@ describe('DB', () => {
         obj3.name = 'noFilter';
 
         const filteredList = db.filterList(obj => obj.name.startsWith('filterTest'));
+        expect(filteredList).toContain(obj1);
+        expect(filteredList).toContain(obj2);
+        expect(filteredList).not.toContain(obj3);
+    });
+    // New test for filterList method
+    it('should filter objects by a given predicate', () => {
+        const obj1 = db.create();
+        const obj2 = db.create();
+        const obj3 = db.create();
+        obj1.name = 'filterTest1';
+        obj2.name = 'filterTest2';
+        obj3.name = 'noFilter';
+        const filteredList = db.filterList((obj: NObject) => obj.name.startsWith('filterTest'));
         expect(filteredList).toContain(obj1);
         expect(filteredList).toContain(obj2);
         expect(filteredList).not.toContain(obj3);

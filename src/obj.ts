@@ -79,8 +79,12 @@ export default class NObject {
             if (add) {
                 arr.push([value]);
             } else if (!add) {
-                const idx = arr.indexOf(value);
-                if (idx !== -1) arr.delete(idx, 1);
+                const n = arr.length;
+                for (var i = 0; i < n; i++)
+                    if (arr.get(i) === value) {
+                        arr.delete(i);
+                        break;
+                    }
             }
         });
     }
