@@ -7,6 +7,7 @@
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
+    "server": "node server/server.ts",
     "signal": "PORT=4444 node ./node_modules/y-webrtc/bin/server.js",
     "dump": "git ls-files | xargs -I{} sh -c 'echo -e \"===== {} =====\\n\"; cat {}; echo -e \"\\n\"'",
     "dumpclip": "npm run dump | xclip -i",
@@ -17,6 +18,7 @@
   "dependencies": {
     "@chainsafe/libp2p-gossipsub": "latest",
     "@chainsafe/libp2p-noise": "latest",
+    "@libp2p/websockets": "latest",
     "@libp2p/bootstrap": "latest",
     "@libp2p/interface-peer-id": "latest",
     "@libp2p/kad-dht": "latest",
@@ -36,7 +38,8 @@
     "y-indexeddb": "latest",
     "y-leveldb": "latest",
     "y-webrtc": "latest",
-    "yjs": "latest"
+    "yjs": "latest",
+    "ipfs-core": "latest"
   },
   "devDependencies": {
     "@types/express": "latest",

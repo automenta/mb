@@ -80,7 +80,7 @@ export default class NObject {
                 arr.push([value]);
             } else if (!add) {
                 const n = arr.length;
-                for (var i = 0; i < n; i++)
+                for (let i = 0; i < n; i++)
                     if (arr.get(i) === value) {
                         arr.delete(i);
                         break;

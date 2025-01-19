@@ -99,7 +99,7 @@ describe('DB', () => {
         setTimeout(()=>{
             const updatedUpdated = obj.updated;
             expect(updatedUpdated).toBeGreaterThan(initialUpdated);
-        }, 15);
+        }, 100);
     });
 
     it('should set text with string', () => {
@@ -184,18 +184,11 @@ describe('DB', () => {
         expect(true).toBeTruthy(); // If whenSynced resolves, the provider is initialized
     });
 
-    // it('should bind provider to document', async () => {
-    //     const provider = new IndexeddbPersistence('testdb', ydoc);
-    //     new DB('testuser', provider);
-    //     await provider.whenSynced;
-    //     expect(provider.doc).toBe(ydoc);
-    // });
-
     it('should log synced event', () => {
         const provider = new IndexeddbPersistence('testdb', ydoc);
         const db = new DB('testuser', provider);
         const consoleSpy = vi.spyOn(console, 'log');
-        provider.emit('synced', []);
+        db.provider.emit('synced', []);
         expect(consoleSpy).toHaveBeenCalledWith('Synced');
     });
 

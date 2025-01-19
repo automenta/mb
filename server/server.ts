@@ -1,23 +1,24 @@
 import express from 'express';
 import http from 'http';
 import path from 'path';
-import { Server as SocketIOServer, Socket } from 'socket.io';
-import { createServer as viteServer } from 'vite';
+import {Server as SocketIOServer, Socket} from 'socket.io';
+import {createServer as viteServer} from 'vite';
 
 const PORT = 3000;
 
-(async () => {
+export async function startServer() {
+
     const app = express();
 
     app.use((await viteServer({
-        server: { middlewareMode: 'html' },
-        root: path.resolve('../'),
+        server: {middlewareMode: 'html'},
+        root: path.resolve('./'), //relative to root, when running from root
     })).middlewares);
 
     const httpServer = http.createServer(app);
 
     const io = new SocketIOServer(httpServer, {
-        cors: { origin: '*' },
+        cors: {origin: '*'},
     });
 
 
@@ -25,21 +26,21 @@ const PORT = 3000;
         console.log('User connected:', s.id);
 
         s.on('signal', (message) => {
-            const { target, data } = message;
+            const {target, data} = message;
             console.log(`Relaying message from ${s.id} to ${target}`);
-            io.to(target).emit('signal', { sender: s.id, data });
+            io.to(target).emit('signal', {sender: s.id, data});
         });
 
         s.on('join', (roomId) => {
             s.join(roomId);
             console.log(`${s.id} joined room: ${roomId}`);
-            s.to(roomId).emit('user-joined', { userId: s.id });
+            s.to(roomId).emit('user-joined', {userId: s.id});
         });
 
         s.on('join', (roomId) => {
             s.join(roomId);
             console.log(`${s.id} joined room: ${roomId}`);
-            s.to(roomId).emit('user-joined', { userId: s.id });
+            s.to(roomId).emit('user-joined', {userId: s.id});
         });
 
 
@@ -58,12 +59,19 @@ const PORT = 3000;
     io.on('connection', (socket) => wsConnect(socket));
 
 
-    // Define HTTP routes
+// Define HTTP routes
     app.get('/status', (req, res) => {
-        res.json({ status: 'OK', timestamp: new Date() });
+        res.json({status: 'OK', timestamp: new Date()});
     });
 
     httpServer.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
     });
-})();
+
+    return {server: httpServer, io};
+}
+// @ts-ignore
+if (import.meta.url === `file://${process.argv[1]}`) {
+    // Start server if not running in a test environment
+    startServer();
+}

@@ -7,6 +7,8 @@ import { v4 as uuidv4 } from 'uuid';
 class DB {
     readonly doc: Y.Doc;
     public readonly index: Y.Map<NObject>;
+    private provider: IndexeddbPersistence;
+
 
     constructor(
         readonly userID: string,
@@ -14,7 +16,7 @@ class DB {
     ) {
         this.doc = new Y.Doc();
 
-        this.initializeProvider(provider);
+        this.provider = this.initializeProvider(provider);
         this.index = this.doc.getMap<NObject>('objects');
     }
 
@@ -22,15 +24,17 @@ class DB {
      * Initializes the persistence provider.
      * @param provider The persistence provider to bind.
      */
-    private initializeProvider(provider?: IndexeddbPersistence /*| LeveldbPersistence*/): void {
+    private initializeProvider(provider?: IndexeddbPersistence /*| LeveldbPersistence*/): IndexeddbPersistence {
          if (!provider) {
             provider = new IndexeddbPersistence(`todo_${this.userID}`, this.doc);
         } else {
-             if (provider.bindState)
+            if (provider.bindState)
                 provider.bindState(this.doc.name, this.doc);
         }
+        this.provider = provider;
 
         provider.on('synced', () => console.log('Synced'));
+        return provider;
     }
 
     /**
@@ -50,7 +54,7 @@ class DB {
      * @returns The NObject if found, otherwise null.
      */
     get(id: string): NObject | null {
-        var indexed = this.index.get(id);
+        const indexed = this.index.get(id);
         if (!indexed) return null;
 
         const m = this.doc.getMap(id);

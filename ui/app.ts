@@ -7,7 +7,6 @@ import Matching from "../src/match.js";
 import { io } from "socket.io-client";
 
 import '/ui/css/app.css';
-import {IndexeddbPersistence} from "y-indexeddb";
 
 export default class App {
     private readonly channel: string;

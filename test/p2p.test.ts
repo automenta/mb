@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { waitFor } from '@testing-library/dom';
 import P2PNode from '../server/p2p';
 import { createEd25519PeerId } from '@libp2p/peer-id-factory';

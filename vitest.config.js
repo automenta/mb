@@ -3,7 +3,7 @@ import {defineConfig} from 'vitest/config';
 export default defineConfig({
     test: {
         globals: true,
-        environment: 'happy-dom',
+        //environment: 'happy-dom',
         setupFiles: ['./test/setup.js'],
         coverage: {
             provider: 'v8',
@@ -13,6 +13,6 @@ export default defineConfig({
                 'dist/**'
             ],
         },
-        include: ['test/**/*.test.ts']
+        include: ['test/**/*.test.ts','test/**/*.integration.ts']
     },
 });
