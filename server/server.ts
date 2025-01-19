@@ -59,7 +59,6 @@ export async function startServer() {
     io.on('connection', (socket) => wsConnect(socket));
 
 
-// Define HTTP routes
     app.get('/status', (req, res) => {
         res.json({status: 'OK', timestamp: new Date()});
     });
@@ -70,6 +69,7 @@ export async function startServer() {
 
     return {server: httpServer, io};
 }
+
 // @ts-ignore
 if (import.meta.url === `file://${process.argv[1]}`) {
     // Start server if not running in a test environment

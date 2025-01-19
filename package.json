@@ -25,7 +25,7 @@
     "@libp2p/mplex": "latest",
     "@libp2p/peer-id-factory": "latest",
     "@libp2p/webrtc-star": "latest",
-    "@testing-library/dom": "^10.4.0",
+    "@testing-library/dom": "latest",
     "bittorrent-dht": "latest",
     "cors": "latest",
     "express": "latest",
@@ -48,7 +48,6 @@
     "@vitest/coverage-v8": "latest",
     "@vitest/ui": "latest",
     "vite": "latest",
-    "vitest": "latest",
-    "happy-dom": "latest"
+    "vitest": "latest"
   }
 }
