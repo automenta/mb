@@ -5,29 +5,22 @@ import App from './app'
 import {debounce} from "../src/util.js";
 import '/ui/css/editor.css';
 import * as Y from 'yjs';
+import { Awareness } from 'y-protocols/awareness';
 
 export default class Editor {
-    private readonly db: DB;
-    private readonly app: App;
-    private readonly getAwareness: Function;
     private currentObjId: string;
-    private provider: any;
-    private ele: JQuery;
     private ytext: Y.Text | null;
     private updatePeriodMS: number;
     private editor: JQuery;
     private isReadOnly: boolean;
     private currentObject:NObject;
+    private awareness: Awareness;
 
-    constructor(ele:JQuery, db:DB, getAwareness:Function, app:App) {
-        this.db = db;
-        this.app = app;
-        this.getAwareness = getAwareness;
+    constructor(private readonly ele:JQuery, private readonly db:DB, private readonly getAwareness:Function, private readonly app:App) {
         this.currentObjId = '';
-        this.provider = null;
         this.ytext = null;
         this.updatePeriodMS = 100;
-        this.ele = ele;
+        this.awareness = getAwareness();
     }
 
     saveContent() {
@@ -107,17 +100,13 @@ export default class Editor {
             if (currentContent !== yContent)
                 this.editor.html(yContent);
         });
+
+        this.setupAwareness();
     }
 
     editorStop() {
-        if (this.provider) {
-            this.provider.destroy();
-            this.provider = null;
-        }
-        if (this.editor) {
-            const observer = this.editor.data('observer');
-            if (observer) observer.disconnect();
-        }
+        this.editor?.data('observer')?.disconnect();
+
         this.ytext = null;
         this.ele.empty();
         this.currentObject = null;
@@ -125,28 +114,27 @@ export default class Editor {
     }
 
     renderMetadataPanel():JQuery {
-        if (!this.currentObject) return $('<div>');
-
-        return $('<div>', {
+        return !this.currentObject ? $('<div>') : $('<div>', {
             class: 'metadata-panel'
         }).append(
-            $('<div>', { class: 'metadata-row' }).append(
-                $('<span>', { text: 'Created: ' }),
-                $('<span>', { text: new Date(this.currentObject.created).toLocaleString() })
+            $('<div>', {class: 'metadata-row'}).append(
+                $('<span>', {text: 'Created: '}),
+                $('<span>', {text: new Date(this.currentObject.created).toLocaleString()})
             ),
-            $('<div>', { class: 'metadata-row' }).append(
-                $('<span>', { text: 'Last Updated: ' }),
-                $('<span>', { text: new Date(this.currentObject.updated).toLocaleString() })
+            $('<div>', {class: 'metadata-row'}).append(
+                $('<span>', {text: 'Last Updated: '}),
+                $('<span>', {text: new Date(this.currentObject.updated).toLocaleString()})
             ),
-            $('<div>', { class: 'metadata-row' }).append(
-                $('<span>', { text: 'Author: ' }),
-                $('<span>', { text: this.currentObject.author })
+            $('<div>', {class: 'metadata-row'}).append(
+                $('<span>', {text: 'Author: '}),
+                $('<span>', {text: this.currentObject.author})
             ),
-            $('<div>', { class: 'metadata-tags' }).append(
-                $('<span>', { text: 'Tags: ' }),
+            $('<div>', {class: 'metadata-tags'}).append(
+                $('<span>', {text: 'Tags: '}),
                 this.renderTagsEditor()
             )
         );
+
     }
 
     renderTagsEditor():JQuery {
@@ -247,6 +235,7 @@ export default class Editor {
             {command: 'insertLink', icon: '🔗', title: 'Insert Link'},
             {command: 'undo', icon: '↩️', title: 'Undo'},
             {command: 'redo', icon: '↪️', title: 'Redo'},
+            {command: 'toggleDarkMode', icon: '🌙', title: 'Toggle Dark Mode'}
         ].forEach(({ command, icon, title }) => {
             $('<button>', {
                 html: icon,
@@ -257,6 +246,8 @@ export default class Editor {
                 if (command === 'insertLink') {
                     const url = prompt('Enter the URL');
                     if (url) document.execCommand(command, false, url);
+                } else if (command === 'toggleDarkMode') {
+                    this.app.toggleDarkMode();
                 } else {
                     document.execCommand(command, false, null);
                 }
@@ -272,30 +263,26 @@ export default class Editor {
         const controls = $('<div>').addClass('editor-controls');
 
         // Title input
-        controls.append(this.renderTitleInput(page, pageId));
+        controls.append(this.renderTitleInput(page));
 
         // Only show privacy toggle and template buttons if not read-only
-        if (!this.isReadOnly) {
+        if (!this.isReadOnly)
             controls.append(
                 this.renderPrivacyToggle(page, pageId),
                 this.renderTemplateButtons()
             );
-        }
 
         // Add read-only indicator if applicable
-        if (this.isReadOnly) {
-            controls.append(
-                $('<div>', {
-                    class: 'readonly-indicator',
-                    text: 'Read Only'
-                })
-            );
-        }
+        if (this.isReadOnly)
+            controls.append($('<div>', {
+                class: 'readonly-indicator',
+                text: 'Read Only'
+            }));
 
         return controls;
     }
 
-    renderTitleInput(page, pageId:string):JQuery {
+    renderTitleInput(page):JQuery<HTMLElement> {
         return $('<input>', {
             type: 'text',
             class: 'title-input',
@@ -315,10 +302,10 @@ export default class Editor {
             $('<label>', {class: 'toggle-switch'}).append(
                 $('<input>', {
                     type: 'checkbox',
-                    checked: page.public,
+                    checked: page.public, // Corrected type
                     disabled: this.isReadOnly
                 }).on('change', e => {
-                    let checked = e.target.checked;
+                    let checked = (e.target as HTMLInputElement).checked; // Type assertion
                     this.db.objPublic(pageId, checked);
                     checked ?
                         this.app.net.shareDocument(pageId) :
@@ -355,23 +342,6 @@ export default class Editor {
         let html = '<TEMPLATE>';
         document.execCommand('insertHTML', false, html);
     }
-}
-/*
-TODO
-
-import * as Y from 'yjs';
-import { Awareness } from 'y-protocols/awareness';
-
-export default class Editor {
-    // ... existing code ...
-
-    private awareness: Awareness;
-
-    constructor(ele: JQuery, db: DB, getAwareness: Function, app: App) {
-        // ... existing code ...
-        this.awareness = getAwareness();
-        this.setupAwareness();
-    }
 
     private setupAwareness() {
         // Listen for local cursor changes
@@ -402,7 +372,7 @@ export default class Editor {
         });
     }
 
-    private renderCursor(cursorData, user) {
+    private renderCursor(cursorData, user: {id: string; color: string}) { // Added type definition for user
         // Remove existing cursor elements for this user
         this.editor.find(`.remote-cursor-${user.id}`).remove();
 
@@ -418,27 +388,18 @@ export default class Editor {
         });
 
         // Position the cursor in the editor
-        // (You'll need to map cursorData.anchor to a position in the DOM)
-        // For simplicity, here's a placeholder implementation:
         const position = this.getPositionFromOffset(cursorData.anchor);
         cursorEle.css({ left: position.left, top: position.top });
 
         this.editor.append(cursorEle);
     }
 
-    private getPositionFromOffset(offset: number) {
-        // Implement a method to convert text offset to x,y coordinates
-        // This can be complex depending on your editor's implementation
-        return { left: 0, top: 0 }; // Placeholder
+    private getPositionFromOffset(offset: number): { left: number; top: number } {
+        const range = document.createRange();
+        if (this.editor[0].childNodes[0]) { //Added check
+            range.setStart(this.editor[0].childNodes[0], offset);
+        }
+        const rect = range.getBoundingClientRect();
+        return { left: rect.left, top: rect.top };
     }
-
-    // ... existing code ...
 }
-
-// In editor.css
-
-.remote-cursor {
-    pointer-events: none;
-    z-index: 10;
-}
- */

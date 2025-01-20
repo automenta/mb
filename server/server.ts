@@ -11,7 +11,7 @@ export async function startServer() {
     const app = express();
 
     app.use((await viteServer({
-        server: {middlewareMode: 'html'},
+        server: {middlewareMode: true},
         root: path.resolve('./'), //relative to root, when running from root
     })).middlewares);
 
@@ -53,6 +53,14 @@ export async function startServer() {
         //         await plugins[pluginName].handleMessage(topic, message);
         //     }
         // });
+        s.on('shareDocument', (documentId) => {
+            console.log(`Document ${documentId} shared by ${s.id}`);
+            // Add logic to synchronize documentId over the network
+        });
+        s.on('unshareDocument', (documentId) => {
+            console.log(`Document ${documentId} unshared by ${s.id}`);
+            // Add logic to stop synchronizing documentId over the network
+        });
     }
 
     io.on('connection', (socket) => wsConnect(socket));
