@@ -6,6 +6,7 @@ import NObject from './obj';
 class DB {
     readonly doc: Y.Doc;
     public readonly index: Y.Map<NObject>;
+    public readonly config: Y.Map<unknown>;
     private provider: IndexeddbPersistence;
 
 
@@ -16,6 +17,7 @@ class DB {
         this.doc = new Y.Doc();
 
         this.provider = this.initializeProvider(provider);
+        this.config = this.doc.getMap('config');
         this.index = this.doc.getMap<NObject>('objects');
     }
 
@@ -23,15 +25,10 @@ class DB {
      * Initializes the persistence provider.
      * @param provider The persistence provider to bind.
      */
-    private initializeProvider(provider?: IndexeddbPersistence /*| LeveldbPersistence*/): IndexeddbPersistence {
-         if (!provider) {
+    private initializeProvider(provider?: IndexeddbPersistence): IndexeddbPersistence {
+        if (!provider) {
             provider = new IndexeddbPersistence(`todo_${this.userID}`, this.doc);
-        } else {
-            if (provider.bindState)
-                provider.bindState(this.doc.name, this.doc);
         }
-        this.provider = provider;
-
         provider.on('synced', () => console.log('Synced'));
         return provider;
     }
@@ -184,6 +181,14 @@ class DB {
         const page = this.get(pageId);
         if (page)
             page.public = isPublic;
+    }
+
+    getSignalingServers(): string[] {
+        return this.config.get('signalingServers') as string[] || [];
+    }
+
+    setSignalingServers(servers: string[]): void {
+        this.config.set('signalingServers', servers);
     }
 }
 

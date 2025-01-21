@@ -32,7 +32,7 @@ export default class App {
         const mainView = $('<div class="main-view"></div>');
         this.ele.append(mainView);
 
-        this.editor = new Editor(mainView, this.db, this.awareness.bind(this), this);
+        this.editor = new Editor(mainView, this.db, this.net.awareness.bind(this.net), this);
 
         this.ele.prepend(new SideBar(this).ele); //HACK add last
 
@@ -57,4 +57,8 @@ export default class App {
 
     user() { return this.net.user(); }
     awareness() { return this.net.awareness(); }
+
+    toggleDarkMode(): void {
+        this.ele.toggleClass('dark-mode');
+    }
 }
