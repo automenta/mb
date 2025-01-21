@@ -4,7 +4,11 @@
   "description": "",
   "main": "main.js",
   "scripts": {
-    "start": "npx electron . --no-sandbox"
+    "start": "npx electron . --no-sandbox",
+
+    "build": "webpack -p",
+    "chat": "qode ./dist/index.js",
+    "debug": "webpack && qode --inspect ./dist/index.js"
   },
   "dependencies": {
     "mb2": "../../",
@@ -20,13 +24,19 @@
     "screenshot-desktop": "latest",
     "sharp": "latest",
     "systeminformation": "latest",
-    "tesseract.js": "latest"
+    "tesseract.js": "latest",
+    "@nodegui/nodegui": "latest"
   },
   "devDependencies": {
     "@types/node": "latest",
     "@types/screenshot-desktop": "latest",
     "electron": "latest",
-    "typescript": "latest"
+    "typescript": "latest",
+    "file-loader": "latest",
+    "node-loader": "latest",
+    "ts-loader": "latest",
+    "webpack": "latest",
+    "webpack-cli": "latest"
   },
   "private": true
 }

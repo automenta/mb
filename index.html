@@ -7,17 +7,13 @@
     <title>TODO</title>
 </head>
 <body>
-<script type="module" language="typescript">
-    import App from '/ui/app';
-    import $ from 'jquery';
-    import { v4 as uuid } from 'uuid';
+    <script type="module" language="typescript">
+        import App from '/ui/app';
+        import $ from 'jquery';
+        import { v4 as uuid } from 'uuid';
 
-    let userID = localStorage['userID'];
-    if (!userID) {
-        userID = uuid();
-        localStorage['userID'] = userID;
-    }
-    $('body').append(new App(userID, "todo").ele);
-</script>
+        let userID = localStorage['userID'] || (localStorage['userID'] = uuid());
+        $('body').append(new App(userID, "todo").ele);
+    </script>
 </body>
 </html>
