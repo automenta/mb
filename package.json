@@ -12,9 +12,9 @@
     "dump": "git ls-files | xargs -I{} sh -c 'echo -e \"===== {} =====\\n\"; cat {}; echo -e \"\\n\"'",
     "dumpclip": "npm run dump | xclip -i",
     "test": "vitest --run",
-    "test:node": "vitest --run --config vitest.config.js",
+    "test:server": "vitest --run --config vitest.config.js",
     "test:browser": "vitest --run --config vitest.browser.config.ts",
-    "test:all": "npm run test:node && npm run test:browser",
+    "test:all": "npm run test:server && npm run test:browser",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage"
   },

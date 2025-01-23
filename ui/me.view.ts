@@ -1,7 +1,6 @@
 import { $, Y, Awareness } from './imports';
 import { SchemaRegistry } from '../schema/schema-registry';
 import userSchemaJson from '../schema/user.schema.json';
-import { Form } from './util/form';
 import { UserSchema } from './schema';
 import { validateSocialLink } from './util/validation';
 import { UserInfo } from './types';
@@ -82,7 +81,7 @@ export default class MeView {
   
     const fieldId = `user-${field}`;
     const label = $('<label/>', { for: fieldId, text: `${schemaProps.description}: ` });
-    let input: JQuery<HTMLElement>;
+    let input: JQuery;
   
     switch (schemaProps.type) {
       case 'string':

@@ -3,7 +3,7 @@ import $ from "jquery";
 import '/ui/css/db.css';
 
 export default class DBView {
-    ele: JQuery<HTMLElement>;
+    ele: JQuery;
     sortKey: string;
     sortOrder: string;
     filterText: string;
@@ -77,7 +77,7 @@ export default class DBView {
         $tbody.append(filteredPages.map(this.createRow.bind(this)).toArray());
     }
 
-    private createRow(page: any): JQuery<HTMLElement> {
+    private createRow(page: any): JQuery {
         const $row = $('<tr>');
         $row.append($('<td>').text(page.pageId));
         $row.append($('<td>').text(page.title));

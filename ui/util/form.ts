@@ -1,5 +1,3 @@
-import { SchemaRegistry } from '../../schema/schema-registry';
-
 interface FormProps {
   schema: any;
   data: any;
@@ -43,10 +41,10 @@ export class Form {
 
   private schema: any;
   private data: any;
-  private onChange: (data: any) => void;
-  private mode: 'edit' | 'read';
-  private element: HTMLDivElement;
-  private schemaInfoElement: HTMLDivElement;
+  private readonly onChange: (data: any) => void;
+  private readonly mode: 'edit' | 'read';
+  private readonly element: HTMLDivElement;
+  private readonly schemaInfoElement: HTMLDivElement;
   private templateControls: HTMLDivElement;
 
   constructor(props: FormProps) {

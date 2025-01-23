@@ -28,7 +28,7 @@ export default class EditorControls {
     return controls;
   }
 
-  private renderTitleInput(): JQuery<HTMLElement> {
+  private renderTitleInput(): JQuery {
     return $('<input>', {
       type: 'text',
       class: 'title-input',

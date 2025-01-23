@@ -8,7 +8,7 @@ export abstract class BaseView {
   protected readonly getAwareness?: () => Awareness;
   protected readonly getUser?: () => UserInfo;
 
-  constructor(
+  protected constructor(
     root: JQuery,
     options: {
       getAwareness?: () => Awareness;

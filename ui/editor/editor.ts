@@ -1,5 +1,5 @@
-import { $, Y, Awareness, DB, App, NObject } from '../imports';
-import { EditorConfig, DocumentMetadata, CursorState } from '../types';
+import { $, Y, Awareness, NObject } from '../imports';
+import { EditorConfig } from '../types';
 import { ToolbarManager } from './toolbar-manager';
 import { MetadataManager } from './metadata-manager';
 import { AwarenessManager } from './awareness-manager';
@@ -12,7 +12,7 @@ export default class Editor {
     private readonly toolbar: ToolbarManager;
     private readonly metadata: MetadataManager;
     private readonly awareness: AwarenessManager;
-    private rootElement: JQuery;
+    private readonly rootElement: JQuery;
     private _darkMode = false;
 
     public currentObject?: NObject | Y.Map<any>;

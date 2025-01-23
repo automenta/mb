@@ -1,6 +1,5 @@
-import { $, Y, Awareness, DB, NObject, debounce } from '../imports';
+import { $, Y, debounce } from '../imports';
 import type { EditorConfig } from '../types';
-import type { JSONContent } from '@tiptap/core';
 
 export type UpdateCallback = () => void;
 

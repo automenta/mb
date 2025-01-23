@@ -4,7 +4,6 @@ import {IndexeddbPersistence} from 'y-indexeddb';
 import NObject from './obj';
 import {QueryBuilder} from './query';
 import {ReplyManager} from './reply-manager';
-import {randomUUID} from "crypto";
 
 class DB {
   readonly doc: Y.Doc;

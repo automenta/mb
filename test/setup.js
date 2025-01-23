@@ -1,5 +1,4 @@
 import {afterEach, beforeAll, vi} from 'vitest';
-import $ from 'jquery';
 
 vi.mock('y-webrtc', () => ({
     WebrtcProvider: vi.fn().mockImplementation(() => ({
@@ -54,7 +53,7 @@ beforeAll(() => {
     global.RTCSessionDescription = vi.fn();
 
     // Add jQuery to global scope as some components expect it
-    global.$ = $;
+    //global.$ = $;
 });
 
 // Clean up after each test

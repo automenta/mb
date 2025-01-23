@@ -1,7 +1,6 @@
 // test/utils.ts
-import { vi, type Mock } from 'vitest';
+import { vi } from 'vitest';
 import { IndexeddbPersistence } from 'y-indexeddb';
-import { WebrtcProvider } from 'y-webrtc';
 import * as Y from 'yjs';
 import DB from '../src/db';
 import Network from '../src/net';

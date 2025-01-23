@@ -1,5 +1,5 @@
 import { $ } from './imports';
-import { store, initializeStore, type AppState } from './store';
+import { store, initializeStore } from './store';
 import type NObject from '../src/obj';
 import ObjViewMini from './util/obj.view.mini';
 import '/ui/css/sidebar.css';
@@ -79,8 +79,8 @@ class PageContextMenu {
 export default class Sidebar {
     readonly ele: JQuery;
     private contextMenu: PageContextMenu;
-    private pageList: JQuery;
-    private store: ReturnType<typeof initializeStore> & { app?: App; };
+    private readonly pageList: JQuery;
+    private readonly store: ReturnType<typeof initializeStore> & { app?: App; };
     private meView: MeView;
     private friendsView: FriendsView;
     private netView: NetView;
@@ -134,12 +134,13 @@ export default class Sidebar {
             return menuBar;
         }
 
+        let $main = $('.main-view');
         const menuItems = [
-            { id: 'profile', title: 'Me', view: new MeView($('.main-view'), app.user.bind(app), app.awareness.bind(app)) },
-            { id: 'friends', title: 'Friends', view: new FriendsView($('.main-view'), app.awareness.bind(app)) },
-            { id: 'network', title: 'Net', view: new NetView($('.main-view'), app.net) },
-            { id: 'database', title: 'DB', view: new DBView($('.main-view')[0], app.db) },
-            { id: 'matching', title: 'Matching', view: new MatchingView($('.main-view'), app.match) },
+            { id: 'profile', title: 'Me', view: new MeView($main, app.user.bind(app), app.awareness.bind(app)) },
+            { id: 'friends', title: 'Friends', view: new FriendsView($main, app.awareness.bind(app)) },
+            { id: 'network', title: 'Net', view: new NetView($main, app.net) },
+            { id: 'database', title: 'DB', view: new DBView($main[0], app.db) },
+            { id: 'matching', title: 'Matching', view: new MatchingView($main, app.match) },
         ];
 
         menuItems.forEach(item => menuBar.append(this.createMenuButton.bind(this)(item)));
