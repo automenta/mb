@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Friend",
+  "description": "Extended user schema for friend relationships",
+  "allOf": [
+    { "$ref": "user.schema.json" }
+  ],
+  "properties": {
+    "userType": {
+      "type": "string",
+      "const": "friend"
+    },
+    "friendshipDate": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the friendship was established"
+    },
+    "sharedActivities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["chat", "gaming", "projects"]
+      },
+      "description": "List of shared activities with this friend"
+    }
+  },
+  "required": ["friendshipDate"]
+}

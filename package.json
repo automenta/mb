@@ -12,6 +12,9 @@
     "dump": "git ls-files | xargs -I{} sh -c 'echo -e \"===== {} =====\\n\"; cat {}; echo -e \"\\n\"'",
     "dumpclip": "npm run dump | xclip -i",
     "test": "vitest --run",
+    "test:node": "vitest --run --config vitest.config.js",
+    "test:browser": "vitest --run --config vitest.browser.config.ts",
+    "test:all": "npm run test:node && npm run test:browser",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage"
   },
@@ -25,8 +28,8 @@
     "@libp2p/peer-id-factory": "latest",
     "@libp2p/webrtc-star": "latest",
     "@libp2p/websockets": "latest",
-    "@nodegui/nodegui": "^0.70.0",
     "@testing-library/dom": "latest",
+    "@tiptap/core": "latest",
     "bittorrent-dht": "latest",
     "cors": "latest",
     "express": "latest",
@@ -38,8 +41,9 @@
     "vite": "latest",
     "ws": "latest",
     "y-indexeddb": "latest",
-    "y-leveldb": "^0.1.2",
+    "y-leveldb": "latest",
     "y-webrtc": "latest",
+    "y-websocket": "latest",
     "yjs": "latest"
   },
   "devDependencies": {
@@ -50,6 +54,7 @@
     "@types/ws": "latest",
     "@vitest/coverage-v8": "latest",
     "@vitest/ui": "latest",
+    "happy-dom": "latest",
     "vite": "latest",
     "vitest": "latest"
   }

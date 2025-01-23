@@ -64,7 +64,7 @@ export default class Matching {
 
         try {
             const page = this.db.page(pageId);
-            const content = this.db.pageContent(pageId).toString();
+            const content = page.content;
 
             // Extract semantic properties (simplified example)
             const properties = this.extractProperties(content);

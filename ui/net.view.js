@@ -6,9 +6,9 @@ import '/ui/css/net.css';
 class BootstrapView {
     constructor(net) {
         this.net = net;
-        this.addButton = $('<button>').text("+"); //#add-bootstrap-server
-        this.$input = $('<input>').attr('placeholder', 'bootstrap'); //#new-bootstrap-server
-        this.$nodeList = $('<div>');//#bootstrap-server-list
+        this.addButton = $('<button>').text("+");
+        this.$input = $('<input>').attr('placeholder', 'bootstrap');
+        this.$nodeList = $('<div>');
 
         this.addButton.click(() => {
             const url = this.$input.val().trim();
@@ -30,25 +30,16 @@ class BootstrapView {
     }
 
     validateURL(url) {
-        try {
-            new URL(url);
-            return true;
-        } catch {
-            return false;
-        }
+        //return validateURL(url);
+        return true;
     }
 
     update() {
-        const nodes = this.net.signalingServers;
-        this.$nodeList.empty();
-        nodes.forEach(url => {
-            this.$nodeList.append(`
-                <li>
-                    ${url}
-                    <button class="remove-node" data-url="${url}">Remove</button>
-                </li>
-            `);
-        });
+        this.$nodeList.empty().append(this.net.signalingServers.map(this.renderNode).toArray());
+    }
+
+    renderNode(url) {
+        return $(`<li>${url}<button class="remove-node" data-url="${url}">Remove</button></li>`);
     }
 
     panel() {
@@ -105,25 +96,20 @@ class NetViewer  {
 
         // Update peer list
         const peerList = r.querySelector('.peers');
-        peerList.innerHTML = stats.awareness.map(peer => `
-            <div class="peer-badge">
-                ${peer.metadata.clientID}
-                (${new Date(peer.lastActive).toLocaleTimeString()})
-            </div>
-        `).join('');
+        peerList.empty().append(stats.awareness.map(this.renderPeerBadge.bind(this)).toArray());
 
-        // Add event to log
         this.events.unshift({type, timestamp, data});
         this.events = this.events.slice(0, this.maxEvents);
 
-        // Update event log
-        r.querySelector('.event-log').innerHTML = this.events.map(event => `
-            <div class="event-entry ${event.type}">
-                [${new Date(event.timestamp).toLocaleTimeString()}] ${event.type}
-                ${event.data.peerId ? `(Peer: ${event.data.peerId})` : ''}
-                ${event.data.bytes ? `(${event.data.bytes} bytes)` : ''}
-            </div>
-        `).join('');
+        r.querySelector('.event-log').empty().append(this.events.map(this.renderEventEntry.bind(this)).toArray());
+    }
+
+    renderPeerBadge(peer) {
+        return $(`<div class="peer-badge">${peer.metadata.clientID} (${new Date(peer.lastActive).toLocaleTimeString()})</div>`);
+    }
+
+    renderEventEntry(event) {
+        return $(`<div class="event-entry ${event.type}>[${new Date(event.timestamp).toLocaleTimeString()}] ${event.type} ${event.data.peerId ? `(Peer: ${event.data.peerId})` : ''} ${event.data.bytes ? `(${event.data.bytes} bytes)` : ''}</div>`);
     }
 }
 

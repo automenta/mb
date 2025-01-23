@@ -1,12 +1,12 @@
 # Collaborative Reality Editor
 
-## How it works
-  - Write and share thoughts, like a TODO list
-  - Web app for browser
+## Overview
+  - Write, remember, and share 'thoughts'; a synchronized prioritizable multimodal "TODO list"
   - Through user editing and automatic data analysis processes, actionable input evolves into autonomous agents that can achieve results 
   - Stores private user and public community data in the browser (IndexedDB)
   - Private objects are not shared (new objects are, by default, private)
-  - 'Supernode' Node.JS server bundles services and serves the Web app.  In this mode, more capabilities are available, as plugins.
+  - '/ui' Web app for browser
+  - '/server' supernode (Node.JS) server integrating plugin tools, networks, and serves '/ui'
 
 ## Search Paradigm
   + Shared objects can be matched, and these matches return as notifications to the user and are organized as replies-to the source object
@@ -28,16 +28,19 @@
     + **Friends**: with statuses
     + **Network**: Peers, Traffic, etc.
     + **Database**: statistics, table view (with sort and filter)
+  - Dark mode (default)
 
 # Implementation & Dependencies
- * Language: TypeScript/JavaScript (ES6+), object-oriented architecture
- * User-interface: Single dynamically-generated page managed by jQuery, HTML Web Components
- * Uses 'yjs' for realtime CRDT WebRTC data synchronization
- * Build: 'vite'
- * Testing: 'vitest'
+  * Language: TypeScript/JavaScript (ES6+), object-oriented architecture
+  * User-interface: Single dynamically-generated page
+    * jQuery for DOM manipulation
+    * HTML Web Components - Use strategically, but not always.  Especially for reusable, repurposable widgets.
+  * Uses 'yjs' for realtime CRDT WebRTC data synchronization
+  * Build: 'vite'
+  * Testing: 'vitest'
 
 # Coding
- * Code clearly, compactly, completely, and correctly.
- * Write self-documenting code with few comments.
- * Use the latest Javascript language features.
- * If possible, explore ways to generate and minimize the necessary code through clever object-oriented design and metaprogramming.
+  * Code clearly, compactly, completely, and correctly.
+  * Write self-documenting code with few comments.
+  * Use the latest Javascript language features.
+  * If possible, explore ways to generate and minimize the necessary code through clever object-oriented design and metaprogramming.

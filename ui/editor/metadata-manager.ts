@@ -1,5 +1,5 @@
 import $ from 'jquery';
-import NObject from '../src/obj';
+import NObject from '../../src/obj';
 
 export class MetadataManager {
   constructor(private readonly isReadOnly: boolean) {}
@@ -13,13 +13,13 @@ export class MetadataManager {
           $('<div>', { class: 'metadata-row' }).append(
             $('<span>', { text: 'Created: ' }),
             $('<span>', {
-              text: new Date(currentObject.created).toLocaleString(),
+              text: new Date(currentObject.meta.created).toLocaleString(),
             })
           ),
           $('<div>', { class: 'metadata-row' }).append(
             $('<span>', { text: 'Last Updated: ' }),
             $('<span>', {
-              text: new Date(currentObject.updated).toLocaleString(),
+              text: new Date(currentObject.meta.updated).toLocaleString(),
             })
           ),
           $('<div>', { class: 'metadata-row' }).append(
@@ -66,13 +66,13 @@ export class MetadataManager {
       container.find('.tags-list') || $('<div>', { class: 'tags-list' });
     tagsDiv.empty();
 
-    currentObject.tags.forEach(tag => {
+    currentObject.tags.toArray().forEach(tag => {
       const tagElement = $('<span>', {
         class: 'tag',
         text: tag,
       });
 
-      if (!this.isReadOnly) {
+      if (!this.isReadOnly)
         tagElement.append(
           $('<button>', {
             class: 'remove-tag',
@@ -82,13 +82,25 @@ export class MetadataManager {
             this.updateTagsDisplay(container, currentObject);
           })
         );
-      }
+      
 
       tagsDiv.append(tagElement);
     });
 
-    if (!container.find('.tags-list').length) {
+    if (!container.find('.tags-list').length)
       container.append(tagsDiv);
-    }
+  
+  }
+
+  showToast(message: string) {
+    const toast = $('<div>', { class: 'toast', text: message });
+    $('body').append(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+
+  updatePrivacyIndicator(isPublic: boolean) {
+    // Logic to update privacy indicator in the UI
+    // For example, you might update a visual element to show if the document is public or private
+    console.log('Privacy updated to:', isPublic);
   }
 }

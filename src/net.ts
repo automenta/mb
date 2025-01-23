@@ -1,18 +1,51 @@
+/**
+ * Interface representing network metrics collected by the Network class
+ */
+interface NetworkMetrics {
+    bytesTransferred: number;
+    messagesSent: number;
+    messagesReceived: number;
+    peersConnected: Set<string>;
+}
+
+/**
+ * Union type of all possible network event types
+ */
+type NetworkEventType =
+    | 'message-sent'
+    | 'message-received'
+    | 'peer-connected'
+    | 'peer-disconnected'
+    | 'awareness-update'
+    | 'document-shared'
+    | 'document-unshared';
+
+/**
+ * Interface representing data payload for network events
+ */
+interface NetworkEventData {
+    bytes?: number;
+    peerId?: string;
+    changes?: any;
+    pageId?: string;
+    stats?: ReturnType<Network['getNetworkStats']>;
+}
+
 import {WebrtcProvider} from 'y-webrtc';
 import DB from "./db";
 import {events} from './events';
 
+/**
+ * Network class handles WebRTC connections and document synchronization
+ * using Yjs and y-webrtc provider. Manages signaling servers, peer connections,
+ * and document sharing state.
+ */
 class Network {
 
     readonly channel: string;
     private db: DB;
     private docsShared: Set<string>;
-    private readonly metrics: {
-        bytesTransferred: number;
-        messagesSent: number;
-        messagesReceived: number;
-        peersConnected: Set<any>
-    };
+    private readonly metrics: NetworkMetrics;
     net: WebrtcProvider;
     private readonly signalingServers: string[];
 
@@ -39,8 +72,16 @@ class Network {
             }
         });
 
-        //TODO load persisted signaling servers
-        this.signalingServers = ['ws://localhost:4444']; // Default server
+        // Load persisted signaling servers with fallback to default
+        try {
+            const storedServers = localStorage.getItem('signalingServers');
+            this.signalingServers = storedServers
+                ? JSON.parse(storedServers)
+                : ['ws://localhost:4444'];
+        } catch (error) {
+            console.warn('Failed to load signaling servers from localStorage:', error);
+            this.signalingServers = ['ws://localhost:4444'];
+        }
 
         this.reset();
     }
@@ -136,7 +177,7 @@ class Network {
         };
     }
 
-    emit(type:string, data:any) {
+    emit(type: NetworkEventType, data: NetworkEventData) {
         events.emit('networkActivity', {
             detail: {
                 type,

@@ -1,51 +1,71 @@
-.database-page .db-controls {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 10px;
+/* Database View Styles */
+.database-page {
+  padding: 1rem;
 }
 
-.database-page #filter-input {
-    flex: 1;
-    padding: 8px;
-    border: 1px solid #ccc;
+.db-controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  
+  input, select, button {
+    padding: 0.5rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
     border-radius: 4px;
-}
-
-.database-page #sort-select,
-.database-page #sort-button {
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+  }
+  
+  button {
+    background: var(--accent);
+    border-color: var(--accent);
     cursor: pointer;
+    transition: opacity 0.2s;
+    
+    &:hover {
+      opacity: 0.9;
+    }
+  }
 }
 
 .database-wrapper {
-    max-height: 100%;
-    overflow: auto;
+  overflow-x: auto;
 }
 
-.database-wrapper tr:nth-child(even){
-    background-color: rgba(122,94,255,0.72);
-}
-.database-wrapper tr:nth-child(odd){
-    background-color: rgba(122,180,255,0.72);
-}
-.database-page .database-table {
-    width: 100%;
-    border-collapse: collapse;
+.database-table {
+  min-width: 800px;
+  
+  th {
+    background: var(--bg-secondary);
+    position: sticky;
+    top: 0;
+  }
+  
+  tr:hover {
+    background: rgba(255,255,255,0.03);
+  }
+  
+  td {
+    vertical-align: top;
+    padding: 0.75rem;
+    
+    &:nth-child(3) { /* Content preview column */
+      max-width: 300px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    &:last-child { /* Public status column */
+      text-align: center;
+    }
+  }
 }
 
-.database-page .database-table th,
-.database-page .database-table td {
-    border: 1px solid #ddd;
-    padding: 8px;
+/* Public status indicators */
+[data-public="true"] { 
+  color: var(--success);
 }
-
-.database-page .database-table th {
-    background-color: #f2f2f2;
-    cursor: pointer;
-}
-
-.database-page .database-table tr:hover {
-    background-color: rgba(225,255,205,0.72);
+[data-public="false"] {
+  color: var(--warning);
 }

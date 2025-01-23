@@ -3,9 +3,11 @@ import $ from "jquery";
 import '/ui/css/db.css';
 
 export default class DBView {
-    constructor(root, db) {
-        this.root = root;
-        this.db = db;
+    ele: JQuery<HTMLElement>;
+    sortKey: string;
+    sortOrder: string;
+    filterText: string;
+    constructor(public root: HTMLElement, public db: any) {
         this.ele = $('<div>').addClass('database-page');
         this.sortKey = 'title';
         this.sortOrder = 'asc';
@@ -13,8 +15,6 @@ export default class DBView {
     }
 
     render() {
-
-
         $(this.root).find('.main-view').empty().append(this.ele);
 
         this.ele.html(`
@@ -47,16 +47,17 @@ export default class DBView {
     }
 
     bindEvents() {
-        this.ele.find('#filter-input').on('input', (e) => {
-            this.filterText = $(e.target).val().toLowerCase();
+        this.ele.find('.filter-input').on('input', (e) => {
+            this.filterText = ($(e.target).val() as string).toLowerCase();
             this.updateTable();
         });
 
-        this.ele.find('#sort-select').on('change', (e) => {
-            this.sortKey = $(e.target).val();
+        this.ele.find('.sort-select').on('change', (e) => {
+            this.sortKey = $(e.target).val() as string;
+            this.updateTable();
         });
 
-        this.ele.find('#sort-button').click(() => {
+        this.ele.find('.sort-button').click(() => {
             this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
             this.updateTable();
         });
@@ -65,29 +66,23 @@ export default class DBView {
     }
 
     updateTable() {
+        const pages = Array.from(this.db.index.entries()).map(([key, value]) => ({ pageId: key, ...value }));
+        this.renderTable(pages);
+    }
+
+    renderTable(pages) {
         const $tbody = this.ele.find('tbody').empty();
-        let pages = Array.from(this.db.index.entries()).map(([key, value]) => ({ pageId: key, ...value }));
+        const filteredPages = pages.filter(page => this.filterText ? page.title.toLowerCase().includes(this.filterText) : true);
+        filteredPages.sort((a, b) => this.sortOrder === 'asc' ? a[this.sortKey].localeCompare(b[this.sortKey]) : b[this.sortKey].localeCompare(a[this.sortKey]));
+        $tbody.append(filteredPages.map(this.createRow.bind(this)).toArray());
+    }
 
-        if (this.filterText)
-            pages = pages.filter(page => page.title.toLowerCase().includes(this.filterText));
-
-        pages.sort((a, b) => {
-            if (a[this.sortKey] < b[this.sortKey]) return this.sortOrder === 'asc' ? -1 : 1;
-            if (a[this.sortKey] > b[this.sortKey]) return this.sortOrder === 'asc' ? 1 : -1;
-            return 0;
-        });
-
-        pages.forEach(page => {
-            const contentPreview = page.text.slice(0, 100);
-            const isPublic = page.p ? 'Yes' : 'No';
-            $tbody.append(`
-                <tr>
-                    <td>${page.pageId}</td>
-                    <td>${page.title}</td>
-                    <td>${contentPreview}</td>
-                    <td>${isPublic}</td>
-                </tr>
-            `);
-        });
+    private createRow(page: any): JQuery<HTMLElement> {
+        const $row = $('<tr>');
+        $row.append($('<td>').text(page.pageId));
+        $row.append($('<td>').text(page.title));
+        $row.append($('<td>').text(page.text.slice(0, 100)));
+        $row.append($('<td>').text(page.p ? 'Yes' : 'No'));
+        return $row;
     }
 }

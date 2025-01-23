@@ -1,13 +1,51 @@
+/* Friends View Styles */
 .Friends-list-page {
-color: rgba(84,255,182,0.72);
-
+  padding: 1rem;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
-.Friends-list-page li:nth-child(even) {
-color: rgba(27,90,255,0.72);
-
+.Friends-list-page ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
 }
 
-.Friends-list-page li:nth-child(odd) {
-color: rgba(79,48,255,0.72);
+.Friends-list-page li {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  transition: background 0.2s ease;
+  
+  &:hover {
+    background: rgba(255,255,255,0.05);
+  }
+}
+
+.status {
+  margin-left: auto;
+  font-size: 0.9em;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.3);
+  
+  &[data-status="online"] { color: var(--success); }
+  &[data-status="away"] { color: var(--warning); }
+  &[data-status="busy"] { color: var(--danger); }
+}
+
+/* Responsive layout */
+@media (max-width: 600px) {
+  .Friends-list-page li {
+    font-size: 0.9rem;
+    padding: 0.5rem;
+  }
+  
+  .status {
+    font-size: 0.8em;
+  }
 }

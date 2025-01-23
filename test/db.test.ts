@@ -87,7 +87,7 @@ describe('DB', () => {
 
     it('should retrieve repliesTo', () => {
         const obj = db.create();
-        const reply = db.createReply(obj.id);
+        const reply = db.createReply(obj.id, '...');
         if (reply === null) throw new Error('Reply creation failed');
         expect(JSON.stringify(db.getRepliesTo(reply.id))).toEqual(JSON.stringify([obj]));
     });
@@ -171,7 +171,7 @@ describe('DB', () => {
         const longText = new Y.Text('b'.repeat(10000));
         const obj = db.create();
         db.objName(obj.id, longName);
-        obj.setText(longText);
+        obj.setText(longText.toString());
         expect(obj.name).toEqual(longName);
         expect(obj.text.toString()).toEqual(longText.toString());
     });
@@ -211,6 +211,5 @@ describe('DB', () => {
         obj3.name = 'noFilter';
         const filteredList = db.filterList((obj: NObject) => obj.name.startsWith('filterTest'));
         expect(JSON.stringify(filteredList)).equals(JSON.stringify([obj1, obj2])); //and not obj3
-
     });
 });

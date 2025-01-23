@@ -3,6 +3,8 @@ import http from 'http';
 import path from 'path';
 import {Server as SocketIOServer, Socket} from 'socket.io';
 import {createServer as viteServer} from 'vite';
+import { WebSocketServer } from 'ws';
+import { setupWSConnection } from 'y-websocket/bin/utils';
 
 const PORT = 3000;
 
@@ -20,6 +22,19 @@ export async function startServer() {
     const io = new SocketIOServer(httpServer, {
         cors: {origin: '*'},
     });
+    
+    // Yjs WebSocket provider
+    const wss = new WebSocketServer({ noServer: true });
+    httpServer.on('upgrade', (request, socket, head) => {
+        if (request.url?.startsWith('/yjs')) {
+            wss.handleUpgrade(request, socket, head, ws => {
+                wss.emit('connection', ws, request);
+            });
+        }
+    });
+    wss.on('connection', (ws) => {
+        y.utils.setupWSConnection(ws);
+    });
 
     function wsConnect(s: Socket) {
         console.log('User connected:', s.id);
@@ -28,12 +43,6 @@ export async function startServer() {
             const {target, data} = message;
             console.log(`Relaying message from ${s.id} to ${target}`);
             io.to(target).emit('signal', {sender: s.id, data});
-        });
-
-        s.on('join', (roomId) => {
-            s.join(roomId);
-            console.log(`${s.id} joined room: ${roomId}`);
-            s.to(roomId).emit('user-joined', {userId: s.id});
         });
 
         s.on('join', (roomId) => {

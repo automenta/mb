@@ -10,7 +10,7 @@ import {mplex} from '@libp2p/mplex';
 import {bootstrap} from '@libp2p/bootstrap';
 import {AddressInfo} from 'net';
 import {startServer} from "../server/server"; // Import startServer
-import P2PNode from '../server/p2p';
+import P2PNode from '../server/net/p2p';
 
 describe('End-to-End Tests', () => {
     let io: SocketIOServer;

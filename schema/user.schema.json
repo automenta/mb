@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "User",
+  "description": "Base schema for user objects with polymorphic support",
+  "validation": {
+    "enabled": true,
+    "rules": {
+      "strict": true,
+      "allowUnknown": false
+    }
+  },
+  "type": "object",
+  "discriminator": {
+    "propertyName": "userType",
+    "mapping": {
+      "user": "#",
+      "friend": "friend.schema.json"
+    }
+  },
+  "properties": {
+    "userType": {
+      "type": "string",
+      "const": "user"
+    },
+    "avatar": {
+      "type": "string",
+      "format": "data-url",
+      "description": "User's avatar image as a data URL"
+    },
+    "name": {
+      "type": "string",
+      "description": "User's name"
+    },
+    "color": {
+      "type": "string",
+      "format": "color",
+      "description": "User's preferred color"
+    },
+    "bio": {
+      "type": "string",
+      "description": "User's bio"
+    },
+    "social": {
+      "type": "object",
+      "description": "User's social media links",
+      "properties": {
+        "twitter": {
+          "type": "string",
+          "format": "url",
+          "description": "User's Twitter profile URL"
+        },
+        "github": {
+          "type": "string",
+          "format": "url",
+          "description": "User's GitHub profile URL"
+        },
+        "website": {
+          "type": "string",
+          "format": "url",
+          "description": "User's personal website URL"
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "online",
+        "away",
+        "busy"
+      ],
+      "description": "User's current status"
+    }
+  },
+  "required": ["userType"]
+}

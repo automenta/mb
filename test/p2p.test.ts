@@ -1,6 +1,6 @@
 import {beforeAll, describe, expect, it} from 'vitest';
 import {waitFor} from '@testing-library/dom';
-import P2PNode from '../server/p2p';
+import P2PNode from '../server/net/p2p';
 import {createEd25519PeerId} from '@libp2p/peer-id-factory';
 import {PeerId} from '@libp2p/interface-peer-id';
 
