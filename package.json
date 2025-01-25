@@ -54,8 +54,14 @@
     "@types/ws": "latest",
     "@vitest/coverage-v8": "latest",
     "@vitest/ui": "latest",
+    "async-exit-hook": "^2.0.1",
+    "fake-indexeddb": "^6.0.0",
     "happy-dom": "latest",
+    "jsdom": "^26.0.0",
+    "localstorage-ponyfill": "latest",
     "vite": "latest",
-    "vitest": "latest"
+    "vite-plugin-node-polyfills": "^0.23.0",
+    "vitest": "latest",
+    "wait-port": "^1.1.0"
   }
 }

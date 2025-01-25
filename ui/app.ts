@@ -18,12 +18,25 @@ export default class App {
     match: Matching;
     editor: Editor;
     sidebar: Sidebar;
+    isDarkMode: boolean;
 
     public ele: JQuery;
 
     constructor(userID: string, channel: string) {
+        if (!userID) {
+            throw new Error('Invalid user ID');
+        }
+        if (!channel) {
+            throw new Error('Invalid channel ID');
+        }
+
         this.channel = channel;
-        this.ele = $('<div>').addClass('container dark-mode');
+
+        // Initialize theme from localStorage or default to dark
+        const savedTheme = localStorage.getItem('themePreference') || 'dark';
+        this.ele = $('<div>').addClass(`container ${savedTheme === 'dark' ? 'dark-mode' : ''}`);
+        this.ele.attr('data-theme', savedTheme);
+        this.isDarkMode = savedTheme === 'dark';
 
         this.initializeApp(userID);
         store.subscribe(state => this.handleStoreUpdate(state));
@@ -72,14 +85,21 @@ export default class App {
     }
 
     private initializeApp(userID: string) {
+        this.initializeSocket();
         this.initializeDB(userID);
         this.initializeNetwork();
         this.initializeMatching();
         this.initializeStore();
         this.initializeEditor();
         this.initializeSidebar();
-        this.setNetworkStatus('connected');
-        this.initializeSocket();
+
+        console.log("App initialized:", {
+            db: this.db,
+            net: this.net,
+            match: this.match,
+            editor: this.editor,
+            sidebar: this.sidebar
+        });
     }
 
     private setupSocket() {
@@ -88,11 +108,43 @@ export default class App {
     }
 
     private setupSocketListeners(socket: Socket) {
-        socket.on('connect', () => this.handleSocketEvent('connect', 'connected'));
-        socket.on('disconnect', () => this.handleSocketEvent('disconnect', 'disconnected'));
+        // Ensure proper network status updates
+        socket.on('connect', () => {
+            this.handleSocketEvent('connect', 'connected');
+            store.setNetworkStatus('connected');
+        });
+        
+        socket.on('disconnect', () => {
+            this.handleSocketEvent('disconnect', 'disconnected');
+            store.setNetworkStatus('disconnected');
+        });
+        
         socket.on('snapshot', (snap: any) => this.handleSocketEvent('snapshot', 'connected', snap));
-        socket.on('plugin-status', (plugins: any) => this.handleSocketPluginStatus(plugins));
-        socket.on('plugin-error', (pluginName: string, error: any) => this.handleSocketPluginError(pluginName, error));
+        
+        // Ensure plugin events are properly handled
+        socket.on('plugin-status', (plugins: any) => {
+            this.handleSocketPluginStatus(plugins);
+            store.updatePluginStatus(plugins);
+        });
+        
+        socket.on('plugin-error', (pluginName: string, error: any) => {
+            this.handleSocketPluginError(pluginName, error);
+            store.logError({
+                pluginName,
+                error,
+                timestamp: Date.now()
+            });
+        });
+        
+        // Add listener for 'error' event to handle connection issues
+        socket.on('error', (err: any) => {
+            console.error('Socket error:', err);
+            store.logError({
+                pluginName: 'socket.io',
+                error: err,
+                timestamp: Date.now()
+            });
+        });
     }
 
     private handleSocketEvent(event: 'connect' | 'disconnect' | 'snapshot', status: 'connected' | 'disconnected', data?: any) {
@@ -141,6 +193,15 @@ export default class App {
     awareness() { return this.net.awareness(); }
 
     toggleDarkMode(): void {
-        this.ele.toggleClass('dark-mode');
+        this.isDarkMode = !this.isDarkMode;
+        this.ele.toggleClass('dark-mode', this.isDarkMode);
+        this.ele.attr('data-theme', this.isDarkMode ? 'dark' : 'light');
+        localStorage.setItem('themePreference', this.isDarkMode ? 'dark' : 'light');
+    }
+
+    mount(container: HTMLElement | null): void {
+        if (container) {
+            container.appendChild(this.ele[0]);
+        }
     }
 }

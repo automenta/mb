@@ -2,16 +2,16 @@
 
 ## Overview
   - Write, remember, and share 'thoughts'; a synchronized prioritizable multimodal "TODO list"
-  - Through user editing and automatic data analysis processes, actionable input evolves into autonomous agents that can achieve results 
-  - Stores private user and public community data in the browser (IndexedDB)
-  - Private objects are not shared (new objects are, by default, private)
-  - '/ui' Web app for browser
+  - Through input, editing, and data analysis, thoughts become clarified into autonomous agents that can achieve results
+  - Stores private user and public community data
+  - Private objects are not shared (new objects are private)
+  - '/ui' Web app for browser (offline-first)
   - '/server' supernode (Node.JS) server integrating plugin tools, networks, and serves '/ui'
 
 ## Search Paradigm
   + Shared objects can be matched, and these matches return as notifications to the user and are organized as replies-to the source object
-  + Objects containing indefinite properties are like persistent search queries.  
-  + Imaginary objects (which act as partial queries) persist until explicitly deleted - because they can represent and track the user's intentions. 
+  + Objects containing indefinite properties are like persistent partial search queries and describe 'imaginary' or hypothetical objects.  
+  + Imaginary objects persist to represent and track the user's intentions, with the potential to become actually real through the network matching and suggestion process.
   + Queries in the conventional Web Search paradigm, by contrast, are weak, disposable, and ephemeral. 
   + JSON Semantic representation: Language Models can translate natural language objects to JSON to enable _semantic matching_ *at scale*.  
   + Objects may include definite and indefinite semantic values, referenced in a community schema  

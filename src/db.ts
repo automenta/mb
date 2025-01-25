@@ -22,6 +22,10 @@ class DB {
     this.index = this.doc.getMap<NObject>('objects');
     this.replyManager = new ReplyManager(this);
 
+    // Initialize Yjs types
+    const yarray = this.doc.getArray('yarray-initializer');
+    const ytext = this.doc.getText('ytext-initializer');
+
     // Y.js will automatically persist through the provider
   }
 

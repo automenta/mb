@@ -5,7 +5,7 @@ export class SchemaRegistry {
   registerSchema(name: string, schema: any): void {
     this.schemas[name] = schema;
     this.validationConfig[name] = {
-      enabled: schema.validation?.enabled ?? false,
+      enabled: true,
       strict: schema.validation?.rules?.strict ?? false,
       allowUnknown: schema.validation?.rules?.allowUnknown ?? true
     };
@@ -22,7 +22,7 @@ export class SchemaRegistry {
     }
 
     const { errors, warnings } = this.validateObject(data, schema, name);
-    const isValid = this.validationConfig[name]?.strict ? errors.length === 0 : true;
+    const isValid = errors.length === 0;
     return { isValid, errors, warnings };
   }
 
@@ -52,7 +52,7 @@ export class SchemaRegistry {
         return { errors, warnings };
       }
 
-      if (this.validationConfig[name]?.strict && schema.required) {
+      if (schema.required) {
         for (const requiredProp of schema.required) {
           if (!(requiredProp in data)) {
             errors.push({ path: `${path}.${requiredProp}`, error: 'required', message: `Missing required property`, suggestion: `Add ${requiredProp} to the object` });

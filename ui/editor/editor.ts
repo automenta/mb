@@ -1,4 +1,4 @@
-import { $, Y, Awareness, NObject } from '../imports';
+import { $, Y, Awareness, NObject, App } from '../imports';
 import { EditorConfig } from '../types';
 import { ToolbarManager } from './toolbar-manager';
 import { MetadataManager } from './metadata-manager';
@@ -6,13 +6,13 @@ import { AwarenessManager } from './awareness-manager';
 import EditorCore from './editor-core';
 
 export default class Editor {
-    private editorCore: EditorCore;
+    public editorCore: EditorCore;
     private readonly doc: Y.Doc;
     private readonly config: EditorConfig;
     private readonly toolbar: ToolbarManager;
     private readonly metadata: MetadataManager;
     private readonly awareness: AwarenessManager;
-    private readonly rootElement: JQuery;
+    public readonly rootElement: JQuery;
     private _darkMode = false;
 
     public currentObject?: NObject | Y.Map<any>;
@@ -166,9 +166,19 @@ export default class Editor {
     public onUpdate(callback: () => void): void {
         this.doc.on('update', callback);
     }
+
+    public getTestConfig(): Partial<EditorConfig> {
+        return {
+            db: this.config.db,
+            networkStatusCallback: this.config.networkStatusCallback,
+            getAwareness: () => this.config.getAwareness(),
+            app: this.config.app,
+            currentObject: this.currentObject
+        };
+    }
 }
 
-// Augment EditorConfig interface with network capabilities
+// Augment EditorConfig interface with network capabilities and other missing properties
 declare module '../types' {
     interface EditorConfig {
         net?: {
@@ -176,5 +186,7 @@ declare module '../types' {
             syncAwareness: (state: Awareness) => void;
         };
         currentObject?: NObject | Y.Map<any>;
+        getAwareness: () => Awareness;
+        app: App;
     }
 }
