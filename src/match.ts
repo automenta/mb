@@ -33,16 +33,16 @@ export default class Matching {
         this.db = db;
         this.net = net;
         this.matchingEngine = new MatchingEngine(db);
-        this.processingQueueManager = new ProcessingQueueManager(db);
+        this.processingQueueManager = new ProcessingQueueManager(db, this.matchingEngine);
 
-        // // Start processing loop (consider starting this externally or via a method call)
-        // // this.startProcessing();
+        // Start processing loop (consider starting this externally or via a method call)
+        this.startProcessing();
 
-        // // Listen for new/changed pages (consider if this should be enabled by default or configurable)
-        // // this.onPagesChanged();
+        // Listen for new/changed pages (consider if this should be enabled by default or configurable)
+        this.onPagesChanged();
         
-        // // Network coordination (consider if this should be enabled by default or configurable)
-        // // this.net.awareness().on('change', () => this.coordinated());
+        // Network coordination (consider if this should be enabled by default or configurable)
+        this.net.awareness().on('change', () => this.coordinated());
     }
 
     on(event: string, listener: (...args: any[]) => void): void {
@@ -99,7 +99,7 @@ export default class Matching {
         if (myPosition === -1) return;
 
         // Adjust work capacity based on position in peer list (consider more dynamic adjustment strategies)
-        this.processingQueueManager.workerCapacity = 1 / (peers.length || 1);
+        this.processingQueueManager.setWorkerCapacity(1 / (peers.length || 1));
     }
 
     // Determine if this server should process now (consider more sophisticated scheduling algorithms)
@@ -113,8 +113,8 @@ export default class Matching {
         this.metrics.processingTime += this.processingQueueManager.getProcessInterval();
         this.metrics.queueSize = this.processingQueueManager.getQueueSize(); // Update queue size
         this.metrics.workerCapacity = this.processingQueueManager.getWorkerCapacity(); // Update worker capacity
-        this.metrics.peersCount = this.net.awareness().getStates().size; // Update peers count
-        
+        this.metrics.peersCount = this.net.awareness()?.getStates()?.size; // Update peers count
+
         // Emit metrics for dashboard (consider throttling or batching metrics emissions)
         events.emit('matching-metrics', {
             detail: this.metrics // Send the entire metrics object
@@ -135,15 +135,13 @@ export default class Matching {
     }
 
     setWorkerCapacity(capacity: number): void {
-        this.workerCapacity = Math.max(0, Math.min(1, capacity));
         this.processingQueueManager.setWorkerCapacity(capacity);
         console.log(`Worker capacity set to ${(this.processingQueueManager.getWorkerCapacity() * 100).toFixed(1)}%`);
     }
 
     setProcessInterval(ms: number): void {
         this.processingQueueManager.setProcessInterval(ms);
-        this.processInterval = this.processingQueueManager.getProcessInterval(); // Get processInterval from ProcessingQueueManager
-        console.log(`Process interval set to ${this.processInterval}ms`);
+        console.log(`Process interval set to ${this.processingQueueManager.getProcessInterval()}ms`);
     }
 
     setSimilarityThreshold(threshold: number): void {
@@ -153,8 +151,7 @@ export default class Matching {
 
     setAutoAdjust(enabled: boolean): void {
         this.autoAdjustCapacity = enabled;
-        if (enabled)
-            this.coordinated(); // Immediately adjust based on peers
+        this.coordinated(); // Immediately adjust based on peers
 
         console.log(`Auto-adjust capacity ${enabled ? 'enabled' : 'disabled'}`);
     }

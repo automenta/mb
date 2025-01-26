@@ -3,35 +3,41 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--bg-primary);
+  background-color: var(--bg-primary); /* Changed to background-color for consistency */
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .editor-toolbar {
   padding: 0.5rem;
-  background: var(--bg-secondary);
+  background-color: var(--bg-secondary); /* Changed to background-color for consistency */
   border-bottom: 1px solid var(--border);
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
   
   button {
-    padding: 0.5rem 0.75rem;
+    padding: 0.6rem 1rem; /* Increased padding */
     background: var(--bg-primary);
     border: 1px solid var(--border);
     color: var(--text-primary);
-    border-radius: 4px;
+    border-radius: 5px; /* Slightly more rounded */
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background-color 0.2s, border-color 0.2s; /* Smooth transition */
+    font-size: 0.85rem; /* Slightly smaller font size */
     
     &:hover {
-      background: var(--accent);
-      border-color: var(--accent);
+      background: var(--bg-hover); /* Darker background on hover */
+      border-color: var(--accent); /* Accent color on border hover */
+      color: var(--text-accent); /* Text color on hover */
     }
     
     &.active {
-      background: var(--accent);
-      border-color: var(--accent);
-      font-weight: 500;
+      background: var(--accent); /* Accent background for active state */
+      border-color: var(--accent-border); /* Accent border for active state */
+      color: var(--bg-primary); /* Inverted text color for active state */
+      font-weight: 600; /* Slightly bolder for active state */
     }
   }
 }
@@ -54,7 +60,157 @@
       color: var(--text-primary);
       margin: 1.5rem 0 1rem;
     }
+    }
   }
+
+/* Document Title */
+/* Document Title */
+.document-title {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    border: none;
+    border-bottom: 2px solid var(--accent);
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 1.75rem;
+    font-weight: bold;
+    outline: none;
+}
+
+/* Content Editor Styles */
+.content-editor {
+  flex: 1;
+  padding: 2rem; /* Further increased padding for content area */
+  overflow-y: auto;
+  background-color: var(--bg-primary); /* Ensure background is set */
+  color: var(--text-primary); /* Ensure text color is set */
+  border-radius: 5px;
+  
+  &:focus {
+    outline: none; /* Remove default focus outline */
+  }
+
+  .ProseMirror {
+    min-height: 400px; /* Increased min-height for better editing space */
+    outline: none;
+    font-size: 1.1rem; /* Slightly larger base font size for content */
+    line-height: 1.8; /* Improved line height for readability */
+
+    /* More refined styles for different elements */
+    p {
+      margin: 1.2rem 0; /* Further increased paragraph margin */
+    }
+
+    h1 {
+      font-size: 2.5rem; /* Even larger heading 1 */
+      margin: 2.2rem 0 1.6rem;
+      border-bottom: 2px solid var(--accent); /* Stronger underline for h1 */
+      padding-bottom: 0.6rem;
+      font-weight: 700; /* Bolder heading 1 */
+    }
+
+    h2 {
+      font-size: 2rem; /* Even larger heading 2 */
+      margin: 2rem 0 1.4rem;
+      font-weight: 600;
+    }
+
+    h3 {
+      font-size: 1.7rem; /* Larger heading 3 */
+      margin: 1.8rem 0 1.2rem;
+      font-weight: 500;
+    }
+
+    h4, h5, h6 {
+      margin: 1.5rem 0 1rem;
+      font-weight: 500;
+    }
+
+    ul, ol {
+      padding-left: 1.8rem; /* Adjusted list indentation */
+      margin: 1.2rem 0;
+    }
+
+    li {
+      margin-bottom: 0.6rem;
+    }
+
+    blockquote {
+      border-left: 4px solid var(--accent); /* Stronger blockquote border */
+      padding-left: 1.2rem;
+      margin: 1.2rem 0;
+      font-style: italic;
+      color: var(--text-secondary);
+    }
+
+    code {
+      background-color: var(--bg-code);
+      color: var(--text-code);
+      padding: 0.3rem 0.5rem; /* Adjusted code padding */
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    pre {
+      background-color: var(--bg-code);
+      color: var(--text-code);
+      padding: 1rem; /* Adjusted pre padding */
+      border-radius: 6px;
+      overflow-x: auto;
+      margin: 1.2rem 0;
+
+      code {
+        padding: 0; /* Reset code padding inside pre */
+        background-color: transparent; /* Reset code background inside pre */
+        font-size: 0.95rem;
+      }
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: underline dotted var(--text-secondary); /* More subtle underline */
+
+      &:hover {
+        text-decoration: underline; /* Solid underline on hover */
+      }
+    }
+
+    strong {
+      font-weight: 700; /* Bolder strong text */
+    }
+
+    em {
+      font-style: italic;
+      opacity: 0.9; /* Slightly less prominent emphasis */
+    }
+
+    /* Add styles for hr (horizontal rule) */
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 2rem 0;
+    }
+  }
+}
+
+/* Metadata Panel Styles */
+.metadata-panel {
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+    
+    > div {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+    
+    label {
+        font-weight: 500;
+        color: var(--text-secondary);
+    }
 }
 
 /* Collaborative Cursors */

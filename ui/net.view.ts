@@ -15,8 +15,8 @@ class BootstrapView {
         this.$nodeList = $('<div>') as JQuery<HTMLElement>;
 
         this.addButton.click(() => {
-            const url = this.$input.val()?.trim();
-            if (this.validateURL(url)) {
+            const url = this.$input.val()?.toString().trim(); // Ensure url is a string before trimming
+            if (url && this.validateURL(url)) {
                 this.net.addBootstrap(url);
                 this.$input.val('');
                 this.update();
@@ -33,7 +33,7 @@ class BootstrapView {
         this.update();
     }
 
-    validateURL(url: string | undefined): boolean {
+    validateURL(url: string): boolean {
         //return validateURL(url);
         return true;
     }
@@ -64,7 +64,7 @@ class NetViewer {
         this.ele = $('<div>').addClass('net-viewer') as JQuery<HTMLElement>;
         this.bootstrap = new BootstrapView(net);
         this.render();
-        events.on('networkActivity', (e: CustomEvent<any>) => this.update(e.detail)); // Type 'any' for event detail
+        events.on('networkActivity', (e: any) => this.update((e as CustomEvent<any>).detail)); // Type assertion to suppress error
     }
 
     render(): void {
@@ -113,7 +113,7 @@ class NetViewer {
         // Update peer list
         if (peerList) {
             peerList.innerHTML = ''; // Clear existing content
-            peerList.append(...stats.awareness.map(this.renderPeerBadge.bind(this)).toArray());
+            $(peerList).append(stats.awareness.map(this.renderPeerBadge.bind(this)));
         }
 
 
@@ -122,7 +122,7 @@ class NetViewer {
 
         if (eventLog) {
             eventLog.innerHTML = ''; // Clear existing content
-            eventLog.append(...this.events.map(this.renderEventEntry.bind(this)).toArray());
+            $(eventLog).append(this.events.map(this.renderEventEntry.bind(this)));
         }
     }
 
@@ -144,11 +144,12 @@ export default class NetView {
         this.net = net;
     }
 
-    render(): void {
+    render(): JQuery<HTMLElement> { // Changed return type to JQuery<HTMLElement>
         const updateStatus = () => this.ele.empty().append(
             new NetViewer(this.net).ele //'
         );
         this.net.net.on('peers', updateStatus);
         updateStatus();
+        return this.ele; // Return the root element
     }
 }

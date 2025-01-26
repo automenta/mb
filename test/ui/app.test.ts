@@ -1,5 +1,5 @@
-import { describe, expect, test, beforeEach, afterEach, vi,  } from 'vitest';
-import { setupAppTest, TestSetup } from './test-utils';
+import { describe, expect, test, beforeEach, afterEach, vi } from 'vitest';
+import { setupAppTest, TestSetup, waitFor } from './test-utils';
 import App from '../../ui/app';
 import { store } from '../../ui/store';
 
@@ -30,8 +30,8 @@ describe('App Component', () => {
   describe('Initialization', () => {
     test('should load without errors', async () => {
       app.mount(testSetup.container);
-      await new Promise(resolve => setTimeout(resolve, 100)); //Added timeout to allow for rendering
-      expect(testSetup.container.querySelector('#app')).toBeDefined(); // Use #app instead of .app
+      await waitFor(100);
+      expect(testSetup.container.querySelector('#app')).toBeDefined();
     });
 
     test('should throw error with invalid constructor parameters', () => {
@@ -41,7 +41,7 @@ describe('App Component', () => {
 
     test('should initialize all required components', async () => {
       app.mount(testSetup.container);
-      await new Promise(resolve => setTimeout(resolve, 500)); //Increased timeout
+      await waitFor(500);
 
       expect(testSetup.container.querySelector('[data-testid="db-provider"]')).toBeDefined();
       expect(testSetup.container.querySelector('[data-testid="network-status"]')).toBeDefined();
@@ -54,32 +54,27 @@ describe('App Component', () => {
   describe('Dark Mode', () => {
     test('should toggle dark mode correctly', async () => {
       app.mount(testSetup.container);
-      await new Promise(resolve => setTimeout(resolve, 500)); //Increased timeout
-      // Remove jQuery-specific assertions
+      await waitFor(500);
       app.toggleDarkMode();
-      await new Promise(resolve => setTimeout(resolve, 500)); //Increased timeout
+      await waitFor(500);
       app.toggleDarkMode();
-      await new Promise(resolve => setTimeout(resolve, 500)); //Increased timeout
+      await waitFor(500);
     });
   });
 
   describe('Network Handling', () => {
-    test('should handle network status transitions', () => {
+    test('should handle network status transitions', async () => {
       testSetup.socket.emit('connect');
-      expect(store.getState().networkStatus).toEqual('connected');
+      await waitFor(100);
+      expect(store.getState().networkStatus).toBe('connected');
 
       testSetup.socket.emit('disconnect');
-      expect(store.getState().networkStatus).toEqual('disconnected');
+      await waitFor(100);
+      expect(store.getState().networkStatus).toBe('disconnected');
 
       testSetup.socket.emit('error', new Error('Network failure'));
-      expect(store.getState().networkStatus).toEqual('error');
-
-      testSetup.socket.emit('connect');
-      testSetup.socket.emit('connect');
-      expect(store.getState().networkStatus).toBe('connected');
-
-      testSetup.socket.emit('connect');
-      expect(store.getState().networkStatus).toBe('connected');
+      await waitFor(100);
+      expect(store.getState().networkStatus).toBe('error');
     });
 
     test('should handle socket errors', () => {

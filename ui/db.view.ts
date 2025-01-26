@@ -1,14 +1,18 @@
 import $ from "jquery";
+import BaseView from './util/base-view';
 
 import '/ui/css/db.css';
 
-export default class DBView {
+export default class DBView extends BaseView {
     ele: JQuery;
     sortKey: string;
     sortOrder: string;
     filterText: string;
-    filterValues: Record<string, string> = {}; // Store filter values
-    constructor(public root: HTMLElement, public db: any) {
+    filterValues: Record<string, string> = {};
+    db: any;
+    constructor(root: HTMLElement, db: any) {
+        super($(root).find('.main-view'));
+        this.db = db;
         this.ele = $('<div>').addClass('database-page');
         this.sortKey = 'title';
         this.sortOrder = 'asc';
@@ -16,52 +20,24 @@ export default class DBView {
     }
 
     render() {
-        $(this.root).find('.main-view').empty().append(this.ele);
+        this.root.empty().append(this.ele);
 
-        // Load page schema
-        const pageSchema = require('../schema/page.schema.json'); // Or however you load your schema
+        const pageSchema = require('../schema/page.schema.json');
 
-        // Generate table headers from schema properties
         let tableHeadersHTML = '';
-        if (pageSchema && pageSchema.properties) {
-            for (const field in pageSchema.properties) {
-                const property = pageSchema.properties[field];
-                tableHeadersHTML += `<th>${property.description}</th>`;
-            }
-        }
+        pageSchema?.properties && Object.entries(pageSchema.properties).forEach(([field, property]) => {
+            tableHeadersHTML += `<th>${(property as {description:string}).description}</th>`;
+        });
 
         const filterControlsHTML = this.renderFilterControls();
 
-        this.ele.html(`
-            <h3>Database Statistics</h3>
-            <div class="db-controls">
-                <div class="filter-controls">
-                    ${filterControlsHTML}
-                </div>
-                <select class="sort-select">
-                    <option value="title">Title</option>
-                    <option value="pageId">Page ID</option>
-                </select>
-                <button class="sort-button">Sort</button>
-            </div>
-            <div class="database-wrapper">
-                <table class="database-table">
-                    <thead>
-                        <tr>
-                            ${tableHeadersHTML}
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        `);
+        this.ele.append(this.createHeader(), this.createControls(filterControlsHTML), this.createTable(tableHeadersHTML));
 
         this.bindEvents();
         this.updateTable();
     }
 
     bindEvents() {
-        // Bind events for dynamically generated filter inputs
         this.ele.find('.filter-controls').on('input', '.filter-input', (e) => {
             const field = $(e.target).data('field');
             const value = ($(e.target).val() as string);
@@ -83,23 +59,20 @@ export default class DBView {
     }
 
     updateTable() {
-        const pages = Array.from(this.db.index.entries()).map(([key, value]) => ({ pageId: key, ...value }));
+        const entries = Array.from(this.db.index.entries()) as [string, any][];
+        const pages = entries.map(([key, value]) => ({ pageId: key, ...value }));
         this.renderTable(pages);
     }
 
     renderTable(pages: any[]) {
         const $tbody = this.ele.find('tbody').empty();
-        // Apply filtering based on filter inputs
         const filteredPages = pages.filter(page => {
             let isMatch = true;
             for (const field in this.filterValues) {
                 const filterValue = this.filterValues[field].toLowerCase();
-                if (filterValue) {
-                    const pageValue = String(page[field]).toLowerCase(); // Ensure pageValue is a string
-                    if (!pageValue.includes(filterValue)) {
-                        isMatch = false;
-                        break;
-                    }
+                if (filterValue && !String(page[field]).toLowerCase().includes(filterValue)) {
+                    isMatch = false;
+                    break;
                 }
             }
             return isMatch;
@@ -119,16 +92,11 @@ export default class DBView {
 
     private createRow(page: any): JQuery {
         const $row = $('<tr>');
-        // Generate table cells from schema properties
-        const pageSchema = require('../schema/page.schema.json'); // Or however you load your schema
-        if (pageSchema && pageSchema.properties) {
-            for (const field in pageSchema.properties) {
-                $row.append($('<td>').text(page[field] || '')); // Use property name to access page data
-            }
-        }
-        // Add edit button
+        const pageSchema = require('../schema/page.schema.json');
+        pageSchema?.properties && Object.entries(pageSchema.properties).forEach(([field, property]) => {
+            $row.append($('<td>').text(page[field] || ''));
+        });
         const editButton = $('<button>').text('Edit').addClass('edit-button').on('click', () => {
-            // Edit functionality will be implemented here
             console.log('Edit button clicked for pageId:', page.pageId);
         });
         $row.append($('<td>').append(editButton));
@@ -137,17 +105,34 @@ export default class DBView {
 
     private renderFilterControls(): string {
         let filterControlsHTML = '';
-        const pageSchema = require('../schema/page.schema.json'); // Load schema
-        if (pageSchema && pageSchema.properties) {
-            for (const field in pageSchema.properties) {
-                const property = pageSchema.properties[field];
-                filterControlsHTML += `
-                    <div class="filter-group">
-                        <label for="filter-${field}">${property.description}:</label>
-                        <input type="text" class="filter-input" id="filter-${field}" data-field="${field}" placeholder="Filter by ${property.description}">
-                    </div>`;
-            }
-        }
+        const pageSchema = require('../schema/page.schema.json');
+        pageSchema?.properties && Object.entries(pageSchema.properties).forEach(([field, property]) => {
+            filterControlsHTML += `
+                <div class="filter-group">
+                    <label for="filter-${field}">${(property as {description:string}).description}:</label>
+                    <input type="text" class="filter-input" id="filter-${field}" data-field="${field}" placeholder="Filter by ${(property as {description:string}).description}">
+                </div>`;
+        });
         return filterControlsHTML;
+    }
+
+    private createHeader(): JQuery<HTMLElement> {
+        return $('<h3>').text('Database Statistics');
+    }
+
+    private createControls(filterControlsHTML: string): JQuery<HTMLElement> {
+        const $controls = $('<div>').addClass('db-controls');
+        $controls.append($('<div>').addClass('filter-controls').html(filterControlsHTML));
+        $controls.append($('<select>').addClass('sort-select').append($('<option>').text('Title').val('title'), $('<option>').text('Page ID').val('pageId')));
+        $controls.append($('<button>').addClass('sort-button').text('Sort'));
+        return $controls;
+    }
+
+    private createTable(tableHeadersHTML: string): JQuery<HTMLElement> {
+        const $table = $('<table>').addClass('database-table');
+        const $thead = $('<thead>');
+        $thead.append($('<tr>').html(tableHeadersHTML));
+        $table.append($thead, $('<tbody>'));
+        return $table;
     }
 }

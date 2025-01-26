@@ -1,13 +1,18 @@
 /* Dark Mode */
-:root {
-    --background-color: #1e293b;
-    --text-color: #e5e7eb;
-    --primary-color: #007bff;
-    --hover-color: #0056b3;
-    --border-color: #3b4355;
-    --input-bg: #2c3e50;
+:root.dark-mode {
+    --bg-primary: #1e293b;
+    --bg-secondary: #2d3748; /* Slightly darker secondary background */
+    --text-primary: #f8f8f8; /* Lighter text for better contrast */
+    --text-secondary: #cbd5e0; /* Slightly softer secondary text */
+    --accent: #63b3ed; /* Brighter accent color */
+    --accent-border: #4299e1; /* Border for accent elements */
+    --border: #4a5568; /* Slightly lighter border color */
+    --bg-hover: #434190; /* Hover background color */
+    --input-bg: #2a4365; /* Input background color */
     --button-text: #ffffff;
-    --table-header-bg: #34495e;
+    --table-header-bg: #4a5568;
+    --bg-code: #282d33; /* Background for code blocks */
+    --text-code: #f0f0f0; /* Text color for code blocks */
 }
 
 /* General Body Styling */

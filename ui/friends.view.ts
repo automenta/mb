@@ -1,12 +1,15 @@
 import { $ } from './imports';
-import { BaseView } from './util/base-view';
+import BaseView from './util/base-view';
 import { UserInfo } from './types';
 import { Awareness } from './imports';
 import '/ui/css/friends.css';
 
 export default class FriendsView extends BaseView {
+    private getAwareness: () => Awareness;
+
     constructor(root: JQuery, getAwareness: () => Awareness) {
-        super(root, { getAwareness });
+        super(root);
+        this.getAwareness = getAwareness;
     }
 
     protected getViewClass(): string {
@@ -14,37 +17,35 @@ export default class FriendsView extends BaseView {
     }
 
     render() {
-        this.clearView();
-        this.container.append(
-            this.renderHeader('Friends'),
+        this.root.empty().append(
+            this.renderHeader('Friends'), 
             $('<input>', { type: 'text', class: 'friends-search', placeholder: 'Search friends...' })
                 .on('input', this.updateFriends.bind(this)),
             $('<ul>').addClass('friends-list')
         );
-        this.updateFriends();
-        this.getAwareness?.().on('change', this.updateFriends.bind(this));
+        this.getAwareness().on('change', this.updateFriends.bind(this));
+        return this.root; 
     }
 
     private updateFriends() {
-        const searchTerm = this.container.find('.friends-search').val() as string || '';
+        const searchTerm = (Array.isArray(this.root.find('.friends-search').val()) ? '' : (this.root.find('.friends-search').val() ?? '').toString()).toLowerCase();
         const awarenessStates = this.getAwareness().getStates();
-        let users: UserInfo[] = [];
-        for (let clientId in awarenessStates) {
-            const state = awarenessStates[clientId];
-            if (state.user) {
-                users.push(state.user);
-            }
-        }
-        const filteredUsers = users.filter(user =>
-            user.name?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+        const users = Array.from(awarenessStates.entries())
+            .filter(([, state]) => state && state.user)
+            .map(([, state]) => state.user);
+        const filteredUsers = users.filter(user => user.name?.toLowerCase().includes(searchTerm));
         this.renderFriendsList(filteredUsers);
     }
 
     private renderFriendsList(users: UserInfo[]) {
-        const ul = this.container.find('ul.friends-list').empty();
+        const ul = this.root.find('ul.friends-list').empty(); 
         users.forEach(user => {
-            const statusIcon = user.status === 'online' ? '🟢' : user.status === 'away' ? '🌙' : '🔴';
+            let statusIcon = '';
+            switch (user.status) {
+                case 'online': statusIcon = '🟢'; break;
+                case 'away': statusIcon = '🌙'; break;
+                default: statusIcon = '🔴';
+            }
             ul.append($('<li>').html(`${user.name} <span class="status">${statusIcon}</span>`));
         });
     }

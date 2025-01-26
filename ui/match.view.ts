@@ -46,8 +46,21 @@ interface MatchingMetrics {
     peersCount: number;
 }
 
+interface MatchingInterface {
+    workerCapacity: number;
+    processInterval: number;
+    startProcessing: () => void;
+    stopProcessing: () => void;
+    setWorkerCapacity: (value: number) => void;
+    setProcessInterval: (value: number) => void;
+    setSimilarityThreshold: (value: number) => void;
+    setAutoAdjust: (value: boolean) => void;
+    getMetrics: () => MatchingMetrics;
+}
+
+
 class MatchingView {
-    matching: any; // Type 'any' for 'matching' as its type is not defined in provided files
+    matching: MatchingInterface;
     root: JQuery<HTMLElement>;
     ele: JQuery<HTMLElement>;
     updateInterval: number = 1000;
@@ -60,36 +73,38 @@ class MatchingView {
     };
     settings: MatchingSettings = {
         isProcessing: false,
-        workerCapacity: 0, // Initialized in constructor
-        processInterval: 0, // Initialized in constructor
+        workerCapacity: 0,
+        processInterval: 0,
         similarityThreshold: 0.5,
         autoAdjustCapacity: true
     };
     updateTimer: any;
-    chart: any; // Type 'any' for chart.js instance
+    chart: any;
 
-    constructor(root: JQuery<HTMLElement>, matching: any) {
+    constructor(root: JQuery<HTMLElement>, matching: MatchingInterface) {
         this.matching = matching;
         this.root = root;
         this.ele = $('<div>').addClass('matching-dashboard') as JQuery<HTMLElement>;
         this.settings.workerCapacity = matching.workerCapacity;
         this.settings.processInterval = matching.processInterval / 1000;
 
+        const handleMatchingMetrics = (e: any) => this.updateMetrics(e.detail as MatchingMetrics);
+        const handleActivity = (e: any) => this.logActivity(e.detail as ActivityEvent);
 
-        events.on('matching-metrics', (e: CustomEvent<MatchingMetrics>) => this.updateMetrics(e.detail));
-        events.on('activity', (e: CustomEvent<ActivityEvent>) => this.logActivity(e.detail));
+        events.on('matching-metrics', handleMatchingMetrics);
+        events.on('activity', handleActivity);
     }
 
     template(): string {
-        const s = this.settings;
+        const { workerCapacity, processInterval, similarityThreshold, autoAdjustCapacity } = this.settings;
         return `
             <div class="control-panel">
                 <div class="panel-section controls">
                     ${this.renderControl('switch', 'Processing', 'processing-toggle')}
-                    ${this.renderControl('slider', 'Worker Capacity', 'capacity-slider', s.workerCapacity * 100)}
-                    ${this.renderControl('number', 'Process Interval', 'interval-input', s.processInterval, 's')}
-                    ${this.renderControl('slider', 'Similarity Threshold', 'similarity-slider', s.similarityThreshold * 100)}
-                    ${this.renderControl('switch', 'Auto-Adjust', 'auto-adjust-toggle', s.autoAdjustCapacity)}
+                    ${this.renderControl('slider', 'Worker Capacity', 'capacity-slider', workerCapacity * 100)}
+                    ${this.renderControl('number', 'Process Interval', 'interval-input', processInterval, 's')}
+                    ${this.renderControl('slider', 'Similarity Threshold', 'similarity-slider', similarityThreshold * 100)}
+                    ${this.renderControl('switch', 'Auto-Adjust', 'auto-adjust-toggle', autoAdjustCapacity)}
                 </div>
             </div>
             <div class="dashboard-grid">
@@ -101,57 +116,45 @@ class MatchingView {
     }
 
     renderControl(type: 'switch' | 'slider' | 'number', label: string, id: string, value: string | number | boolean = '', suffix: string = ''): string {
-        const controls: { [key: string]: () => string } = {
-            switch: () => `
+        return type === 'switch' ? `
+            <div class="control-group">
                 <label class="switch-label">${label}
                     <label class="toggle-switch">
                         <input type="checkbox" id="${id}" ${value ? 'checked' : ''}>
                         <span class="toggle-slider"></span>
                     </label>
-                </label>`,
-            slider: () => `
+                </label>
+            </div>` : type === 'slider' ? `
+            <div class="control-group">
                 <label>${label}
                     <input type="range" id="${id}" min="0" max="100" value="${value}">
                     <span id="${id}-value">${(value as number).toFixed(1)}%</span>
-                </label>`,
-            number: () => `
+                </label>
+            </div>` : `
+            <div class="control-group">
                 <label>${label}
                     <input type="number" id="${id}" min="1" max="60" value="${value}">${suffix}
-                </label>`
-        };
-        return `<div class="control-group">${controls[type]()}</div>`;
+                </label>
+            </div>`;
     }
 
     renderStatusPanel(): string {
+        const metrics = ['processing-rate', 'queue-size', 'pages-processed', 'matches-found', 'peers-count', 'worker-capacity'];
         return `
             <div class="dashboard-cell status-panel">
                 <h3>Processing Status</h3>
                 <div class="status-indicators">
-                    ${['processing-rate', 'queue-size'].map(id => `
+                    ${metrics.map(id => `
                         <div class="status-row">
                             <div class="indicator">
-                                <div class="indicator-label">${id.replace('-', ' ').toUpperCase()}</div>
+                                <div class="indicator-label">${id.replace(/-/g, ' ').toUpperCase()}</div>
                                 <div class="indicator-value" id="${id}">0</div>
-                                <div class="indicator-bar">
-                                    <div class="bar-fill" id="${id}-bar" style="width: 0%"></div>
-                                </div>
+                                ${['processing-rate', 'queue-size'].includes(id) ? `<div class="indicator-bar"><div class="bar-fill" id="${id}-bar" style="width: 0%"></div></div>` : ''}
                             </div>
                         </div>
                     `).join('')}
-                    <div class="status-row">
-                        ${this.renderMetricPair('pages-processed', 'matches-found')}
-                    </div>
-                    <div class="status-row">
-                        ${this.renderMetricPair('peers-count', 'worker-capacity')}
-                    </div>
                 </div>
             </div>`;
-    }
-
-    renderMetricPair(id1: string, id2: string): string {
-        return ['metric', id1, id2].reduce((html, id) =>
-            html + `<div class="${id}"><span class="${id}-label"></span>
-            <span class="${id}-value" id="${id}">0</span></div>`, '');
     }
 
     renderActivityPanel(): string {
@@ -190,65 +193,40 @@ class MatchingView {
     }
 
     bindControls(): void {
-        const controls: { [key: string]: (e: any) => void } = {
-            'processing-toggle': (e: any) => {
-                this.settings.isProcessing = e.target.checked;
-                this.matching[e.target.checked ? 'startProcessing' : 'stopProcessing']();
-                this.logActivity({
-                    type: 'system',
-                    message: `Processing ${e.target.checked ? 'started' : 'stopped'}`,
-                    icon: e.target.checked ? '▶️' : '⏹️'
-                });
-            },
-            'capacity-slider': (e: any) => {
-                const value = e.target.value / 100;
-                this.settings.workerCapacity = value;
-                this.ele.find('#capacity-value').text(e.target.value + '%');
-                if (!this.settings.autoAdjustCapacity) {
-                    this.matching.setWorkerCapacity(value);
-                    this.logActivity({
-                        type: 'config',
-                        message: `Worker capacity: ${e.target.value}%`,
-                        icon: '⚡'
-                    });
-                }
-            },
-            'interval-input': (e: any) => {
-                const value = Math.max(1, Math.min(60, parseInt(e.target.value)));
-                this.settings.processInterval = value;
-                this.matching.setProcessInterval(value * 1000);
-                this.logActivity({
-                    type: 'config',
-                    message: `Interval: ${value}s`,
-                    icon: '⏱️'
-                });
-            },
-            'similarity-slider': (e: any) => {
-                const value = e.target.value / 100;
-                this.settings.similarityThreshold = value;
-                this.ele.find('#similarity-value').text(e.target.value + '%');
-                this.matching.setSimilarityThreshold(value);
-                this.logActivity({
-                    type: 'config',
-                    message: `Threshold: ${e.target.value}%`,
-                    icon: '🎯'
-                });
-            },
-            'auto-adjust-toggle': (e: any) => {
-                this.settings.autoAdjustCapacity = e.target.checked;
-                this.matching.setAutoAdjust(e.target.checked);
-                this.ele.find('#capacity-slider').prop('disabled', e.target.checked);
-                this.logActivity({
-                    type: 'config',
-                    message: `Auto-adjust: ${e.target.checked ? 'on' : 'off'}`,
-                    icon: '🔄'
-                });
+/*         this.ele.on('change', '#processing-toggle', (e: JQuery.Event) => {
+            this.settings.isProcessing = e.currentTarget.checked;
+            this.matching[this.settings.isProcessing ? 'startProcessing' : 'stopProcessing']();
+            this.logActivity({ type: 'system', message: `Processing ${this.settings.isProcessing ? 'started' : 'stopped'}`, icon: this.settings.isProcessing ? '▶️' : '⏹️' });
+        });
+        this.ele.on('input', '#capacity-slider', (e: JQuery.Event) => {
+            const value = parseFloat(e.currentTarget.value) / 100;
+            this.settings.workerCapacity = value;
+            this.ele.find('#capacity-value').text(`${value * 100}%`);
+            if (!this.settings.autoAdjustCapacity) {
+                this.matching.setWorkerCapacity(value);
+                this.logActivity({ type: 'config', message: `Worker capacity: ${value * 100}%`, icon: '⚡' });
             }
-        };
-
-        Object.entries(controls).forEach(([id, handler]) =>
-            this.ele.find(`#${id}`).on('change input', handler));
-    }
+        });
+        this.ele.on('input', '#interval-input', (e: JQuery.Event) => {
+            const value = Math.max(1, Math.min(60, parseInt(e.currentTarget.value, 10)));
+            this.settings.processInterval = value;
+            this.matching.setProcessInterval(value * 1000);
+            this.logActivity({ type: 'config', message: `Interval: ${value}s`, icon: '⏱️' });
+        });
+        this.ele.on('input', '#similarity-slider', (e: JQuery.Event) => {
+            const value = parseFloat(e.currentTarget.value) / 100;
+            this.settings.similarityThreshold = value;
+            this.ele.find('#similarity-value').text(`${value * 100}%`);
+            this.matching.setSimilarityThreshold(value);
+            this.logActivity({ type: 'config', message: `Threshold: ${value * 100}%`, icon: '🎯' });
+        });
+        this.ele.on('change', '#auto-adjust-toggle', (e: JQuery.Event) => {
+            this.settings.autoAdjustCapacity = e.currentTarget.checked;
+            this.matching.setAutoAdjust(this.settings.autoAdjustCapacity);
+            this.ele.find('#capacity-slider').prop('disabled', this.settings.autoAdjustCapacity);
+            this.logActivity({ type: 'config', message: `Auto-adjust: ${this.settings.autoAdjustCapacity ? 'on' : 'off'}`, icon: '🔄' });
+        });
+ */    }
 
     logActivity(event: ActivityEvent): void {
         const entry = { ...event, timestamp: new Date().toLocaleTimeString(), id: Date.now() };
@@ -270,8 +248,7 @@ class MatchingView {
     }
 
     updateMetrics(metrics: MatchingMetrics): void {
-        Object.entries(metrics).forEach(([key, value]) =>
-            this.animateValue(`#${key}`, value as number));
+        Object.entries(metrics).forEach(([key, value]) => this.animateValue(`#${key}`, value));
 
         const rate = metrics.processingRate || 0;
         this.ele.find('#processing-rate').text(`${rate.toFixed(1)}/s`);
@@ -285,7 +262,7 @@ class MatchingView {
 
     animateValue(selector: string, newValue: number): void {
         const $el = this.ele.find(selector);
-        const current = parseInt($el.text());
+        const current = parseInt($el.text(), 10);
         if (current !== newValue) {
             $el.prop('counter', current).animate({ counter: newValue }, {
                 duration: 500,
@@ -296,10 +273,11 @@ class MatchingView {
 
     updateHistory(metrics: MatchingMetrics): void {
         Object.entries(metrics).forEach(([key, value]) => {
-            if (key in this.history) {
-                this.history[key].push(value as number);
-                if (this.history[key].length > this.maxHistoryPoints) {
-                    this.history[key] = this.history[key].slice(-this.maxHistoryPoints);
+            const historyKey = key as keyof HistoryData;
+            if (historyKey in this.history) {
+                this.history[historyKey].push(value);
+                if (this.history[historyKey].length > this.maxHistoryPoints) {
+                    this.history[historyKey] = this.history[historyKey].slice(-this.maxHistoryPoints);
                 }
             }
         });
@@ -329,16 +307,13 @@ class MatchingView {
     }
 
     startUpdates(): void {
-        if (this.updateTimer) clearInterval(this.updateTimer);
-        this.updateTimer = setInterval(() =>
-            this.updateMetrics(this.matching.getMetrics()), this.updateInterval);
+        clearInterval(this.updateTimer);
+        this.updateTimer = setInterval(() => this.updateMetrics(this.matching.getMetrics()), this.updateInterval);
     }
 
     stop(): void {
-        if (this.updateTimer) {
-            clearInterval(this.updateTimer);
-            this.updateTimer = null;
-        }
+        this.updateTimer && clearInterval(this.updateTimer);
+        this.updateTimer = null;
     }
 
     updateChart(): void {

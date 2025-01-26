@@ -38,29 +38,29 @@ export default class MatchingEngine {
     }
 
     // Find matching pages (consider different matching algorithms and filtering options)
-    // async findMatches(pageId: string, properties: PageProperties): Promise<MatchResult[]> {
-    //     const matches: MatchResult[] = [];
-    //
-    //     for (const otherPage of this.db.list()) { // Iterate over NObject directly
-    //         if (otherPage.id === pageId) continue;
-    //
-    //         const otherContent = otherPage.text.toString(); // Access text content directly
-    //         const otherProps: PageProperties = this.extractProperties(otherContent);
-    //
-    //         // Calculate similarity (consider different similarity metrics)
-    //         const similarity = this.calculateSimilarity(properties, otherProps);
-    //
-    //         if (similarity > this.similarityThreshold) { // Use similarityThreshold property
-    //             matches.push({
-    //                 pageId: otherPage.id,
-    //                 similarity,
-    //                 timestamp: Date.now()
-    //             });
-    //         }
-    //     }
-    //
-    //     return matches;
-    // }
+    async findMatches(pageId: string, properties: PageProperties): Promise<MatchResult[]> {
+        const matches: MatchResult[] = [];
+
+        for (const otherPage of this.db.list()) { // Iterate over NObject directly
+            if (otherPage.id === pageId) continue;
+
+            const otherContent = otherPage.text.toString(); // Access text content directly
+            const otherProps: PageProperties = this.extractProperties(otherContent);
+
+            // Calculate similarity (consider different similarity metrics)
+            const similarity = this.calculateSimilarity(properties, otherProps);
+
+            if (similarity > this.similarityThreshold) { // Use similarityThreshold property
+                matches.push({
+                    pageId: otherPage.id,
+                    similarity,
+                    timestamp: Date.now()
+                });
+            }
+        }
+
+        return matches;
+    }
 
     // Calculate similarity between pages (consider different similarity algorithms)
     calculateSimilarity(propsA: PageProperties, propsB: PageProperties): number {
@@ -73,16 +73,16 @@ export default class MatchingEngine {
             Math.max(propsA.topics.length, propsB.topics.length);
     }
 
-    // // Store processing results (consider storing in a separate collection or using NObject metadata)
-    // storeResults(pageId: string, properties: PageProperties, matches: MatchResult[]): void {
-    //     const page = this.db.get(pageId);
-    //     if (page) {
-    //         // Example: Storing matches as metadata (consider data structure and size limits)
-    //         // page.metadata.set('matchingProperties', properties);
-    //         // page.metadata.set('pageMatches', matches);
-    //         // console.log(`Stored results for page ${pageId}: ${matches.length} matches found.`);
-    //     }
-    // }
+    // Store processing results (consider storing in a separate collection or using NObject metadata)
+    storeResults(pageId: string, properties: PageProperties, matches: MatchResult[]): void {
+        const page = this.db.get(pageId);
+        if (page) {
+            // Example: Storing matches as metadata (consider data structure and size limits)
+            page.setMetadata('matchingProperties', properties);
+            page.setMetadata('pageMatches', matches);
+            console.log(`Stored results for page ${pageId}: ${matches.length} matches found.`);
+        }
+    }
 
     setSimilarityThreshold(threshold: number): void {
         this.similarityThreshold = Math.max(0, Math.min(1, threshold));

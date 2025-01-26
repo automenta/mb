@@ -4,7 +4,6 @@ interface ProcessingState {
     startTime: number;
 }
 
-
 import MatchingEngine, { PageProperties, MatchResult } from './matching-engine';
 
 export default class ProcessingQueueManager {
@@ -68,15 +67,15 @@ export default class ProcessingQueueManager {
     }
 
     startProcessing(): void {
-        if (this.processTimer) return;
-
-        this.processTimer = setInterval(() => this.processLoop(), this.processInterval);
-        console.log('Processing started');
+        if (!this.processTimer) {
+            this.processTimer = setInterval(() => this.processLoop(), this.processInterval);
+            console.log('Processing started');
+        }
     }
 
     stopProcessing(): void {
         if (this.processTimer) {
-            clearInterval(this.processTimer);
+            clearInterval(this.processTimer as unknown as number);
             this.processTimer = null;
             console.log('Processing stopped');
         }
@@ -84,10 +83,8 @@ export default class ProcessingQueueManager {
 
     setProcessInterval(ms: number): void {
         this.processInterval = Math.max(1000, Math.min(60000, ms));
-        if (this.processTimer) {
-            this.stopProcessing();
-            this.startProcessing();
-        }
+        this.stopProcessing();
+        this.startProcessing();
         console.log(`Process interval set to ${this.processInterval}ms`);
     }
 

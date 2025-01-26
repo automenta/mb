@@ -27,16 +27,10 @@ export default class NObject {
       ['replyTo', new Y.Array<string>()]
     ]);
 
-    if (!this.root.has('content'))
-      this.root.set('content', new Y.Text());
+    this.root.set('content', this.root.has('content') ? this.root.get('content') : new Y.Text());
   }
   private getOrInitSubMap(key: string, initialData: [string, any][] = []): Y.Map<any> {
-    let subMap = this.root.get(key);
-    if (!(subMap instanceof Y.Map)) {
-      subMap = new Y.Map<any>(initialData);
-      this.root.set(key, subMap);
-    }
-    return subMap;
+    return this.root.has(key) && this.root.get(key) instanceof Y.Map ? this.root.get(key) : this.root.set(key, new Y.Map<any>(initialData)) as Y.Map<any>;
   }
 
   // Helper to update metadata within a transaction
@@ -58,22 +52,8 @@ export default class NObject {
     get text(): Y.Text { return this.root.get('content'); }
     get tags(): Y.Array<string> { return this.metadata.get('tags'); }
     get sharedWith(): Y.Array<string> { return this.metadata.get('sharedWith'); }
-    get replies(): Y.Array<string> {
-      let replies = this.links.get('reply');
-      if (!replies) {
-        replies = new Y.Array<string>();
-        this.links.set('reply', replies);
-      }
-      return replies;
-    }
-    get repliesTo(): Y.Array<string> {
-      let repliesTo = this.links.get('replyTo');
-      if (!repliesTo) {
-        repliesTo = new Y.Array<string>();
-        this.links.set('replyTo', repliesTo);
-      }
-      return repliesTo;
-    }
+    get replies(): Y.Array<string> { return this.links.get('reply') || new Y.Array<string>(); }
+    get repliesTo(): Y.Array<string> { return this.links.get('replyTo') || new Y.Array<string>(); }
   
     // Setters
     set name(v: string) { this.updateMetadata({ name: v }); }
@@ -98,36 +78,27 @@ export default class NObject {
     }
   
     // Helper method for adding to Y.Array
-    private addToArray(arr: Y.Array<string>, item: string) {
-      this.doc.transact(() => {
-        if (!arr.toArray().includes(item)) {
-          arr.push([item]);
-          this.updateMetadata({}); // Just to update 'updated'
-        }
-      });
-    }
-  
-    // Helper method for removing from Y.Array
-    private removeFromArray(arr: Y.Array<string>, item: string) {
+    private updateArray(arr: Y.Array<string>, item: string, add: boolean) {
       this.doc.transact(() => {
         const index = arr.toArray().indexOf(item);
-        if (index > -1) {
+        if (add && index === -1) {
+          arr.push([item]);
+        } else if (!add && index > -1) {
           arr.delete(index, 1);
-          this.updateMetadata({}); // Just to update 'updated'
         }
+        this.updateMetadata({}); // Just to update 'updated'
       });
     }
   
     // Methods using the helpers
-    addTag(tag: string) { this.addToArray(this.tags, tag); }
-    removeTag(tag: string) { this.removeFromArray(this.tags, tag); }
-    addReply(id: string) { this.addToArray(this.replies, id); }
-    removeReply(id: string) { this.removeFromArray(this.replies, id); }
-    addReplyTo(id: string) { this.addToArray(this.repliesTo, id); }
-    removeReplyTo(id: string) { this.removeFromArray(this.repliesTo, id); }
-
-    shareWith(userId: string) { this.addToArray(this.sharedWith, userId); }
-    unshareWith(userId: string) { this.removeFromArray(this.sharedWith, userId); }
+    addTag(tag: string) { this.updateArray(this.tags, tag, true); }
+    removeTag(tag: string) { this.updateArray(this.tags, tag, false); }
+    addReply(id: string) { this.updateArray(this.replies, id, true); }
+    removeReply(id: string) { this.updateArray(this.replies, id, false); }
+    addReplyTo(id: string) { this.updateArray(this.repliesTo, id, true); }
+    removeReplyTo(id: string) { this.updateArray(this.repliesTo, id, false); }
+    shareWith(userId: string) { this.updateArray(this.sharedWith, userId, true); }
+    unshareWith(userId: string) { this.updateArray(this.sharedWith, userId, false); }
 
     observe(fn: (events: Y.YEvent<any>[]) => void) {
       this.root.observeDeep(fn);
