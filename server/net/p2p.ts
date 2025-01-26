@@ -155,6 +155,10 @@ class P2PNode extends EventEmitter {
             });
         });
     }
+
+    getMultiaddrs() {
+        return this.node?.getAddresses() || [];
+    }
 }
 
 export default P2PNode;

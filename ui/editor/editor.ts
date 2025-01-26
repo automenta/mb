@@ -55,11 +55,13 @@ export default class Editor {
 
         // Initialize document state
         this.initDocument();
-        this.initUI();
-        this.initNetwork();
-
-        this.awareness = new AwarenessManager(this.config.getAwareness(), this.rootElement.querySelector('.content-editor') as HTMLElement);
-
+        setTimeout(() => {
+            this.initUI();
+            this.initNetwork();
+            this.awareness = new AwarenessManager(this.config.getAwareness(), this.rootElement.querySelector('.content-editor') as HTMLElement);
+            const contentEditorElement = this.rootElement.querySelector('.content-editor') as HTMLElement;
+            console.log('contentEditorElement:', contentEditorElement); // Debug log
+        }, 0);
     }
 
     private initDocument(): void {
@@ -85,12 +87,13 @@ export default class Editor {
     private initUI(): void {
         this.rootElement.innerHTML = ''; // Replace empty() with innerHTML = ''
         this.rootElement.append(this.renderUI());
-    
+
         this.bindEditorEvents();
-        this.toolbar.init($(this.rootElement)); //toolbar.init expects JQuery element
-    
+        this.toolbar.init($(this.rootElement).find('.editor-container')); //toolbar.init expects JQuery element
+
         // Render metadata after binding events
         if (this.currentObject) {
+            console.log('metadataPanel:', this.rootElement.querySelector('.metadata-panel')); // Debug log
             this.rootElement.querySelector('.metadata-panel')!.append(this.currentObject instanceof Y.Map ? document.createElement('div') : this.metadata.renderMetadataPanel(this.currentObject)[0]); // Wrap with jQuery and use [0] to get HTMLElement
         }
     }
@@ -98,7 +101,6 @@ export default class Editor {
     private renderUI(): string {
         return `
             <div class="editor-container">
-                ${this.toolbar.render()}
                 <div class="content-editor" contenteditable="true"></div>
                 <div class="metadata-panel"></div>
             </div>

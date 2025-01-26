@@ -1,5 +1,5 @@
 import $ from 'jquery'
-import Y from 'yjs';
+import * as Y from 'yjs';
 import { Awareness } from 'y-protocols/awareness';
 import DB from '../src/db';
 import NObject from '../src/obj';
@@ -17,3 +17,4 @@ export {
 };
 
 export * from './types';
+export type { AppState } from './store';

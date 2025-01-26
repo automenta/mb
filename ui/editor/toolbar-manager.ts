@@ -46,7 +46,7 @@ export class ToolbarManager {
       button.on('click', () => item.action(this.editor));
       toolbar.append(button);
     });
-    return toolbar.prop('outerHTML');
+    return toolbar; // Return the jQuery object
   }
 
   init(root: JQuery) {

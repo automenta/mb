@@ -13,7 +13,8 @@
         import { v4 as uuid } from 'uuid';
 
         let userID = localStorage['userID'] || (localStorage['userID'] = uuid());
-        $('body').append(new App(userID, "todo").ele);
+        const app = new App(userID, "todo");
+        app.mount(document.body);
     </script>
 </body>
 </html>

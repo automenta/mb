@@ -25,8 +25,8 @@ describe('P2PNode', () => {
             capturedLogs.push(args.join(' '));
         };
 
-        await node1.start();
-        await node2.start();
+        await node1.start({peerId: peerId1});
+        await node2.start({peerId: peerId2});
 
         let node1Connected = false;
         let node2Connected = false;
@@ -69,8 +69,8 @@ describe('P2PNode', () => {
         });
         const node2 = new P2PNode({ peerId: peerId2 });
 
-        await node1.start();
-        await node2.start();
+        await node1.start({peerId: peerId1});
+        await node2.start({peerId: peerId2});
 
         // Simulate a connection failure by stopping node2
         await node2.stop();

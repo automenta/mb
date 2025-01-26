@@ -7,7 +7,9 @@ export class AwarenessManager {
     readonly awareness: Awareness,
     private readonly editor: HTMLElement
   ) {
-    this.setupAwareness();
+    setTimeout(() => {
+      this.setupAwareness();
+    }, 0);
   }
 
   private setupAwareness() {

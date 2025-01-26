@@ -1,9 +1,10 @@
 import DB from '../src/db';
 import Network from '../src/net';
 import Matching from "../src/match.js";
-import { store, initializeStore, type AppState } from './store';
+import { $, type AppState } from './imports';
 import Sidebar from './sidebar';
 import Editor from "./editor/editor";
+import { store, initializeStore } from './store';
 import { EditorConfig } from './types';
 import { io, Socket } from "socket.io-client";
 import '/ui/css/app.css';
@@ -18,6 +19,7 @@ export default class App {
     editor: Editor;
     sidebar: Sidebar;
     isDarkMode: boolean;
+    private _userID: string;
 
     public ele: HTMLElement; // Changed to HTMLElement
 
@@ -36,7 +38,7 @@ export default class App {
         const savedTheme = localStorage.getItem('themePreference') || 'dark';
         this.isDarkMode = savedTheme === 'dark';
 
-        this.initializeApp(userID);
+        // this.initializeApp(userID); // Removed from constructor
         store.subscribe(state => this.handleStoreUpdate(state));
     }
 
@@ -76,7 +78,7 @@ export default class App {
 
     private initializeSidebar() {
         this.sidebar = new Sidebar(this.db, this);
-        this.ele.prepend(this.sidebar.ele); // prepend is standard DOM API
+        this.ele.prepend(this.sidebar.ele[0]); // prepend is standard DOM API
     }
 
     private initializeSocket() {
@@ -89,16 +91,8 @@ export default class App {
         this.initializeNetwork();
         this.initializeMatching();
         this.initializeStore();
-        // this.initializeEditor();
-        // this.initializeSidebar();
-
-        /*console.log("App initialized:", {
-            db: this.db,
-            net: this.net,
-            match: this.match,
-            editor: this.editor,
-            sidebar: this.sidebar
-        });*/
+        this.initializeEditor();
+        this.initializeSidebar();
     }
 
     private setupSocket() {
@@ -206,7 +200,7 @@ export default class App {
         if (container) {
             container.appendChild(this.ele); // Vanilla JS appendChild
         }
-        this.initializeEditor();
-        this.initializeSidebar();
+        this._userID = arguments[0]; // Assign userID to _userID from arguments[0]
+        this.initializeApp(this._userID); // Call initializeApp with _userID
     }
 }
