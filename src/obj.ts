@@ -19,7 +19,8 @@ export default class NObject {
       ['updated', Date.now()],
       ['public', false],
       ['author', ''],
-      ['tags', new Y.Array<string>()]
+      ['tags', new Y.Array<string>()],
+      ['sharedWith', new Y.Array<string>()]
     ]);
     this.links = this.getOrInitSubMap('links', [
       ['reply', new Y.Array<string>()],
@@ -31,7 +32,7 @@ export default class NObject {
   }
   private getOrInitSubMap(key: string, initialData: [string, any][] = []): Y.Map<any> {
     let subMap = this.root.get(key);
-    if (!subMap) {
+    if (!(subMap instanceof Y.Map)) {
       subMap = new Y.Map<any>(initialData);
       this.root.set(key, subMap);
     }
@@ -56,8 +57,23 @@ export default class NObject {
     get author(): string { return this.metadata.get('author'); }
     get text(): Y.Text { return this.root.get('content'); }
     get tags(): Y.Array<string> { return this.metadata.get('tags'); }
-    get replies(): Y.Array<string> { return this.links.get('reply'); }
-    get repliesTo(): Y.Array<string> { return this.links.get('replyTo'); }
+    get sharedWith(): Y.Array<string> { return this.metadata.get('sharedWith'); }
+    get replies(): Y.Array<string> {
+      let replies = this.links.get('reply');
+      if (!replies) {
+        replies = new Y.Array<string>();
+        this.links.set('reply', replies);
+      }
+      return replies;
+    }
+    get repliesTo(): Y.Array<string> {
+      let repliesTo = this.links.get('replyTo');
+      if (!repliesTo) {
+        repliesTo = new Y.Array<string>();
+        this.links.set('replyTo', repliesTo);
+      }
+      return repliesTo;
+    }
   
     // Setters
     set name(v: string) { this.updateMetadata({ name: v }); }
@@ -109,11 +125,14 @@ export default class NObject {
     removeReply(id: string) { this.removeFromArray(this.replies, id); }
     addReplyTo(id: string) { this.addToArray(this.repliesTo, id); }
     removeReplyTo(id: string) { this.removeFromArray(this.repliesTo, id); }
-  
+
+    shareWith(userId: string) { this.addToArray(this.sharedWith, userId); }
+    unshareWith(userId: string) { this.removeFromArray(this.sharedWith, userId); }
+
     observe(fn: (events: Y.YEvent<any>[]) => void) {
       this.root.observeDeep(fn);
     }
-  
+
     unobserve(fn: (events: Y.YEvent<any>[]) => void) {
       this.root.unobserveDeep(fn);
     }

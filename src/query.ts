@@ -1,5 +1,6 @@
 import * as Y from 'yjs';
 import NObject from './obj';
+import DB from './db'; // Import DB class from db.ts
 
 type FilterPredicate = (obj: NObject) => boolean;
 type SortPredicate = (a: NObject, b: NObject) => number;
@@ -67,15 +68,4 @@ export class QueryBuilder {
         results = this.applySorting(results);
         return this.applyPagination(results);
     }
-}
-
-export interface DB {
-    index: Y.Map<NObject>;
-    get(id: string): NObject | null;
-    create(id?: string): NObject;
-    list(): NObject[];
-    listByTag(tag: string): NObject[];
-    listByAuthor(author: string): NObject[];
-    search(query: string): NObject[];
-    delete(id: string): boolean;
 }

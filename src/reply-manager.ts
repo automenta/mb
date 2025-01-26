@@ -1,5 +1,5 @@
 import NObject from './obj';
-import {DB} from './query';
+import DB from './db';
 import { Array as YArray } from 'yjs';
 
 export class ReplyManager {

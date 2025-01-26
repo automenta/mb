@@ -4,7 +4,6 @@ import * as Y from 'yjs';
 import DB from '../../src/db';
 import NObject from '../../src/obj';
 
-vi.mock('y-indexeddb');
 
 describe('DB', () => {
     let db: DB;
@@ -110,23 +109,23 @@ describe('DB', () => {
         expect(obj.text.toString()).toEqual('Y.Text content');
     });
 
-    it('should set and get object public status', () => {
+    it('should set and get object text', () => {
         const obj = db.create();
         obj.setText('Test text');
-        const objTextValue = db.objText(obj.id);
-        if (objTextValue === null || objTextValue.toString().length === 0) throw new Error('Object text is null');
-        expect(objTextValue.toString()).toEqual('Test text');
+        const retrievedObj = db.get(obj.id);
+        if (retrievedObj === null) throw new Error('Object is null');
+        expect(retrievedObj.text.toString()).toEqual('Test text');
     });
 
     it('should set and get object name', () => {
         const obj = db.create();
-        db.objName(obj.id, 'Test Name');
+        obj.name = 'Test Name';
         expect(obj.name).toEqual('Test Name');
     });
 
     it('should set and get object public status', () => {
         const obj = db.create();
-        db.objPublic(obj.id, true);
+        obj.public = true;
         expect(obj.public).toEqual(true);
     });
 
@@ -170,7 +169,7 @@ describe('DB', () => {
         const longName = 'a'.repeat(1000);
         const longText = new Y.Text('b'.repeat(10000));
         const obj = db.create();
-        db.objName(obj.id, longName);
+        obj.name = longName;
         obj.setText(longText.toString());
         expect(obj.name).toEqual(longName);
         expect(obj.text.toString()).toEqual(longText.toString());

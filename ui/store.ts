@@ -1,8 +1,7 @@
-import type NObject from '../src/obj';
+import NObject from '../src/obj';
 import type { UserInfo } from './types';
 export type { UserInfo } from './types';
 import type DB from '../src/db';
-
 import type { Awareness } from 'y-protocols/awareness';
 import type { Doc as YDoc } from 'yjs';
 
@@ -13,7 +12,11 @@ export interface AppState {
   friends: UserInfo[];
   networkStatus: 'connected' | 'disconnected' | 'error';
   pluginStatus: Record<string, boolean>;
-  errors: Array<{ pluginName: string; error: any; timestamp: number }>;
+  errors: Array<{
+    pluginName: string;
+    error: any;
+    timestamp: number;
+  }>;
   db: DB | null;
   net?: {
     bindDocument: (doc: YDoc) => void;
@@ -23,6 +26,7 @@ export interface AppState {
 }
 
 type Listener = (state: AppState) => void;
+
 interface StoreConfig {
   initialState: AppState;
   persistKeys?: (keyof AppState)[];
@@ -45,14 +49,14 @@ class Store {
 
   syncWithDB(db: DB) {
     const updateObjects = () => {
-      let objects = Array.from(db.index.values());
-      objects = objects.map(x => {
-        //if (x.constructor!=="NObject")
-          return db.get(x.id); //HACK
-        //else
-          //return x;
-      });
-      objects = objects.filter(x => x);
+      console.log('syncWithDB: updateObjects started'); // Added log
+      // Retrieve objects from db.index and create NObject instances
+      const objects = Array.from(db.index.values()).map(objId => { // objId is now object ID (string)
+        const obj = db.get(objId); // Retrieve NObject instance using db.get(id)
+        return obj;
+      }).filter((obj): obj is NObject => obj !== null);
+
+      console.log('syncWithDB: updateObjects loaded', objects.length, 'objects'); // Added log
 
       this.update(currentState => ({
         ...currentState,
@@ -61,8 +65,9 @@ class Store {
           ? objects[0]
           : currentState.currentObject
       }));
+      console.log('syncWithDB: updateObjects finished'); // Added log
     };
-    
+
     db.index.observe(updateObjects);
     updateObjects();
   }
@@ -130,51 +135,54 @@ class Store {
     this.notify();
   }
 
-    getState(): AppState {
-        return this.state;
-    }
+  getState(): AppState {
+    return this.state;
+  }
 }
+
 let storeInstance: Store | null = null;
+
 export function initializeStore(db: DB) {
-    if (!storeInstance) {
-        storeInstance = new Store({
-            initialState: {
-                currentUser: null,
-                currentObject: null,
-                objects: [],
-                friends: [],
-                networkStatus: 'disconnected',
-                pluginStatus: {},
-                errors: [],
-                db: db,
-            },
-        });
-        storeInstance.syncWithDB(db);
-    }
-    return storeInstance;
+  if (!storeInstance) {
+    storeInstance = new Store({
+      initialState: {
+        currentUser: null,
+        currentObject: null,
+        objects: [],
+        friends: [],
+        networkStatus: 'disconnected',
+        pluginStatus: {},
+        errors: [],
+        db: db,
+      },
+    });
+    storeInstance.syncWithDB(db);
+  }
+  return storeInstance;
 }
+
 export const store = {
-    getState: () => storeInstance?.getState() ||
-        {
-            currentUser: null,
-            currentObject: null,
-            objects: [],
-            friends: [],
-            networkStatus: 'disconnected',
-            pluginStatus: {},
-            errors: [],
-            db: null,
-        },
-    subscribe: (callback: (state: AppState) => void) => storeInstance?.subscribe(callback) || (() => { }),
-    setCurrentUser: (user: UserInfo) => storeInstance?.setCurrentUser(user),
-    setNetworkStatus: (status: 'connected' | 'disconnected') => storeInstance?.setNetworkStatus(status),
-    addObject: (obj: NObject) => storeInstance?.addObject(obj),
-    removeObject: (id: string) => storeInstance?.removeObject(id),
-    setCurrentObject: (obj: NObject) => storeInstance?.setCurrentObject(obj),
-    updatePluginStatus: (plugins: Record<string, boolean>) => storeInstance?.updatePluginStatus(plugins),
-    logError: (error: {
-        pluginName: string;
-        error: any;
-        timestamp: number;
-    }) => storeInstance?.logError(error),
+  getState: () => storeInstance?.getState() ||
+    {
+      currentUser: null,
+      currentObject: null,
+      objects: [],
+      friends: [],
+      networkStatus: 'disconnected',
+      pluginStatus: {},
+      errors: [],
+      db: null,
+    },
+  subscribe: (callback: (state: AppState) => void) => storeInstance?.subscribe(callback) || (() => { }),
+  setCurrentUser: (user: UserInfo) => storeInstance?.setCurrentUser(user),
+  setNetworkStatus: (status: 'connected' | 'disconnected') => storeInstance?.setNetworkStatus(status),
+  addObject: (obj: NObject) => storeInstance?.addObject(obj),
+  removeObject: (id: string) => storeInstance?.removeObject(id),
+  setCurrentObject: (obj: NObject) => storeInstance?.setCurrentObject(obj),
+  updatePluginStatus: (plugins: Record<string, boolean>) => storeInstance?.updatePluginStatus(plugins),
+  logError: (error: {
+    pluginName: string;
+    error: any;
+    timestamp: number;
+  }) => storeInstance?.logError(error),
 };

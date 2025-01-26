@@ -9,7 +9,7 @@ import { PersistenceManager } from './persistence-manager'; // Added import
 
 export default class DB {
   readonly doc: Y.Doc;
-  public readonly index: Y.Map<NObject>;
+  public readonly index: Y.Map<string>;
   // public readonly config: Y.Map<unknown>; // Removed
   public readonly provider: IndexeddbPersistence;
   public readonly store: Y.Doc;
@@ -25,7 +25,7 @@ export default class DB {
     this.store = new Y.Doc();
     this.provider = provider || new IndexeddbPersistence('main-db', this.doc);
     // this.config = this.doc.getMap('config'); // Removed
-    this.index = this.doc.getMap<NObject>('objects');
+    this.index = this.doc.getMap<string>('objects');
     this.replyManager = new ReplyManager(this);
     this.configManager = new ConfigManager(this.doc); // Added
     this.persistenceManager = new PersistenceManager(this.doc); // Added
@@ -47,7 +47,7 @@ export default class DB {
     //if (!id) id = randomUUID();
     const obj = new NObject(this.doc, id);
     obj.author = this.userID;
-    this.index.set(obj.id, obj.toJSON());
+    this.index.set(obj.id, obj.id); // Store object ID in index
     return obj;
   }
 
@@ -57,8 +57,8 @@ export default class DB {
    * @returns The NObject if found, otherwise null.
    */
   get(id: string): NObject | null {
-    const indexed = this.index.get(id);
-    return indexed ? new NObject(this.doc, id) : null;
+    const objectId = this.index.get(id); // Get object ID from index
+    return objectId ? new NObject(this.doc, objectId) : null; // Create new NObject instance
   }
 
   /**

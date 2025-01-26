@@ -17,8 +17,9 @@ type NetworkEventType =
     | 'peer-connected'
     | 'peer-disconnected'
     | 'awareness-update'
-    | 'document-shared'
-    | 'document-unshared';
+    | 'object-shared'
+    | 'object-unshared';
+
 
 /**
  * Interface representing data payload for network events
@@ -46,7 +47,7 @@ class Network {
     private db: DB;
     private docsShared: Set<string>;
     private readonly metrics: NetworkMetrics;
-    net: WebrtcProvider;
+    net!: WebrtcProvider;
     private readonly signalingServers: string[];
 
     constructor(channel:string, db:DB) {
@@ -63,7 +64,7 @@ class Network {
 
         this.db.doc.on('update', (update, origin) => {
             this.metrics.bytesTransferred += update.length;
-            if (origin === this.net) {
+            if (origin === this.net!) {
                 this.metrics.messagesSent++;
                 this.emit('message-sent', { bytes: update.length });
             } else {
@@ -87,8 +88,8 @@ class Network {
     }
 
     reset() {
-        if (this.net)
-            this.net.destroy();
+        if (this.net!)
+            this.net!.destroy();
 
         /** https://github.com/yjs/y-webrtc
          *  https://github.com/feross/simple-peer#peer--new-peeropts */
@@ -114,7 +115,7 @@ class Network {
             });
         });
 
-        this.net.awareness.on('change', changes => this.emit('awareness-update', {changes}));
+        this.net.awareness.on('change', (changes: any) => this.emit('awareness-update', {changes}));
     }
 
     addBootstrap(url:string) {
@@ -133,32 +134,32 @@ class Network {
             throw "Bootstrap not found";
     }
 
-    user() { return this.awareness().getLocalState().user; }
-    awareness() { return this.net.awareness; }
+    user() { return this.awareness()?.getLocalState()?.user; }
+    awareness() { return this.net?.awareness; }
 
-    shareDocument(pageId: string) {
+    shareObject(pageId: string) {
         if (!this.docsShared.has(pageId)) {
-            const page = this.db.get(pageId);
-            if (page && page.public) {
-                // Assuming that sharing a document involves ensuring its content is synced
-                // Since Yjs syncs all shared content in the document, no action is needed here
-                // However, if you have separate Y.Docs per page, initialize and connect them here
+            const obj = this.db.get(pageId);
+            if (obj && obj.public) {
                 this.docsShared.add(pageId);
-                console.log(`Document ${pageId} is now shared.`);
-                this.emit('document-shared', { pageId });
+                obj.shareWith(this.db.userID); // Add current user to sharedWith list
+                console.log(`Object ${pageId} is now shared with user ${this.db.userID}.`);
+                this.emit('object-shared', { pageId, peerId: this.db.userID });
++                events.emit('public-object-shared', { pageId, peerId: this.db.userID }); // Announce public object sharing
             } else
-                console.warn(`Cannot share document ${pageId} as it is not public.`);
+                console.warn(`Cannot share object ${pageId} as it is not public.`);
         }
     }
 
-    unshareDocument(pageId:string) {
+    unshareObject(pageId:string) {
         if (this.docsShared.has(pageId)) {
-            // Assuming that unsharing involves removing its content from synchronization
-            // Since Yjs syncs all shared content in the document, you might need to remove or isolate it
-            // If using separate Y.Docs per page, disconnect the provider here
-            this.docsShared.delete(pageId);
-            console.log(`Document ${pageId} is now unshared.`);
-            this.emit('document-unshared', { pageId });
+            const obj = this.db.get(pageId);
+            if (obj) {
+                this.docsShared.delete(pageId);
+                obj.unshareWith(this.db.userID); // Remove current user from sharedWith list
+                console.log(`Object ${pageId} is now unshared with user ${this.db.userID}.`);
+                this.emit('object-unshared', { pageId, peerId: this.db.userID });
+            }
         }
     }
 

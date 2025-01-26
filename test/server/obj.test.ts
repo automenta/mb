@@ -77,4 +77,19 @@ describe('NObject', () => {
         expect(json.metadata.name).toEqual('Test Object');
         expect(json.metadata.tags).toEqual(['test']);
     });
+
+    it('should always return a Y.Map from getOrInitSubMap', () => {
+        const subMap = (obj as any).getOrInitSubMap('test', [['key', 'value']]);
+        expect(subMap instanceof Y.Map).toBe(true);
+        expect(subMap.get('key')).toEqual('value');
+
+        const existingValue = obj.root.get('test');
+        expect(existingValue instanceof Y.Map).toBe(true);
+
+        // Test with non-Y.Map value
+        obj.root.set('test2', 'not a map');
+        const subMap2 = (obj as any).getOrInitSubMap('test2', [['key2', 'value2']]);
+        expect(subMap2 instanceof Y.Map).toBe(true);
+        expect(subMap2.get('key2')).toEqual('value2');
+    });
 });

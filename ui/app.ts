@@ -270,7 +270,7 @@ export default class App {
         if (container) {
             container.appendChild(this.ele);
         }
-        this.initializeApp(this._userID);
+        this.initializeApp(this._userID); // Moved back to the end
     }
 
     private isReadOnlyDocument(): boolean {
