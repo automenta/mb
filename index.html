@@ -5,24 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Collaborative Reality Editor</title>
     <link rel="stylesheet" href="ui/css/app.css">
+    <link rel="stylesheet" href="ui/css/dark-mode.css"> <!-- Themes (dark mode default) -->
+    <link rel="stylesheet" href="ui/css/light-mode.css"> <!-- Light mode overrides -->
     <link rel="stylesheet" href="ui/css/sidebar.css">
-    <link rel="stylesheet" href="ui/css/editor.css">
-    <link rel="stylesheet" href="ui/css/dark-mode.css">
 </head>
 <body>
     <div id="app"></div>
-
     <script type="module">
-        import { $ } from './ui/imports';
-        import App from './ui/app';
+        import App from './ui/app.ts';
 
-        $(async () => {
-            const userID = localStorage.getItem('userID') || randomUUID();
-            const channel = 'my-channel';
-            const app = new App(userID, channel);
-            app.mount($('#app')[0]);
-            window.app = app; // Expose app to the global scope
-        });
+        const app = new App('testuser', 'testchannel');
+        app.mount(document.getElementById('app'));
     </script>
 </body>
 </html>

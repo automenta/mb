@@ -14,7 +14,7 @@
     "allowJs": true,
 
     /* Strict Type-Checking Options */
-//    "strict": true,
+   "strict": true,
 //    "noImplicitAny": true,
 //    "strictNullChecks": true,
 //    "strictFunctionTypes": true,

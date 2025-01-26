@@ -54,7 +54,7 @@ export default class Editor {
         // Initialize core components
         this.toolbar = new ToolbarManager(this);
         this.metadata = new MetadataManager(this.config.isReadOnly || false);
-        this.editorCore = new EditorCore(this.config, this);
+        this.editorCore = new EditorCore(this.config, this, this.config.isReadOnly);
 
         // Initialize UI and then document state
         this.initUI();
@@ -146,27 +146,39 @@ export default class Editor {
     }
 
     private bindEditorEvents(): void {
-        this.rootElement.querySelector('.content-editor')
-            ?.addEventListener('input', () => this.awareness.updateLocalCursor());
-        this.rootElement.querySelector('.content-editor')
-            ?.addEventListener('keydown', this.handleShortcuts.bind(this));
-        this.rootElement.querySelector('.document-title')
-            ?.addEventListener('input', this.handleTitleChange.bind(this));
+        const contentEditor = this.rootElement.querySelector('.content-editor');
+        contentEditor?.addEventListener('input', () => {
+            this.awareness.updateLocalCursor();
+            this.saveDocument(); // Call saveDocument on input event
+        });
+        contentEditor?.addEventListener('keydown', this.handleShortcuts.bind(this));
+
+        const titleEditor = this.rootElement.querySelector('.document-title');
+        titleEditor?.addEventListener('input', this.handleTitleChange.bind(this));
     }
 
-    private handleTitleChange(event: Event): void {
-        const titleEditor = event.target as HTMLInputElement;
-        const newTitle = titleEditor.value;
-        if (this.currentObject) {
-            if (this.currentObject instanceof NObject) {
-                this.currentObject.name = newTitle;
-            } else if (this.currentObject instanceof Y.Map) {
-                this.currentObject.set('name', newTitle);
-            }
-            this.config.db.persistDocument(this.currentObject); // Persist the change
-            this.config.app.store.setCurrentObject(this.currentObject); // Update store to refresh sidebar
-        }
-    }
+   private handleTitleChange(event: Event): void {
+       const titleEditor = event.target as HTMLInputElement;
+       const newTitle = titleEditor.value;
+       if (this.currentObject) {
+           if (this.currentObject instanceof NObject) {
+               this.currentObject.name = newTitle;
+               this.config.db.persistDocument(this.currentObject);
+               this.config.app.store.setCurrentObject(this.currentObject);
+           } else if (this.currentObject instanceof Y.Map) {
+               this.currentObject.set('name', newTitle);
+               // Find and update the corresponding object in the store's objects array
+               const objects = this.config.app.store.getState().objects;
+               const updatedObjects = objects.map(obj => {
+                   if (this.currentObject instanceof Y.Map && obj.id === this.currentObject.get('id')) {
+                       return this.config.db.get(obj.id); // Fetch updated object from db
+                   }
+                   return obj;
+               });
+               this.config.app.store.update(state => ({ ...state, objects: updatedObjects }));
+           }
+       }
+   }
 
     private initNetwork(): void {
         if (this.config.net) {
@@ -175,7 +187,7 @@ export default class Editor {
         }
     }
 
-    private handleShortcuts(event: KeyboardEvent): void { // Changed to standard KeyboardEvent
+    private handleShortcuts(event: KeyboardEvent): void {
         if (event.ctrlKey || event.metaKey) {
             switch (event.key.toLowerCase()) {
                 case 's':
@@ -198,18 +210,18 @@ export default class Editor {
             this.config.db.doc.transact(() => {
                 const content = (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML;
                 (this.currentObject as Y.Map<any>).set('content', new Y.Text(content));
-                // console.log('Y.Map Document saved:', this.currentObject.toJSON()); // Add console log here
             });
-        } else if (this.currentObject) {
+        } else if (this.currentObject instanceof NObject) {
+            const content = (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML;
+            this.currentObject.text = content;
             this.config.db.persistDocument(this.currentObject);
-            // console.log('NObject Document saved:', this.currentObject.toJSON()); // Add console log here
         }
     }
 
     public loadDocument(object: NObject | Y.Map<any>): void {
         this.currentObject = object;
         if (object instanceof Y.Map) {
-            const title = object.get('name') || 'Untitled'; // Default title
+            const title = object.get('name') || 'Untitled';
             const content = object.get('content');
             const contentEditor = this.rootElement.querySelector('.content-editor') as HTMLElement;
             const titleEditor = this.rootElement.querySelector('.document-title') as HTMLInputElement;
@@ -226,12 +238,13 @@ export default class Editor {
             }
         } else if (object instanceof NObject) {
             (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML = object.text.toString();
+            (this.rootElement.querySelector('.document-title') as HTMLInputElement).value = object.name;
             this.metadata.renderMetadataPanel(object);
         } else {
             (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML = '';
             this.metadata.clearMetadataPanel();
         }
-        this.updatePrivacy(); // Update privacy indicator based on loaded object
+        this.updatePrivacy();
     }
 
     public togglePrivacy(): void {

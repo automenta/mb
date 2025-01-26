@@ -21,6 +21,10 @@ export class ToolbarManager {
     { command: 'heading1', icon: 'H1', title: 'Heading 1', action: (editor) => editor.formatText('heading1') },
     { command: 'heading2', icon: 'H2', title: 'Heading 2', action: (editor) => editor.formatText('heading2') },
     { command: 'heading3', icon: 'H3', title: 'Heading 3', action: (editor) => editor.formatText('heading3') },
+    { command: 'heading4', icon: 'H4', title: 'Heading 4', action: (editor) => editor.formatText('heading4') },
+    { command: 'heading5', icon: 'H5', title: 'Heading 5', action: (editor) => editor.formatText('heading5') },
+    { command: 'heading6', icon: 'H6', title: 'Heading 6', action: (editor) => editor.formatText('heading6') },
+    { command: 'formatBlockquote', icon: '”', title: 'Quote Block', action: (editor) => editor.formatText('formatBlockquote') }, // Add Quote Block
     { command: 'insertCode', icon: '{}', title: 'Code Block', action: (editor) => editor.formatText('insertCode') },
     {
       command: 'insertLink',

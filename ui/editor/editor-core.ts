@@ -1,5 +1,7 @@
 import { $, Y, debounce } from '../imports';
+import * as jsdiff from 'diff';
 import type { EditorConfig } from '../types';
+import { MetadataManager } from './metadata-manager';
 
 export type UpdateCallback = () => void;
 
@@ -9,16 +11,23 @@ export default class EditorCore {
     private config: EditorConfig;
     private updateCallbacks: UpdateCallback[] = [];
     private editorInstance: any;
+    private metadataManager: any; // TODO: Type this properly once MetadataManager is typed
 
-    constructor(config: EditorConfig, editorInstance: any) {
+    constructor(config: EditorConfig, editorInstance: any, isReadOnly: boolean) {
         if (!config.db) throw new Error('DB instance required');
-        
+
         this.config = config;
         this.editorInstance = editorInstance;
+        this.metadataManager = new MetadataManager(isReadOnly); // Initialize MetadataManager
+        this.config.isReadOnly = isReadOnly; // Store isReadOnly in config
         this.editor = this.renderEditor();
 
         if (config.currentObject)
-            this.ytext = this.config.currentObject instanceof Y.Map ? this.config.currentObject.get('content') : this.config.currentObject.text;
+            this.ytext = this.getContentFromObject(this.config.currentObject);
+    }
+
+    private getContentFromObject(obj: any): Y.Text | null {
+        return obj instanceof Y.Map ? obj.get('content') : obj.text;
     }
 
     private renderEditor(): JQuery {
@@ -38,6 +47,7 @@ export default class EditorCore {
     }
 
     private handleFormattingShortcuts(e: JQuery.KeyDownEvent) {
+        if (this.config.isReadOnly) return; // Early return if read-only
         switch (e.key.toLowerCase()) {
             case 'b':
                 e.preventDefault();
@@ -58,7 +68,8 @@ export default class EditorCore {
     }
 
     private saveContent(e: Event) {
-        if (!this.ytext || this.config.isReadOnly) return;
+        if (this.config.isReadOnly) return; // Early return if read-only
+        if (!this.ytext) return;
         const content = this.editor.text();
         this.updateContent(content, true);
     }
@@ -71,12 +82,7 @@ export default class EditorCore {
         this.ytext = ytext;
         this.editor = this.renderEditor();
     }
-
-    view(obj: any) {
-        this.config.currentObject = obj;
-        this.editor.html(obj.text.toString());
-        this.triggerUpdate();
-    }
+    
 
     loadSnapshot(snapshot: any) {
         if (snapshot) {
@@ -105,14 +111,26 @@ export default class EditorCore {
         }
     }
 
-    private saveContentToDb(content: string) {
-        if (!this.ytext) return;
-        this.config.db.doc.transact(() => {
-            this.ytext?.delete(0, this.ytext.length);
-            this.ytext?.insert(0, content);
-        });
-    }
 
+        private saveContentToDb(content: string) {
+            if (!this.ytext) return;
+            const oldContent = this.ytext.toString();
+            const diff = jsdiff.diffChars(oldContent, content);
+
+            this.config.db.doc.transact(() => {
+                let index = 0;
+                diff.forEach(part => {
+                    if (part.removed) {
+                        this.ytext?.delete(index, part.count);
+                    } else if (part.added) {
+                        this.ytext?.insert(index, part.value);
+                        index += part.value.length;
+                    } else {
+                        index += part.count;
+                    }
+                });
+            });
+        }
     private loadContent(content: string) {
         this.updateContent(content);
     }

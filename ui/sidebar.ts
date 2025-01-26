@@ -104,8 +104,9 @@ export default class Sidebar {
 
         // Subscribe to store changes
         this.store.subscribe(state => {
-            this.updatePageList(state.objects)
+            this.updatePageList(state.objects);
         });
+        this.updatePageList(this.store.getState().objects); // Initial load
     }
 
     menu() {
@@ -118,7 +119,7 @@ export default class Sidebar {
                 const db = this.store.getState().db;
                 if (db) {
                     const newObj = db.create();
-                    newObj.name = 'Untitled'
+                    newObj.name = 'Untitled';
                     this.store.addObject(newObj);
                     this.store.setCurrentObject(newObj);
                     // console.log('New page created and set as current object:', newObj.id);
@@ -128,6 +129,20 @@ export default class Sidebar {
                         timestamp: Date.now()
                     });
                     this.store.app?.editor.loadDocument(newObj); // Load new object into editor
+                }
+            }),
+            // Add a button to test object updates
+            $('<button>', {
+                class: 'menubar-button',
+                text: 'Test Add Object',
+                title: 'Test Add Object'
+            }).click(() => {
+                const db = this.store.getState().db;
+                if (db) {
+                    const newObj = db.create();
+                    newObj.name = 'Test Object';
+                    this.store.addObject(newObj);
+                    console.log('Test object added:', newObj.id);
                 }
             })
         );
@@ -143,27 +158,53 @@ export default class Sidebar {
             { id: 'profile', title: 'Me', view: new MeView($main, app.user.bind(app), app.awareness.bind(app), app.db) },
             { id: 'friends', title: 'Friends', view: new FriendsView($main, app.awareness.bind(app)) },
             { id: 'network', title: 'Net', view: new NetView($main, app.net) },
-            { id: 'database', title: 'DB', view: new DBView($main[0], app.db) },
-            { id: 'matching', title: 'Matching', view: new MatchingView($main, app.match) },
+            { id: 'database', title: 'DB', view: new DBView($main[0], app.db), isView: true },
+            { id: 'matching', title: 'Matching', view: new MatchingView($main, app.match), isView: true },
         ];
 
         menuItems.forEach(item => menuBar.append(this.createMenuButton.bind(this)(item)));
+
+        // Add a button to toggle dark mode
+        menuBar.append(
+            $('<button>', {
+                class: 'menubar-button',
+                text: 'Toggle Dark Mode',
+                title: 'Toggle Dark Mode'
+            }).click(() => {
+                this.store.app?.toggleDarkMode();
+            })
+        );
+
         return menuBar;
     }
 
-    private createMenuButton({ id, title, view }: { id: string; title: string; view: any }) {
-        return $('<button>', {
+    private createMenuButton({ id, title, view, isView }: { id: string; title: string; view: any, isView?: boolean }) {
+        const button = $('<button>', {
             id: `menu-${id}`,
             class: 'menubar-button',
             text: title,
             title: title
-        }).click(() => {
-            $('.main-view').empty();
-            view.render();
         });
+    
+        if (isView) {
+            button.click(() => {
+                const mainView = $('.main-view');
+                mainView.empty();
+                view.render();
+            });
+        } else {
+            button.click(() => {
+                const mainView = $('.main-view');
+                mainView.empty();
+                mainView.append(view.render());
+            });
+        }
+    
+        return button;
     }
 
     updatePageList(objects: NObject[]) {
+        console.log('updatePageList called with', objects.length, 'objects');
         const nextPageList: JQuery[] = [];
         objects.forEach(obj => {
             const v = new ObjViewMini(obj);

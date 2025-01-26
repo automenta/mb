@@ -8,6 +8,8 @@
   --accent: #0d6efd;
 }
 
-.dark-mode {
-  display: none; /* Light mode is default when dark-mode class not present */
+/* Light mode specific styles can be added here */
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
 }

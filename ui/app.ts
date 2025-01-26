@@ -1,7 +1,7 @@
 import DB from '../src/db';
 import Network from '../src/net';
 import Matching from "../src/match.js";
-import { type AppState } from './imports';
+import { $, Y, Awareness, NObject, App as IApp, type AppState } from './imports';
 import Sidebar from './sidebar';
 import Editor from "./editor/editor";
 import { store, initializeStore } from './store';
@@ -11,19 +11,28 @@ import '/ui/css/app.css';
 
 export default class App {
     private readonly channel: string;
-    private socket: Socket;
+    private socket: Socket; // No initializer, will be assigned in initializeApp
 
-    db: DB;
-    net: Network;
-    match: Matching;
-    editor: Editor;
-    sidebar: Sidebar;
+    db: DB; // No initializer
+    net: Network; // No initializer
+    match: Matching; // No initializer
+    editor: Editor; // No initializer
+    sidebar: Sidebar; // No initializer
     isDarkMode: boolean;
-    private _userID: string;
-    public store: ReturnType<typeof initializeStore>; // Public store property
-    public ele: HTMLElement; // Changed to HTMLElement
+    private _userID: string; // No initializer
+    public store: ReturnType<typeof initializeStore>; // Public store property, no initializer
+    public ele: HTMLElement; // Changed to HTMLElement, no initializer
 
     constructor(userID: string, channel: string) {
+        this.socket = null as any; // Initialize to null and cast to Socket
+        this.db = null as any; // Initialize to null and cast to DB
+        this.net = null as any; // Initialize to null and cast to Network
+        this.match = null as any; // Initialize to null and cast to Matching
+        this.editor = null as any; // Initialize to null and cast to Editor
+        this.sidebar = null as any; // Initialize to null and cast to Sidebar
+        this._userID = userID; // Initialize userID here
+        this.store = null as any; // Initialize to null and cast to Store type
+        this.ele = null as any; // Initialize to null and cast to HTMLElement
         if (!userID) {
             throw new Error('Invalid user ID');
         }
@@ -43,8 +52,8 @@ export default class App {
         store.subscribe(state => this.handleStoreUpdate(state));
     }
 
-    private setNetworkStatus(status: 'connected' | 'disconnected') {
-        store.setNetworkStatus(status);
+    private setNetworkStatus(status: boolean) { // Modified to accept boolean
+        store.setNetworkStatus(status ? 'connected' : 'disconnected'); // Convert boolean to string for store
     }
 
     private initializeDB(userID: string) {
@@ -68,6 +77,7 @@ export default class App {
         const mainView = document.createElement('div');
         mainView.className = 'main-view';
         this.ele.appendChild(mainView);
+        const isReadOnly = this.isReadOnlyDocument();
         // console.log('App.initializeEditor: mainView created:', mainView); // Add log
         // console.log('App.initializeEditor: this.ele:', this.ele); // Add log
         this.editor = new Editor({
@@ -75,9 +85,11 @@ export default class App {
             db: this.db,
             getAwareness: this.net.awareness.bind(this.net),
             app: this,
-            networkStatusCallback: this.setNetworkStatus.bind(this),
+            networkStatusCallback: this.setNetworkStatus.bind(this) as (status: boolean) => void, // Type assertion here
+            isReadOnly: this.isReadOnlyDocument(),
             ydoc: this.db.doc,
         } as EditorConfig);
+        console.log('isReadOnlyDocument', this.isReadOnlyDocument());
         // console.log('App.initializeEditor: Editor initialized:', this.editor); // Add log
     }
 
@@ -102,26 +114,28 @@ export default class App {
     }
 
     private loadUserProfile() {
-       const storedProfile = this.db.config.get('userProfile');
+       const storedProfile = this.db.config.getUserProfile();
        if (storedProfile) {
            this.net.awareness().setLocalStateField('user', storedProfile);
        }
    }
 
     private setupSocket() {
-        this.setupSocket();
         this.setupSocketListeners(this.socket);
     }
-    
+
     private setupSocketListeners(socket: Socket) {
+        if (!socket)
+            return;
+        
         // Ensure proper network status updates
         socket.on('connect', () => {
             this.handleSocketEvent('connect', 'connected');
-            store.setNetworkStatus('connected');
+            this.setNetworkStatus(true); // Pass boolean true for connected
         });
         socket.on('disconnect', () => {
             this.handleSocketEvent('disconnect', 'disconnected');
-            store.setNetworkStatus('disconnected');
+            this.setNetworkStatus(false); // Pass boolean false for disconnected
         });
         socket.on('snapshot', (snap: any) => this.handleSocketEvent('snapshot', 'connected', snap));
         // Ensure plugin events are properly handled
@@ -151,7 +165,7 @@ export default class App {
     private handleSocketMessage(type: 'event' | 'plugin-status' | 'plugin-error', event: string, status: 'connected' | 'disconnected' | null, data?: any, pluginName?: string, error?: any) {
         if (type === 'event') {
             console.log(`Socket ${event}:`, data);
-            if (status) this.setNetworkStatus(status);
+            if (status) this.setNetworkStatus(status === 'connected'); // Convert string status to boolean
             if (event === 'snapshot' && data) {
                 this.editor.loadSnapshot(data);
             }
@@ -159,8 +173,9 @@ export default class App {
             console.log('Plugin status:', data);
             store.updatePluginStatus(data);
         } else if (type === 'plugin-error') {
-            console.error(`Plugin ${pluginName} error:`, error);
-            store.logError({ pluginName, error, timestamp: Date.now() });
+            const pluginNameStr = pluginName || 'unknown-plugin'; // Default to 'unknown-plugin' if undefined
+            console.error(`Plugin ${pluginNameStr} error:`, error);
+            store.logError({ pluginName: pluginNameStr, error, timestamp: Date.now() });
         }
     }
 
@@ -177,20 +192,23 @@ export default class App {
     }
 
     private handleStoreUpdate(state: AppState) {
+        if (state.currentObject) {
+            this.editor.loadDocument(state.currentObject);
+        }
         if (state.networkStatus === 'disconnected') {
-            this.showConnectionWarning(true); // Show warning when disconnected
+            this.showConnectionWarning(true);
         } else {
-            this.showConnectionWarning(false); // Hide warning when connected
+            this.showConnectionWarning(false);
         }
         if (state.errors.length > 0) {
-            this.showErrors(state.errors); // Show errors if any
+            this.showErrors(state.errors);
         } else {
-            this.showErrors([]); // Hide error container if no errors
+            this.showErrors([]);
         }
         if (Object.keys(state.pluginStatus).length > 0) {
-            this.showPluginStatus(state.pluginStatus); // Show plugin status if any
+            this.showPluginStatus(state.pluginStatus);
         } else {
-            this.showPluginStatus({}); // Hide plugin status container if no plugin statuses
+            this.showPluginStatus({});
         }
     }
 
@@ -239,7 +257,7 @@ export default class App {
 
     toggleDarkMode(): void {
         this.isDarkMode = !this.isDarkMode;
-        this.ele.classList.toggle('dark-mode', this.isDarkMode);
+        this.ele.classList.toggle('light-mode', !this.isDarkMode);
         this.ele.setAttribute('data-theme', this.isDarkMode ? 'dark' : 'light');
         localStorage.setItem('themePreference', this.isDarkMode ? 'dark' : 'light');
     }
@@ -253,5 +271,20 @@ export default class App {
             container.appendChild(this.ele);
         }
         this.initializeApp(this._userID);
+    }
+
+    private isReadOnlyDocument(): boolean {
+        const currentObject = this.store.getState().currentObject;
+        if (!currentObject) {
+            return false; // New documents are editable
+        }
+        const userId = this.net.user().userId;
+        let authorId;
+        if (currentObject instanceof Y.Map) {
+            authorId = (currentObject as Y.Map<any>).get('author');
+        } else if (currentObject instanceof NObject) {
+            authorId = currentObject.author;
+        }
+        return authorId !== userId;
     }
 }

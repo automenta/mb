@@ -38,6 +38,7 @@
     },
     "bio": {
       "type": "string",
+      "format": "textarea",
       "description": "User's bio"
     },
     "social": {

@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Page",
+  "description": "Schema for page objects displayed in DBView",
+  "type": "object",
+  "properties": {
+    "pageId": {
+      "type": "string",
+      "description": "Page ID"
+    },
+    "title": {
+      "type": "string",
+      "description": "Page Title"
+    },
+    "text": {
+      "type": "string",
+      "description": "Content (Preview)"
+    },
+    "p": {
+      "type": "boolean",
+      "description": "Public"
+    }
+  },
+  "required": ["pageId", "title", "text", "p"]
+}

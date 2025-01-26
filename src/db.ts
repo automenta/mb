@@ -4,23 +4,31 @@ import {IndexeddbPersistence} from 'y-indexeddb';
 import NObject from './obj';
 import {QueryBuilder} from './query';
 import {ReplyManager} from './reply-manager';
+import ConfigManager from './config-manager';
+import { PersistenceManager } from './persistence-manager'; // Added import
 
-class DB {
+export default class DB {
   readonly doc: Y.Doc;
   public readonly index: Y.Map<NObject>;
-  public readonly config: Y.Map<unknown>;
+  // public readonly config: Y.Map<unknown>; // Removed
   public readonly provider: IndexeddbPersistence;
   public readonly store: Y.Doc;
-
+  private persistenceManager: PersistenceManager; // Added
   private replyManager: ReplyManager;
+  private configManager: ConfigManager; // Added
+  public get config(): ConfigManager { // Added public getter for configManager
+    return this.configManager;
+  }
 
   constructor(readonly userID: string = 'anonymous', provider?: IndexeddbPersistence) {
     this.doc = new Y.Doc();
     this.store = new Y.Doc();
     this.provider = provider || new IndexeddbPersistence('main-db', this.doc);
-    this.config = this.doc.getMap('config');
+    // this.config = this.doc.getMap('config'); // Removed
     this.index = this.doc.getMap<NObject>('objects');
     this.replyManager = new ReplyManager(this);
+    this.configManager = new ConfigManager(this.doc); // Added
+    this.persistenceManager = new PersistenceManager(this.doc); // Added
 
     // console.log('DB.constructor: this.doc:', this.doc);
 
@@ -78,10 +86,9 @@ class DB {
   }
 
   /**
-   /**
-    * Creates a new QueryBuilder instance for querying objects.
-    * @returns A new QueryBuilder instance
-    */
+   * Creates a new QueryBuilder instance for querying objects.
+   * @returns A new QueryBuilder instance
+   */
   query(): QueryBuilder {
     return new QueryBuilder(this);
   }
@@ -136,68 +143,25 @@ class DB {
    * @param pageId The ID of the page.
    * @returns The text of the object if found, else null.
    */
-  objText(pageId: string): Y.Text | null {
+  getObjectText(pageId: string): Y.Text | null {
     const page = this.get(pageId);
     return page ? page.text : null;
   }
 
-  /**
-   * Sets the name of an object.
-   * @param pageId The ID of the page.
-   * @param title The new title.
-   */
-  objName(pageId: string, title: string): void {
-    const page = this.get(pageId);
-    if (page) page.name = title;
-  }
+  // Removed objName, use object.name setter instead
 
   /**
    * Sets the public status of an object.
    * @param pageId The ID of the page.
    * @param isPublic The public status.
    */
-  objPublic(pageId: string, isPublic: boolean): void {
-    const page = this.get(pageId);
-    if (page) page.public = isPublic;
-  }
+  // Removed objPublic, use object.public setter instead
 
-  getSignalingServers(): string[] {
-    return this.config.get('signalingServers') as string[] || [];
-  }
 
-  setSignalingServers(servers: string[]): void {
-    this.config.set('signalingServers', servers);
-  }
-
-  persistDocument(obj: NObject | Y.Map<any>): void {
-    if (obj instanceof NObject) {
-      this.index.set(obj.id, obj.toJSON());
-    } else if (obj instanceof Y.Map) {
-          const objId = obj.get('id');
-          if (typeof objId === 'string') {
-            // Store Y.Map objects in a separate Y.Map
-            let yMapObjects = this.doc.getMap<Y.Map<any>>('yMapObjects');
-            yMapObjects.set(objId, obj);
-          } else {
-            console.error('Object ID is not a string:', objId);
-          }
-        } else {
-          console.error('Unknown object type:', obj);
-        }
-      }
-
-  /**
-   * Retrieves the history of document snapshots
-   * @returns Promise resolving to array of document snapshots
-   */
-  async getSnapshotHistory(): Promise<Uint8Array[]> {
-    const snapshots: Uint8Array[] = [];
-    // Get current snapshot
-    snapshots.push(Y.encodeStateAsUpdate(this.doc));
-    // TODO: Implement proper snapshot history storage/retrieval
-    return snapshots;
-  }
-
-}
-
-export default DB;
+ /** Retrieves the history of document snapshots
+  * @returns Promise resolving to array of document snapshots
+  */
+ async getSnapshotHistory(): Promise<Uint8Array[]> {
+   return this.persistenceManager.getSnapshotHistory();
+ }
+};

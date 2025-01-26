@@ -89,6 +89,7 @@ class Store {
 
   addObject(obj: NObject) {
     this.state.objects = [...this.state.objects, obj];
+    this.setCurrentObject(obj);
     this.notify();
   }
 

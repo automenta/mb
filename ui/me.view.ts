@@ -6,6 +6,7 @@ import userSchemaJson from '../schema/user.schema.json';
 import { UserSchema } from './schema';
 import { validateSocialLink } from './util/validation';
 import { UserInfo } from './types';
+import { renderSchemaForm } from './util/schema-form'; // Import renderSchemaForm
 
 const schemaRegistry = new SchemaRegistry();
 schemaRegistry.registerSchema('user', userSchemaJson);
@@ -64,98 +65,7 @@ export default class MeView {
     return validateSocialLink(link);
   }
 
-  private renderField(field: string, user: UserInfo) {
-    if (!userSchema || typeof userSchema !== 'object') {
-      console.error('Invalid user schema:', userSchema);
-      return null;
-    }
-
-    const path = field.split('.');
-    let currentSchema: any = userSchema.properties;
-    
-    for (const part of path) {
-      if (!currentSchema[part]) {
-        console.error(`Field ${field} not found in schema`);
-        return null;
-      }
-      currentSchema = currentSchema[part].properties || currentSchema[part];
-    }
-
-    const schemaProps = currentSchema;
-  
-    const fieldId = `user-${field}`;
-    const label = $('<label/>', { for: fieldId, text: `${schemaProps.description}: ` });
-    let input: JQuery;
-  
-    switch (schemaProps.type) {
-      case 'string':
-        if (schemaProps.format === 'color') {
-          input = $('<input/>', {
-            type: 'color',
-            id: fieldId,
-            value: user[field] || schemaProps.default || '#000000',
-          }).on('input', e => {
-            if (e.target instanceof HTMLInputElement) {
-              this.updateUserField(field, e.target.value);
-            }
-          });
-        } else if (schemaProps.format === 'url') {
-          const socialField = field.split('.').pop();
-          input = $('<input/>', {
-            type: 'url',
-            id: fieldId,
-            placeholder: `${socialField} URL`,
-            value: user.social?.[socialField] || '',
-          }).on('input', e => {
-            if (e.target instanceof HTMLInputElement) {
-              this.updateUserField(field, e.target.value);
-            }
-          });
-        } else {
-          input = $('<input/>', {
-            type: 'text',
-            id: fieldId,
-            placeholder: field.charAt(0).toUpperCase() + field.slice(1),
-            value: user[field] || '',
-          }).on('input', e => {
-            if (e.target instanceof HTMLInputElement) {
-              this.updateUserField(field, e.target.value);
-            }
-          });
-        }
-        break;
-      case 'object':
-        if (field === 'social' && schemaProps.properties) {
-          const socialLinks = $('<div/>', { class: 'social-links' });
-          for (const social in schemaProps.properties) {
-            const socialField = this.renderField(`social.${social}`, user);
-            if (socialField) {
-              socialLinks.append(socialField);
-            }
-          }
-          return $('<div/>', { class: 'profile-field' }).append(label, socialLinks);
-        }
-        break;
-      case 'array':
-        // Handle array types if needed
-        break;
-      default:
-        input = $('<input/>', {
-          type: 'text',
-          id: fieldId,
-          placeholder: field.charAt(0).toUpperCase() + field.slice(1),
-          value: user[field] || '',
-        }).on('input', e => {
-          if (e.target instanceof HTMLInputElement) {
-            this.updateUserField(field, e.target.value);
-          }
-        });
-    }
-  
-    return $('<div/>', { class: 'profile-field' }).append(label, input);
-  }
-
-  private updateUserField(fieldPath: string, value: any) {
+  private updateUserField(fieldPath: string, value: any) { // Updated updateUserField to be used with schemaForm
     const user = this.getUser();
     const pathParts = fieldPath.split('.');
     let current = user;
@@ -178,12 +88,12 @@ export default class MeView {
       }
     }
   }
-
+  
   render() {
     const user = this.getUser();
 
     // Clear and get container
-    this.$('.main-view').empty().append(
+    this.$('.main-view')?.empty().append(
       $('<div/>', { class: 'profile-page' }).append(
         // Profile Picture Section
         $('<div/>', { class: 'profile-field profile-avatar' }).append(
@@ -201,13 +111,23 @@ export default class MeView {
           )
         ),
 
-        // Other fields based on schema
-        ...(userSchema && typeof userSchema === 'object' && userSchema.properties
-          ? Object.keys(userSchema.properties).map(field => this.renderField(field, user))
-          : []
+        // Placeholder for user name and ID
+        $('<div/>', { class: 'profile-field' }).append(
+          $('<label/>', { text: 'Name: ' }),
+          $('<span/>', { text: user.name || 'Anonymous' })
+        ),
+        $('<div/>', { class: 'profile-field' }).append(
+          $('<label/>', { text: 'ID: ' }),
+          $('<span/>', { text: user.userId || '' })
+        ),
+        // Render schema form for user profile fields
+        (userSchema && typeof userSchema === 'object' && userSchema.properties
+          ? renderSchemaForm(userSchema, user, this.updateUserField.bind(this))
+          : $('<div/>').text('Failed to load user schema form.')
         ),
 
         // Status Indicator
+
         $('<div/>', { class: 'profile-field' }).append(
           $('<label/>', { text: 'Status:' }),
           $('<select/>', { id: 'user-status', value: user.status || 'online' }).append(
@@ -225,15 +145,15 @@ export default class MeView {
         $('<div/>', { class: 'profile-actions' }).append(
           $('<button/>', { class: 'save-btn', text: '💾 Save Changes' }).on('click', () => {
             const user = this.getUser();
-            this.db.config.set('userProfile', user); // Save user profile to db.config
+            this.db.config?.set('userProfile', user); // Save user profile to db.config
             alert('Profile changes saved!');
           }),
           $('<button/>', { class: 'cancel-btn', text: '❌ Cancel' }).on('click', () => {
             // Reset form logic
             this.render(); // Re-render to reset form
-          }),
+          })
         )
       )
-    );
+    )
   };
 }
