@@ -35,7 +35,7 @@ class BootstrapView {
     }
 
     update() {
-        this.$nodeList.empty().append(this.net.signalingServers.map(this.renderNode).toArray());
+        this.$nodeList.empty().append(this.net.signalingServers.map(this.renderNode));
     }
 
     renderNode(url) {

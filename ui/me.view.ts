@@ -1,3 +1,5 @@
+import DB from '../src/db';
+
 import { $, Y, Awareness } from './imports';
 import { SchemaRegistry } from '../schema/schema-registry';
 import userSchemaJson from '../schema/user.schema.json';
@@ -34,10 +36,12 @@ export default class MeView {
   readonly getUser: () => UserInfo;
   private awareness: () => Awareness;
   private $: (selector: string, context?: any) => JQuery;
+  private db: DB;
 
-  constructor(ele: JQuery, getUser: () => UserInfo, awareness: () => Awareness) {
+  constructor(ele: JQuery, getUser: () => UserInfo, awareness: () => Awareness, db: DB) {
     this.getUser = getUser;
     this.awareness = awareness;
+    this.db = db;
     this.$ = (selector, context?) => $(selector, context || ele);
   }
 
@@ -220,15 +224,15 @@ export default class MeView {
         // Action Buttons
         $('<div/>', { class: 'profile-actions' }).append(
           $('<button/>', { class: 'save-btn', text: '💾 Save Changes' }).on('click', () => {
-            // Save logic here
-            alert('Changes saved!');
+            // Save logic - changes are already saved to awareness
+            alert('Profile changes saved!');
           }),
           $('<button/>', { class: 'cancel-btn', text: '❌ Cancel' }).on('click', () => {
-            // Reset form logic here
-            this.render();
-          })
+            // Reset form logic
+            this.render(); // Re-render to reset form
+          }),
         )
       )
     );
-  }
+  };
 }

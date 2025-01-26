@@ -160,26 +160,60 @@ export default class App {
 
     private handleStoreUpdate(state: AppState) {
         if (state.networkStatus === 'disconnected') {
-            this.showConnectionWarning();
+            this.showConnectionWarning(true); // Show warning when disconnected
+        } else {
+            this.showConnectionWarning(false); // Hide warning when connected
         }
         if (state.errors.length > 0) {
-            this.showErrors(state.errors);
+            this.showErrors(state.errors); // Show errors if any
+        } else {
+            this.showErrors([]); // Hide error container if no errors
         }
         if (Object.keys(state.pluginStatus).length > 0) {
-            this.showPluginStatus(state.pluginStatus);
+            this.showPluginStatus(state.pluginStatus); // Show plugin status if any
+        } else {
+            this.showPluginStatus({}); // Hide plugin status container if no plugin statuses
         }
     }
 
     private showErrors(errors: Array<{ pluginName: string; error: any; timestamp: number }>) {
-        // Implement error display UI
+        const errorContainer = document.getElementById('error-container');
+        const errorList = document.getElementById('error-list');
+        if (errorContainer && errorList) {
+            if (errors.length > 0) {
+                errorList.innerHTML = ''; // Clear previous errors
+                errors.forEach(error => {
+                    const errorItem = document.createElement('li');
+                    errorItem.textContent = `${error.pluginName}: ${error.error}`;
+                    errorList.appendChild(errorItem);
+                });
+                errorContainer.style.display = 'block'; // Show error container
+            } else {
+                errorContainer.style.display = 'none'; // Hide error container if no errors
+            }
+        }
     }
 
     private showPluginStatus(plugins: Record<string, boolean>) {
-        // Implement plugin status display UI
+        const pluginStatusContainer = document.getElementById('plugin-status-container');
+        const pluginStatusList = document.getElementById('plugin-status-list');
+        if (pluginStatusContainer && pluginStatusList) {
+            pluginStatusList.innerHTML = ''; // Clear previous statuses
+            for (const pluginName in plugins) {
+                const status = plugins[pluginName] ? '🟢' : '🔴';
+                const pluginItem = document.createElement('li');
+                pluginItem.textContent = `${pluginName}: ${status}`;
+                pluginStatusList.appendChild(pluginItem);
+            }
+            pluginStatusContainer.style.display = 'block'; // Show plugin status container
+        }
     }
 
-    private showConnectionWarning() {
-        // Implement connection warning UI
+    private showConnectionWarning(show: boolean) {
+        const warningDiv = document.getElementById('connection-warning');
+        if (warningDiv) {
+            warningDiv.style.display = show ? 'block' : 'none'; // Show/hide warning
+        }
     }
 
     user() { return this.net.user(); }
@@ -200,7 +234,6 @@ export default class App {
         if (container) {
             container.appendChild(this.ele); // Vanilla JS appendChild
         }
-        this._userID = arguments[0]; // Assign userID to _userID from arguments[0]
         this.initializeApp(this._userID); // Call initializeApp with _userID
     }
 }

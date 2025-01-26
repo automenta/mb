@@ -55,13 +55,11 @@ export default class Editor {
 
         // Initialize document state
         this.initDocument();
-        setTimeout(() => {
-            this.initUI();
-            this.initNetwork();
-            this.awareness = new AwarenessManager(this.config.getAwareness(), this.rootElement.querySelector('.content-editor') as HTMLElement);
-            const contentEditorElement = this.rootElement.querySelector('.content-editor') as HTMLElement;
-            console.log('contentEditorElement:', contentEditorElement); // Debug log
-        }, 0);
+        this.initUI();
+        this.initNetwork();
+        this.awareness = new AwarenessManager(this.config.getAwareness(), this.rootElement.querySelector('.content-editor') as HTMLElement);
+        const contentEditorElement = this.rootElement.querySelector('.content-editor') as HTMLElement;
+        console.log('contentEditorElement:', contentEditorElement); // Debug log
     }
 
     private initDocument(): void {
@@ -79,32 +77,54 @@ export default class Editor {
     }
 
     private initializeContent(): void {
+        if (!this.currentObject) {
+            this.currentObject = this.createNewDocument();
+        }
         if (this.currentObject instanceof Y.Map && !this.currentObject.get('content')) {
             this.currentObject.set('content', new Y.Text());
         }
     }
 
-    private initUI(): void {
-        this.rootElement.innerHTML = ''; // Replace empty() with innerHTML = ''
-        this.rootElement.append(this.renderUI());
+    
+        private initUI(): void {
+            // this.rootElement.innerHTML = ''; // Replace empty() with innerHTML = '' - REMOVE THIS LINE
+            console.log('Editor.initUI: rootElement:', this.rootElement); // Debug log
+            console.log('Editor.initUI: renderUI():', this.renderUI()); // Debug log
+            console.log('Editor.initUI: rootElement.innerHTML before append:', this.rootElement.innerHTML);
+            this.rootElement.append(this.renderUI());
+            console.log('Editor.initUI: rootElement.innerHTML after append:', this.rootElement.innerHTML); // New log
+            console.log('Editor.initUI: metadataPanel element:', this.rootElement.querySelector('.metadata-panel')); // Debug log - THIS IS THE PROBLEM LINE
 
         this.bindEditorEvents();
         this.toolbar.init($(this.rootElement).find('.editor-container')); //toolbar.init expects JQuery element
 
         // Render metadata after binding events
         if (this.currentObject) {
-            console.log('metadataPanel:', this.rootElement.querySelector('.metadata-panel')); // Debug log
-            this.rootElement.querySelector('.metadata-panel')!.append(this.currentObject instanceof Y.Map ? document.createElement('div') : this.metadata.renderMetadataPanel(this.currentObject)[0]); // Wrap with jQuery and use [0] to get HTMLElement
+            // console.log('metadataPanel:', this.rootElement.querySelector('.metadata-panel')); // Debug log - THIS LINE IS NOW REDUNDANT
+            const metadataPanel = this.rootElement.querySelector('.metadata-panel');
+            if (!metadataPanel) {
+                console.error('Metadata panel not found!');
+                return; // Exit if metadataPanel is not found
+            }
+            metadataPanel.innerHTML = ''; // Clear existing content
+            metadataPanel.append(this.currentObject instanceof Y.Map ? document.createElement('div') : this.metadata.renderMetadataPanel(this.currentObject)[0]); // Append metadata content
         }
     }
+    private renderUI(): HTMLElement {
+        const editorContainer = document.createElement('div');
+        editorContainer.className = 'editor-container';
 
-    private renderUI(): string {
-        return `
-            <div class="editor-container">
-                <div class="content-editor" contenteditable="true"></div>
-                <div class="metadata-panel"></div>
-            </div>
-        `;
+        const contentEditor = document.createElement('div');
+        contentEditor.className = 'content-editor';
+        contentEditor.contentEditable = 'true';
+        editorContainer.append(contentEditor);
+
+        const metadataPanel = document.createElement('div');
+        metadataPanel.className = 'metadata-panel';
+        metadataPanel.textContent = 'Metadata Panel Test';
+        editorContainer.append(metadataPanel);
+
+        return editorContainer;
     }
 
     private bindEditorEvents(): void {
