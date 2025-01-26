@@ -34,6 +34,7 @@ export interface EditorConfig {
     bindDocument: (doc: YDoc) => void;
     syncAwareness: (state: Awareness) => void;
   };
+  ydoc: YDoc; // Add ydoc to EditorConfig
 }
 
 export interface DocumentMetadata {

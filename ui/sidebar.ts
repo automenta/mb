@@ -51,8 +51,12 @@ class PageContextMenu {
 
     deletePage(obj: NObject) {
         if (confirm('Are you sure you want to delete this page?')) {
-            const wasPublic = obj.meta.public;
+            const wasPublic = obj.public;
             store.removeObject(obj.id);
+            
+            // Update database and clear editor if viewing deleted object
+            this.store.app?.db.delete(obj.id);
+            this.store.app?.editor.clearIfCurrent(obj.id);
             
             if (wasPublic) {
                 const net = this.store.app?.net;
@@ -117,13 +121,13 @@ export default class Sidebar {
                     newObj.name = 'Untitled'
                     this.store.addObject(newObj);
                     this.store.setCurrentObject(newObj);
-                    
-                    // Awareness system integration
+                    // console.log('New page created and set as current object:', newObj.id);
                     this.store.getState().awareness?.setLocalState({
                         type: 'object-created',
                         id: newObj.id,
                         timestamp: Date.now()
                     });
+                    this.store.app?.editor.loadDocument(newObj); // Load new object into editor
                 }
             })
         );
@@ -136,7 +140,7 @@ export default class Sidebar {
 
         let $main = $('.main-view');
         const menuItems = [
-            { id: 'profile', title: 'Me', view: new MeView($main, app.user.bind(app), app.awareness.bind(app)) },
+            { id: 'profile', title: 'Me', view: new MeView($main, app.user.bind(app), app.awareness.bind(app), app.db) },
             { id: 'friends', title: 'Friends', view: new FriendsView($main, app.awareness.bind(app)) },
             { id: 'network', title: 'Net', view: new NetView($main, app.net) },
             { id: 'database', title: 'DB', view: new DBView($main[0], app.db) },
@@ -168,8 +172,9 @@ export default class Sidebar {
                     e.preventDefault();
                     this.contextMenu.showContextMenu(e, obj.id);
                 })
-                .on('click', () => {
+                .on('click', async () => {
                     this.store.setCurrentObject(obj);
+                    await this.store.app?.editor.loadDocument(obj);
                 });
             nextPageList.push(v.ele);
         });

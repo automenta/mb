@@ -1,5 +1,6 @@
 import { $, Y, Awareness, NObject, App } from '../imports';
 import { EditorConfig } from '../types';
+import type { Doc as YDoc } from 'yjs'; // Import Doc type
 import { ToolbarManager } from './toolbar-manager';
 import { MetadataManager } from './metadata-manager';
 import { AwarenessManager } from './awareness-manager';
@@ -38,9 +39,11 @@ export default class Editor {
 
     constructor(config: EditorConfig) {
         this.config = config;
-        this.doc = new Y.Doc();
+        this.doc = config.ydoc; // Use ydoc from config
+        // console.log('Editor.constructor: this.doc:', this.doc); // Add log
         this.rootElement = config.ele as HTMLElement; // Cast to HTMLElement
         this.isPublic = false;
+        // console.log('Editor.constructor: rootElement:', this.rootElement); 
 
         if (config.currentObject instanceof Y.Map) {
             this.isPublic = config.currentObject.get('public') || false;
@@ -53,26 +56,37 @@ export default class Editor {
         this.metadata = new MetadataManager(this.config.isReadOnly || false);
         this.editorCore = new EditorCore(this.config, this);
 
-        // Initialize document state
-        this.initDocument();
+        // Initialize UI and then document state
         this.initUI();
+        this.initDocument();
         this.initNetwork();
         this.awareness = new AwarenessManager(this.config.getAwareness(), this.rootElement.querySelector('.content-editor') as HTMLElement);
         const contentEditorElement = this.rootElement.querySelector('.content-editor') as HTMLElement;
-        console.log('contentEditorElement:', contentEditorElement); // Debug log
+        // console.log('contentEditorElement:', contentEditorElement); 
     }
 
     private initDocument(): void {
         this.currentObject = this.config.currentObject || this.createNewDocument();
-        this.initializeContent();
+        this.loadDocument(this.currentObject); // Load document after creation
     }
 
     private createNewDocument(): Y.Map<any> {
-        const newDoc = new Y.Map();
-        newDoc.set('content', new Y.Text('Start writing...'));
-        newDoc.set('public', this.isPublic);
-        newDoc.set('author', this.config.app.user().userId);
-        newDoc.set('created', Date.now());
+        const yMapObjects = this.config.db.doc.getMap('yMapObjects');
+        const newId = Date.now().toString(); // Generate a unique ID
+    
+        let newDoc;
+        if (!yMapObjects.has(newId)) {
+            newDoc = new Y.Map();
+            newDoc.set('content', new Y.Text('Start writing...'));
+            newDoc.set('public', this.isPublic);
+            newDoc.set('author', this.config.app.user().userId);
+            newDoc.set('created', Date.now());
+            newDoc.set('id', newId);
+            yMapObjects.set(newId, newDoc);
+        } else {
+            newDoc = yMapObjects.get(newId);
+        }
+    
         return newDoc;
     }
 
@@ -80,6 +94,7 @@ export default class Editor {
         if (!this.currentObject) {
             this.currentObject = this.createNewDocument();
         }
+        this.loadDocument(this.currentObject);
         if (this.currentObject instanceof Y.Map && !this.currentObject.get('content')) {
             this.currentObject.set('content', new Y.Text());
         }
@@ -88,12 +103,10 @@ export default class Editor {
     
         private initUI(): void {
             // this.rootElement.innerHTML = ''; // Replace empty() with innerHTML = '' - REMOVE THIS LINE
-            console.log('Editor.initUI: rootElement:', this.rootElement); // Debug log
-            console.log('Editor.initUI: renderUI():', this.renderUI()); // Debug log
-            console.log('Editor.initUI: rootElement.innerHTML before append:', this.rootElement.innerHTML);
+            // console.log('Editor.initUI: rootElement:', this.rootElement); 
             this.rootElement.append(this.renderUI());
-            console.log('Editor.initUI: rootElement.innerHTML after append:', this.rootElement.innerHTML); // New log
-            console.log('Editor.initUI: metadataPanel element:', this.rootElement.querySelector('.metadata-panel')); // Debug log - THIS IS THE PROBLEM LINE
+            // console.log('Editor.initUI: rootElement.innerHTML after append:', this.rootElement.innerHTML); 
+            // console.log('Editor.initUI: contentEditorElement:', this.rootElement.querySelector('.content-editor')); 
 
         this.bindEditorEvents();
         this.toolbar.init($(this.rootElement).find('.editor-container')); //toolbar.init expects JQuery element
@@ -114,6 +127,11 @@ export default class Editor {
         const editorContainer = document.createElement('div');
         editorContainer.className = 'editor-container';
 
+        const titleEditor = document.createElement('input');
+        titleEditor.type = 'text';
+        titleEditor.className = 'document-title';
+        editorContainer.append(titleEditor);
+
         const contentEditor = document.createElement('div');
         contentEditor.className = 'content-editor';
         contentEditor.contentEditable = 'true';
@@ -132,6 +150,22 @@ export default class Editor {
             ?.addEventListener('input', () => this.awareness.updateLocalCursor());
         this.rootElement.querySelector('.content-editor')
             ?.addEventListener('keydown', this.handleShortcuts.bind(this));
+        this.rootElement.querySelector('.document-title')
+            ?.addEventListener('input', this.handleTitleChange.bind(this));
+    }
+
+    private handleTitleChange(event: Event): void {
+        const titleEditor = event.target as HTMLInputElement;
+        const newTitle = titleEditor.value;
+        if (this.currentObject) {
+            if (this.currentObject instanceof NObject) {
+                this.currentObject.name = newTitle;
+            } else if (this.currentObject instanceof Y.Map) {
+                this.currentObject.set('name', newTitle);
+            }
+            this.config.db.persistDocument(this.currentObject); // Persist the change
+            this.config.app.store.setCurrentObject(this.currentObject); // Update store to refresh sidebar
+        }
     }
 
     private initNetwork(): void {
@@ -164,9 +198,40 @@ export default class Editor {
             this.config.db.doc.transact(() => {
                 const content = (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML;
                 (this.currentObject as Y.Map<any>).set('content', new Y.Text(content));
+                // console.log('Y.Map Document saved:', this.currentObject.toJSON()); // Add console log here
             });
-        } else if (this.currentObject)
+        } else if (this.currentObject) {
             this.config.db.persistDocument(this.currentObject);
+            // console.log('NObject Document saved:', this.currentObject.toJSON()); // Add console log here
+        }
+    }
+
+    public loadDocument(object: NObject | Y.Map<any>): void {
+        this.currentObject = object;
+        if (object instanceof Y.Map) {
+            const title = object.get('name') || 'Untitled'; // Default title
+            const content = object.get('content');
+            const contentEditor = this.rootElement.querySelector('.content-editor') as HTMLElement;
+            const titleEditor = this.rootElement.querySelector('.document-title') as HTMLInputElement;
+
+            if (titleEditor) titleEditor.value = title;
+
+            if (content instanceof Y.Text) {
+                contentEditor.innerHTML = content.toString();
+            } else {
+                if (!object.has('content')) {
+                    object.set('content', new Y.Text());
+                }
+                contentEditor.innerHTML = '';
+            }
+        } else if (object instanceof NObject) {
+            (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML = object.text.toString();
+            this.metadata.renderMetadataPanel(object);
+        } else {
+            (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML = '';
+            this.metadata.clearMetadataPanel();
+        }
+        this.updatePrivacy(); // Update privacy indicator based on loaded object
     }
 
     public togglePrivacy(): void {
@@ -182,6 +247,22 @@ export default class Editor {
             this.currentObject.public = this.isPublic;
         }
 
+    }
+
+    public clearIfCurrent(objectId: string): void {
+        const currentId = this.currentObject instanceof Y.Map ?
+            this.currentObject.get('id') :
+            this.currentObject?.id;
+            
+        if (currentId === objectId) {
+            this.clear();
+        }
+    }
+
+    public clear(): void {
+        this.currentObject = undefined;
+        (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML = '';
+        this.metadata.clearMetadataPanel();
     }
 
     public loadSnapshot(snapshot: Uint8Array): void {
@@ -214,5 +295,6 @@ declare module '../types' {
         currentObject?: NObject | Y.Map<any>;
         getAwareness: () => Awareness;
         app: App;
+        ydoc: YDoc;
     }
 }

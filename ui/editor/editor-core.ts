@@ -27,9 +27,9 @@ export default class EditorCore {
             class: 'editor',
             contenteditable: !this.config.isReadOnly,
             spellcheck: true,
-            html: content,
+            text: content,
         })
-            .on('input', debounce(() => this.saveContent(), 100))
+            .on('input', debounce((e) => this.saveContent(e), 100))
             .on('keydown', e => {
                 if (!this.config.isReadOnly && (e.ctrlKey || e.metaKey)) {
                     this.handleFormattingShortcuts(e);
@@ -57,9 +57,9 @@ export default class EditorCore {
         }
     }
 
-    private saveContent() {
+    private saveContent(e: Event) {
         if (!this.ytext || this.config.isReadOnly) return;
-        const content = this.editor.html();
+        const content = this.editor.text();
         this.updateContent(content, true);
     }
 

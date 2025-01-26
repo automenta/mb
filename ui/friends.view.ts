@@ -17,26 +17,32 @@ export default class FriendsView extends BaseView {
         this.clearView();
         this.container.append(
             this.renderHeader('Friends'),
+            $('<input>', { type: 'text', class: 'friends-search', placeholder: 'Search friends...' })
+                .on('input', this.updateFriends.bind(this)),
             $('<ul>').addClass('friends-list')
         );
         this.updateFriends();
         this.getAwareness?.().on('change', this.updateFriends.bind(this));
     }
-    
+
     private updateFriends() {
+        const searchTerm = this.container.find('.friends-search').val() as string || '';
         const awarenessStates = this.getAwareness().getStates();
-        const users: UserInfo[] = [];
+        let users: UserInfo[] = [];
         for (let clientId in awarenessStates) {
             const state = awarenessStates[clientId];
             if (state.user) {
                 users.push(state.user);
             }
         }
-        this.renderFriendsList(users);
+        const filteredUsers = users.filter(user =>
+            user.name?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        this.renderFriendsList(filteredUsers);
     }
 
     private renderFriendsList(users: UserInfo[]) {
-        const ul = this.container.find('ul').empty();
+        const ul = this.container.find('ul.friends-list').empty();
         users.forEach(user => {
             const statusIcon = user.status === 'online' ? '🟢' : user.status === 'away' ? '🌙' : '🔴';
             ul.append($('<li>').html(`${user.name} <span class="status">${statusIcon}</span>`));

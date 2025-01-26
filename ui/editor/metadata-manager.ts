@@ -13,18 +13,22 @@ export class MetadataManager {
           $('<div>', { class: 'metadata-row' }).append(
             $('<span>', { text: 'Created: ' }),
             $('<span>', {
-              text: new Date(currentObject.meta.created).toLocaleString(),
+              text: new Date(currentObject.created).toLocaleString(),
             })
           ),
           $('<div>', { class: 'metadata-row' }).append(
             $('<span>', { text: 'Last Updated: ' }),
             $('<span>', {
-              text: new Date(currentObject.meta.updated).toLocaleString(),
+              text: new Date(currentObject.updated).toLocaleString(),
             })
           ),
           $('<div>', { class: 'metadata-row' }).append(
             $('<span>', { text: 'Author: ' }),
             $('<span>', { text: currentObject.author })
+          ),
+          $('<div>', { class: 'metadata-row' }).append(
+            $('<span>', { text: 'Page ID: ' }),
+            $('<span>', { text: currentObject.id })
           ),
           $('<div>', { class: 'metadata-tags' }).append(
             $('<span>', { text: 'Tags: ' }),
@@ -102,5 +106,9 @@ export class MetadataManager {
     // Logic to update privacy indicator in the UI
     // For example, you might update a visual element to show if the document is public or private
     console.log('Privacy updated to:', isPublic);
+  }
+
+  clearMetadataPanel(): void {
+    $('.metadata-panel').empty(); // Or however you want to clear the panel
   }
 }

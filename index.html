@@ -1,31 +1,28 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>TODO</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collaborative Reality Editor</title>
+    <link rel="stylesheet" href="ui/css/app.css">
+    <link rel="stylesheet" href="ui/css/sidebar.css">
+    <link rel="stylesheet" href="ui/css/editor.css">
+    <link rel="stylesheet" href="ui/css/dark-mode.css">
 </head>
 <body>
-    <div id="connection-warning" style="display: none; background-color: yellow; padding: 10px; text-align: center;">
-        Warning: Disconnected from network.
-    </div>
-    <div id="error-container" style="display: none; background-color: red; color: white; padding: 10px;">
-        Errors:
-        <ul id="error-list"></ul>
-    </div>
-    <div id="plugin-status-container" style="display: none; background-color: lightgreen; padding: 10px;">
-        Plugin Status:
-        <ul id="plugin-status-list"></ul>
-    </div>
-    <script type="module">
-        import App from '/ui/app.ts';
-        import $ from 'jquery';
-        import { v4 as uuid } from 'uuid';
+    <div id="app"></div>
 
-        let userID = localStorage['userID'] || (localStorage['userID'] = uuid());
-        const app = new App(userID, "todo");
-        app.mount(document.body);
+    <script type="module">
+        import { $ } from './ui/imports';
+        import App from './ui/app';
+
+        $(async () => {
+            const userID = localStorage.getItem('userID') || randomUUID();
+            const channel = 'my-channel';
+            const app = new App(userID, channel);
+            app.mount($('#app')[0]);
+            window.app = app; // Expose app to the global scope
+        });
     </script>
 </body>
 </html>

@@ -1,33 +1,86 @@
 import $ from 'jquery';
 import '/ui/css/match.css';
-import {events} from '../src/events.ts';
+import { events } from '../src/events';
+import Chart from 'chart.js/auto';
+
+interface MatchingSettings {
+    isProcessing: boolean;
+    workerCapacity: number;
+    processInterval: number;
+    similarityThreshold: number;
+    autoAdjustCapacity: boolean;
+}
+
+interface HistoryData {
+    timestamps: number[];
+    pagesProcessed: number[];
+    matchesFound: number[];
+    workerCapacity: number[];
+    queueSize: number[];
+    processingRate: number[];
+}
+
+interface ActivityEvent {
+    type: string;
+    message: string;
+    icon: string;
+    timestamp?: string;
+    id?: number;
+}
+
+interface Match {
+    pageA: string;
+    pageB: string;
+    similarity: number;
+    matchedProperties: string[];
+    timestamp: number;
+}
+
+interface MatchingMetrics {
+    pagesProcessed: number;
+    matchesFound: number;
+    workerCapacity: number;
+    queueSize: number;
+    processingRate: number;
+    recentMatches: Match[];
+    peersCount: number;
+}
 
 class MatchingView {
-    constructor(root, matching) {
+    matching: any; // Type 'any' for 'matching' as its type is not defined in provided files
+    root: JQuery<HTMLElement>;
+    ele: JQuery<HTMLElement>;
+    updateInterval: number = 1000;
+    maxLogEntries: number = 50;
+    maxHistoryPoints: number = 100;
+    activityLog: ActivityEvent[] = [];
+    history: HistoryData = {
+        timestamps: [], pagesProcessed: [], matchesFound: [],
+        workerCapacity: [], queueSize: [], processingRate: []
+    };
+    settings: MatchingSettings = {
+        isProcessing: false,
+        workerCapacity: 0, // Initialized in constructor
+        processInterval: 0, // Initialized in constructor
+        similarityThreshold: 0.5,
+        autoAdjustCapacity: true
+    };
+    updateTimer: any;
+    chart: any; // Type 'any' for chart.js instance
+
+    constructor(root: JQuery<HTMLElement>, matching: any) {
         this.matching = matching;
         this.root = root;
-        this.ele = $('<div>').addClass('matching-dashboard');
-        this.updateInterval = 1000;
-        this.maxLogEntries = 50;
-        this.maxHistoryPoints = 100;
-        this.activityLog = [];
-        this.history = {
-            timestamps: [], pagesProcessed: [], matchesFound: [],
-            workerCapacity: [], queueSize: [], processingRate: []
-        };
-        this.settings = {
-            isProcessing: false,
-            workerCapacity: matching.workerCapacity,
-            processInterval: matching.processInterval / 1000,
-            similarityThreshold: 0.5,
-            autoAdjustCapacity: true
-        };
+        this.ele = $('<div>').addClass('matching-dashboard') as JQuery<HTMLElement>;
+        this.settings.workerCapacity = matching.workerCapacity;
+        this.settings.processInterval = matching.processInterval / 1000;
 
-        events.on('matching-metrics', e => this.updateMetrics(e.detail));
-        events.on('activity', e => this.logActivity(e));
+
+        events.on('matching-metrics', (e: CustomEvent<MatchingMetrics>) => this.updateMetrics(e.detail));
+        events.on('activity', (e: CustomEvent<ActivityEvent>) => this.logActivity(e.detail));
     }
 
-    template() {
+    template(): string {
         const s = this.settings;
         return `
             <div class="control-panel">
@@ -47,8 +100,8 @@ class MatchingView {
             </div>`;
     }
 
-    renderControl(type, label, id, value = '', suffix = '') {
-        const controls = {
+    renderControl(type: 'switch' | 'slider' | 'number', label: string, id: string, value: string | number | boolean = '', suffix: string = ''): string {
+        const controls: { [key: string]: () => string } = {
             switch: () => `
                 <label class="switch-label">${label}
                     <label class="toggle-switch">
@@ -59,7 +112,7 @@ class MatchingView {
             slider: () => `
                 <label>${label}
                     <input type="range" id="${id}" min="0" max="100" value="${value}">
-                    <span id="${id}-value">${value.toFixed(1)}%</span>
+                    <span id="${id}-value">${(value as number).toFixed(1)}%</span>
                 </label>`,
             number: () => `
                 <label>${label}
@@ -69,7 +122,7 @@ class MatchingView {
         return `<div class="control-group">${controls[type]()}</div>`;
     }
 
-    renderStatusPanel() {
+    renderStatusPanel(): string {
         return `
             <div class="dashboard-cell status-panel">
                 <h3>Processing Status</h3>
@@ -95,13 +148,13 @@ class MatchingView {
             </div>`;
     }
 
-    renderMetricPair(id1, id2) {
+    renderMetricPair(id1: string, id2: string): string {
         return ['metric', id1, id2].reduce((html, id) =>
             html + `<div class="${id}"><span class="${id}-label"></span>
             <span class="${id}-value" id="${id}">0</span></div>`, '');
     }
 
-    renderActivityPanel() {
+    renderActivityPanel(): string {
         return `
             <div class="dashboard-cell activity-panel">
                 <h3>Activity Log</h3>
@@ -109,7 +162,7 @@ class MatchingView {
             </div>`;
     }
 
-    renderMatchesPanel() {
+    renderMatchesPanel(): string {
         return `
             <div class="dashboard-cell matches-panel">
                 <h3>Recent Matches</h3>
@@ -117,7 +170,7 @@ class MatchingView {
             </div>`;
     }
 
-    renderPerformancePanel() {
+    renderPerformancePanel(): string {
         return `
             <div class="dashboard-cell performance-panel">
                 <h3>Performance History</h3>
@@ -127,7 +180,7 @@ class MatchingView {
             </div>`;
     }
 
-    render() {
+    render(): JQuery<HTMLElement> {
         this.ele.empty();
         this.root.find('.main-view').empty().append(this.ele);
         this.ele.html(this.template());
@@ -136,9 +189,9 @@ class MatchingView {
         return this.ele;
     }
 
-    bindControls() {
-        const controls = {
-            'processing-toggle': (e) => {
+    bindControls(): void {
+        const controls: { [key: string]: (e: any) => void } = {
+            'processing-toggle': (e: any) => {
                 this.settings.isProcessing = e.target.checked;
                 this.matching[e.target.checked ? 'startProcessing' : 'stopProcessing']();
                 this.logActivity({
@@ -147,7 +200,7 @@ class MatchingView {
                     icon: e.target.checked ? '▶️' : '⏹️'
                 });
             },
-            'capacity-slider': (e) => {
+            'capacity-slider': (e: any) => {
                 const value = e.target.value / 100;
                 this.settings.workerCapacity = value;
                 this.ele.find('#capacity-value').text(e.target.value + '%');
@@ -160,7 +213,7 @@ class MatchingView {
                     });
                 }
             },
-            'interval-input': (e) => {
+            'interval-input': (e: any) => {
                 const value = Math.max(1, Math.min(60, parseInt(e.target.value)));
                 this.settings.processInterval = value;
                 this.matching.setProcessInterval(value * 1000);
@@ -170,7 +223,7 @@ class MatchingView {
                     icon: '⏱️'
                 });
             },
-            'similarity-slider': (e) => {
+            'similarity-slider': (e: any) => {
                 const value = e.target.value / 100;
                 this.settings.similarityThreshold = value;
                 this.ele.find('#similarity-value').text(e.target.value + '%');
@@ -181,7 +234,7 @@ class MatchingView {
                     icon: '🎯'
                 });
             },
-            'auto-adjust-toggle': (e) => {
+            'auto-adjust-toggle': (e: any) => {
                 this.settings.autoAdjustCapacity = e.target.checked;
                 this.matching.setAutoAdjust(e.target.checked);
                 this.ele.find('#capacity-slider').prop('disabled', e.target.checked);
@@ -197,7 +250,7 @@ class MatchingView {
             this.ele.find(`#${id}`).on('change input', handler));
     }
 
-    logActivity(event) {
+    logActivity(event: ActivityEvent): void {
         const entry = { ...event, timestamp: new Date().toLocaleTimeString(), id: Date.now() };
         this.activityLog.unshift(entry);
         this.activityLog = this.activityLog.slice(0, this.maxLogEntries);
@@ -212,39 +265,39 @@ class MatchingView {
         `).prependTo($log).animate({ opacity: 1 }, 300);
 
         if ($log.children().length > this.maxLogEntries) {
-            $log.children().last().fadeOut(300, function() { $(this).remove(); });
+            $log.children().last().fadeOut(300, function () { $(this).remove(); });
         }
     }
 
-    updateMetrics(metrics) {
+    updateMetrics(metrics: MatchingMetrics): void {
         Object.entries(metrics).forEach(([key, value]) =>
-            this.animateValue(`#${key}`, value));
+            this.animateValue(`#${key}`, value as number));
 
         const rate = metrics.processingRate || 0;
-        $('#processing-rate').text(`${rate.toFixed(1)}/s`);
-        $('#rate-bar').css('width', `${Math.min(rate * 10, 100)}%`);
-        $('#queue-bar').css('width', `${Math.min((metrics.queueSize / 20) * 100, 100)}%`);
-        $('#worker-capacity').text(`${(metrics.workerCapacity * 100).toFixed(1)}%`);
+        this.ele.find('#processing-rate').text(`${rate.toFixed(1)}/s`);
+        this.ele.find('#rate-bar').css('width', `${Math.min(rate * 10, 100)}%`);
+        this.ele.find('#queue-bar').css('width', `${Math.min((metrics.queueSize / 20) * 100, 100)}%`);
+        this.ele.find('#worker-capacity').text(`${(metrics.workerCapacity * 100).toFixed(1)}%`);
 
         this.updateHistory(metrics);
         this.updateMatches(metrics.recentMatches || []);
     }
 
-    animateValue(selector, newValue) {
+    animateValue(selector: string, newValue: number): void {
         const $el = this.ele.find(selector);
         const current = parseInt($el.text());
         if (current !== newValue) {
             $el.prop('counter', current).animate({ counter: newValue }, {
                 duration: 500,
-                step: function(now) { $(this).text(Math.ceil(now)); }
+                step: function (now) { $(this).text(Math.ceil(now)); }
             });
         }
     }
 
-    updateHistory(metrics) {
+    updateHistory(metrics: MatchingMetrics): void {
         Object.entries(metrics).forEach(([key, value]) => {
             if (key in this.history) {
-                this.history[key].push(value);
+                this.history[key].push(value as number);
                 if (this.history[key].length > this.maxHistoryPoints) {
                     this.history[key] = this.history[key].slice(-this.maxHistoryPoints);
                 }
@@ -253,7 +306,7 @@ class MatchingView {
         this.updateChart();
     }
 
-    updateMatches(matches) {
+    updateMatches(matches: Match[]): void {
         const $list = this.ele.find('#matches-list');
         matches.forEach(match => {
             $(`
@@ -271,28 +324,29 @@ class MatchingView {
         });
 
         while ($list.children().length > 10) {
-            $list.children().last().fadeOut(300, function() { $(this).remove(); });
+            $list.children().last().fadeOut(300, function () { $(this).remove(); });
         }
     }
 
-    startUpdates() {
+    startUpdates(): void {
         if (this.updateTimer) clearInterval(this.updateTimer);
         this.updateTimer = setInterval(() =>
             this.updateMetrics(this.matching.getMetrics()), this.updateInterval);
     }
 
-    stop() {
+    stop(): void {
         if (this.updateTimer) {
             clearInterval(this.updateTimer);
             this.updateTimer = null;
         }
     }
 
-    updateChart() {
+    updateChart(): void {
         if (!this.chart) {
-            const canvas = this.ele.find('#history-canvas')[0];
+            const canvas = this.ele.find<HTMLCanvasElement>('#history-canvas')[0];
             if (!canvas || !(canvas instanceof HTMLCanvasElement)) return;
             const ctx = canvas.getContext('2d');
+            if (!ctx) return;
             this.chart = new Chart(ctx, {
                 type: 'line',
                 data: {

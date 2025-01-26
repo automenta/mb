@@ -1,7 +1,7 @@
 import DB from '../src/db';
 import Network from '../src/net';
 import Matching from "../src/match.js";
-import { $, type AppState } from './imports';
+import { type AppState } from './imports';
 import Sidebar from './sidebar';
 import Editor from "./editor/editor";
 import { store, initializeStore } from './store';
@@ -20,7 +20,7 @@ export default class App {
     sidebar: Sidebar;
     isDarkMode: boolean;
     private _userID: string;
-
+    public store: ReturnType<typeof initializeStore>; // Public store property
     public ele: HTMLElement; // Changed to HTMLElement
 
     constructor(userID: string, channel: string) {
@@ -37,6 +37,7 @@ export default class App {
         // Initialize theme from localStorage or default to dark
         const savedTheme = localStorage.getItem('themePreference') || 'dark';
         this.isDarkMode = savedTheme === 'dark';
+        // this.store = initializeStore(this.db); // Initialize the store
 
         // this.initializeApp(userID); // Removed from constructor
         store.subscribe(state => this.handleStoreUpdate(state));
@@ -60,25 +61,29 @@ export default class App {
     }
 
     private initializeStore() {
-        initializeStore(this.db);
+        // initializeStore(this.db); // REMOVE THIS LINE - store is initialized in constructor - redundant call
     }
 
     private initializeEditor() {
-        const mainView = document.createElement('div'); // Vanilla JS element creation
-        mainView.className = 'main-view'; // Set class using className
-        this.ele.appendChild(mainView); // Vanilla JS appendChild
+        const mainView = document.createElement('div');
+        mainView.className = 'main-view';
+        this.ele.appendChild(mainView);
+        // console.log('App.initializeEditor: mainView created:', mainView); // Add log
+        // console.log('App.initializeEditor: this.ele:', this.ele); // Add log
         this.editor = new Editor({
-            ele: mainView as HTMLElement, // Type assertion to HTMLElement
+            ele: mainView as HTMLElement,
             db: this.db,
             getAwareness: this.net.awareness.bind(this.net),
             app: this,
-            networkStatusCallback: this.setNetworkStatus.bind(this)
+            networkStatusCallback: this.setNetworkStatus.bind(this),
+            ydoc: this.db.doc,
         } as EditorConfig);
+        // console.log('App.initializeEditor: Editor initialized:', this.editor); // Add log
     }
 
     private initializeSidebar() {
         this.sidebar = new Sidebar(this.db, this);
-        this.ele.prepend(this.sidebar.ele[0]); // prepend is standard DOM API
+        this.ele.prepend(this.sidebar.ele[0]);
     }
 
     private initializeSocket() {
@@ -90,36 +95,40 @@ export default class App {
         this.initializeDB(userID);
         this.initializeNetwork();
         this.initializeMatching();
-        this.initializeStore();
+        this.loadUserProfile(); // Load user profile from db.config
+        this.store = initializeStore(this.db); // Initialize the store
         this.initializeEditor();
         this.initializeSidebar();
     }
 
+    private loadUserProfile() {
+       const storedProfile = this.db.config.get('userProfile');
+       if (storedProfile) {
+           this.net.awareness().setLocalStateField('user', storedProfile);
+       }
+   }
+
     private setupSocket() {
-        this.socket = io();
+        this.setupSocket();
         this.setupSocketListeners(this.socket);
     }
-
+    
     private setupSocketListeners(socket: Socket) {
         // Ensure proper network status updates
         socket.on('connect', () => {
             this.handleSocketEvent('connect', 'connected');
             store.setNetworkStatus('connected');
         });
-
         socket.on('disconnect', () => {
             this.handleSocketEvent('disconnect', 'disconnected');
             store.setNetworkStatus('disconnected');
         });
-
         socket.on('snapshot', (snap: any) => this.handleSocketEvent('snapshot', 'connected', snap));
-
         // Ensure plugin events are properly handled
         socket.on('plugin-status', (plugins: any) => {
             this.handleSocketPluginStatus(plugins);
             store.updatePluginStatus(plugins);
         });
-
         socket.on('plugin-error', (pluginName: string, error: any) => {
             this.handleSocketPluginError(pluginName, error);
             store.logError({
@@ -128,7 +137,6 @@ export default class App {
                 timestamp: Date.now()
             });
         });
-
         // Add listener for 'error' event to handle connection issues
         socket.on('error', (err: any) => {
             console.error('Socket error:', err);
@@ -140,22 +148,32 @@ export default class App {
         });
     }
 
-    private handleSocketEvent(event: 'connect' | 'disconnect' | 'snapshot', status: 'connected' | 'disconnected', data?: any) {
-        console.log(`Socket ${event}:`, data);
-        this.setNetworkStatus(status);
-        if (event === 'snapshot' && data) {
-            this.editor.loadSnapshot(data);
+    private handleSocketMessage(type: 'event' | 'plugin-status' | 'plugin-error', event: string, status: 'connected' | 'disconnected' | null, data?: any, pluginName?: string, error?: any) {
+        if (type === 'event') {
+            console.log(`Socket ${event}:`, data);
+            if (status) this.setNetworkStatus(status);
+            if (event === 'snapshot' && data) {
+                this.editor.loadSnapshot(data);
+            }
+        } else if (type === 'plugin-status') {
+            console.log('Plugin status:', data);
+            store.updatePluginStatus(data);
+        } else if (type === 'plugin-error') {
+            console.error(`Plugin ${pluginName} error:`, error);
+            store.logError({ pluginName, error, timestamp: Date.now() });
         }
     }
 
+    private handleSocketEvent(event: 'connect' | 'disconnect' | 'snapshot', status: 'connected' | 'disconnected', data?: any) {
+        this.handleSocketMessage('event', event, status, data);
+    }
+
     private handleSocketPluginStatus(plugins: any) {
-        console.log('Plugin status:', plugins);
-        store.updatePluginStatus(plugins);
+        this.handleSocketMessage('plugin-status', '', null, plugins);
     }
 
     private handleSocketPluginError(pluginName: string, error: any) {
-        console.error(`Plugin ${pluginName} error:`, error);
-        store.logError({ pluginName, error, timestamp: Date.now() });
+        this.handleSocketMessage('plugin-error', '', null, null, pluginName, error);
     }
 
     private handleStoreUpdate(state: AppState) {
@@ -221,19 +239,19 @@ export default class App {
 
     toggleDarkMode(): void {
         this.isDarkMode = !this.isDarkMode;
-        this.ele.classList.toggle('dark-mode', this.isDarkMode); // Vanilla JS classList.toggle
-        this.ele.setAttribute('data-theme', this.isDarkMode ? 'dark' : 'light'); // Vanilla JS setAttribute
+        this.ele.classList.toggle('dark-mode', this.isDarkMode);
+        this.ele.setAttribute('data-theme', this.isDarkMode ? 'dark' : 'light');
         localStorage.setItem('themePreference', this.isDarkMode ? 'dark' : 'light');
     }
 
     mount(container: HTMLElement | null): void {
         const savedTheme = localStorage.getItem('themePreference') || 'dark';
-        this.ele = document.createElement('div'); // Vanilla JS element creation
-        this.ele.className = `container ${savedTheme === 'dark' ? 'dark-mode' : ''}`; // Vanilla JS className and string template
-        this.ele.setAttribute('data-theme', savedTheme); // Vanilla JS setAttribute
+        this.ele = document.createElement('div');
+        this.ele.className = `container ${savedTheme === 'dark' ? 'dark-mode' : ''}`;
+        this.ele.setAttribute('data-theme', savedTheme);
         if (container) {
-            container.appendChild(this.ele); // Vanilla JS appendChild
+            container.appendChild(this.ele);
         }
-        this.initializeApp(this._userID); // Call initializeApp with _userID
+        this.initializeApp(this._userID);
     }
 }

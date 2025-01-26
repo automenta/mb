@@ -22,6 +22,8 @@ class DB {
     this.index = this.doc.getMap<NObject>('objects');
     this.replyManager = new ReplyManager(this);
 
+    // console.log('DB.constructor: this.doc:', this.doc);
+
     // Initialize Yjs types
     const yarray = this.doc.getArray('yarray-initializer');
     const ytext = this.doc.getText('ytext-initializer');
@@ -124,10 +126,10 @@ class DB {
 
   getRepliesTo = (id: string): NObject[] => this.replyManager.getRepliesTo(id);
 
-  // Uncomment if observation needed
-  // observe = (fn: Observer): void => this.index.observe(fn);
-  // observeObject = (id: string, fn: Observer): void =>
-  //     this.get(id)?.observe(fn);
+  // // Uncomment if observation needed
+  // // observe = (fn: Observer): void => this.index.observe(fn);
+  // // observeObject = (id: string, fn: Observer): void =>
+  // //     this.get(id)?.observe(fn);
 
   /**
    * Retrieves the text of an object by its page ID.
@@ -169,18 +171,20 @@ class DB {
 
   persistDocument(obj: NObject | Y.Map<any>): void {
     if (obj instanceof NObject) {
-      this.index.set(obj.id, obj);
-    } /*else if (obj instanceof Y.Map) {
-      const objId = obj.get('id');
-      if (typeof objId === 'string') {
-        this.index.set(objId, obj);
-      } else {
-        console.error('Object ID is not a string:', objId);
+      this.index.set(obj.id, obj.toJSON());
+    } else if (obj instanceof Y.Map) {
+          const objId = obj.get('id');
+          if (typeof objId === 'string') {
+            // Store Y.Map objects in a separate Y.Map
+            let yMapObjects = this.doc.getMap<Y.Map<any>>('yMapObjects');
+            yMapObjects.set(objId, obj);
+          } else {
+            console.error('Object ID is not a string:', objId);
+          }
+        } else {
+          console.error('Unknown object type:', obj);
+        }
       }
-    } */ else {
-      console.error('Unknown object type:', obj);
-    }
-  }
 
   /**
    * Retrieves the history of document snapshots

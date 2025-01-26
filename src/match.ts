@@ -50,14 +50,14 @@ export default class Matching {
         this.db = db;
         this.net = net;
 
-        // Start processing loop (consider starting this externally or via a method call)
-        // this.startProcessing();
+        // // Start processing loop (consider starting this externally or via a method call)
+        // // this.startProcessing();
 
-        // Listen for new/changed pages (consider if this should be enabled by default or configurable)
-        // this.onPagesChanged();
+        // // Listen for new/changed pages (consider if this should be enabled by default or configurable)
+        // // this.onPagesChanged();
 
-        // Network coordination (consider if this should be enabled by default or configurable)
-        // this.net.awareness().on('change', () => this.coordinated());
+        // // Network coordination (consider if this should be enabled by default or configurable)
+        // // this.net.awareness().on('change', () => this.coordinated());
     }
 
     on(event: string, listener: (...args: any[]) => void): void {
@@ -80,7 +80,7 @@ export default class Matching {
         let oldest: string | null = null;
         let oldestTime: number = Infinity;
 
-        for (const pageId of this.db.query().list().map(obj => obj.id)) { // Iterate over page IDs directly
+        for (const pageId of this.db.list().map(obj => obj.id)) { // Iterate over page IDs directly
             const lastTime = this.lastProcessed.get(pageId) || 0;
             if (lastTime < oldestTime && !this.processingQueue.has(pageId)) {
                 oldest = pageId;
@@ -143,7 +143,7 @@ export default class Matching {
     async findMatches(pageId: string, properties: PageProperties): Promise<MatchResult[]> {
         const matches: MatchResult[] = [];
 
-        for (const otherPage of this.db.query().list()) { // Iterate over NObject directly
+        for (const otherPage of this.db.list()) { // Iterate over NObject directly
             if (otherPage.id === pageId) continue;
 
             const otherContent = otherPage.text.toString(); // Access text content directly

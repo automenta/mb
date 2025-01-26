@@ -224,7 +224,8 @@ export default class MeView {
         // Action Buttons
         $('<div/>', { class: 'profile-actions' }).append(
           $('<button/>', { class: 'save-btn', text: '💾 Save Changes' }).on('click', () => {
-            // Save logic - changes are already saved to awareness
+            const user = this.getUser();
+            this.db.config.set('userProfile', user); // Save user profile to db.config
             alert('Profile changes saved!');
           }),
           $('<button/>', { class: 'cancel-btn', text: '❌ Cancel' }).on('click', () => {
