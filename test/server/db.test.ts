@@ -1,8 +1,8 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {IndexeddbPersistence} from 'y-indexeddb';
 import * as Y from 'yjs';
-import DB from '../src/db';
-import NObject from '../src/obj';
+import DB from '../../src/db';
+import NObject from '../../src/obj';
 
 vi.mock('y-indexeddb');
 

@@ -1,7 +1,12 @@
 import { defineConfig } from 'vite';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 export default defineConfig({
-    plugins: [],
+    plugins: [
+        nodePolyfills({
+            protocolImports: true,
+        }),
+    ],
     build: {
         sourcemap: true,
         target: 'esnext',
@@ -25,10 +30,9 @@ export default defineConfig({
         }*/
     },
     // For better organization you could add resolve aliases:
-    resolve: {
-        alias: {
-            '@': '/src',
-            '@ui': '/ui',
-        },
-    },
+    /*resolve: {
+       alias: {
+           'http': 'stream-http'
+       },
+   }*/
 });

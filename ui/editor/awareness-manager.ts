@@ -5,14 +5,15 @@ import $ from 'jquery';
 export class AwarenessManager {
   constructor(
     readonly awareness: Awareness,
-    private readonly editor: JQuery
+    private readonly editor: HTMLElement
   ) {
     this.setupAwareness();
   }
 
   private setupAwareness() {
     // Listen for local cursor changes
-    this.editor.on('mouseup keyup', () => this.updateLocalCursor());
+    this.editor.addEventListener('mouseup', () => this.updateLocalCursor());
+    this.editor.addEventListener('keyup', () => this.updateLocalCursor());
 
     // Listen for awareness updates
     this.awareness.on('change', () => this.renderRemoteCursors());
@@ -41,27 +42,27 @@ export class AwarenessManager {
 
   private renderCursor(cursorData: { anchor: number; head: number }, user: UserInfo) {
     // Try to reuse existing cursor element
-    let cursorEle = this.editor.find(`.remote-cursor-${user?.getUser().userId}`);
+    let cursorEle = this.editor.querySelector(`.remote-cursor-${user?.getUser().userId}`);
     
     const u = user?.getUser();
 
-    if (cursorEle.length === 0) {
+    if (!cursorEle) {
       // Create a new cursor element if it doesn't exist
-      cursorEle = $('<span>', {
-        class: `remote-cursor remote-cursor-${u.userId}`,
-        css: {
-          position: 'absolute',
-          backgroundColor: u.color,
-          width: '2px',
-          height: '1em',
-        },
-      });
+      cursorEle = document.createElement('span') as HTMLElement;
+      cursorEle.className = `remote-cursor remote-cursor-${u.userId}`;
+      (cursorEle as HTMLElement).style.position = 'absolute';
+      (cursorEle as HTMLElement).style.backgroundColor = u.color;
+      (cursorEle as HTMLElement).style.width = '2px';
+      (cursorEle as HTMLElement).style.height = '1em';
+
       this.editor.append(cursorEle);
     }
 
     // Position the cursor in the editor
     const position = this.getPositionFromOffset(cursorData.anchor);
-    cursorEle.css({ left: position.left, top: position.top, backgroundColor: u.color });
+    (cursorEle as HTMLElement).style.left = `${position.left}px`;
+    (cursorEle as HTMLElement).style.top = `${position.top}px`;
+    (cursorEle as HTMLElement).style.backgroundColor = u.color;
   }
 
   private getPositionFromOffset(offset: number): { left: number; top: number } {

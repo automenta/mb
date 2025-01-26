@@ -182,6 +182,18 @@ class DB {
     }
   }
 
+  /**
+   * Retrieves the history of document snapshots
+   * @returns Promise resolving to array of document snapshots
+   */
+  async getSnapshotHistory(): Promise<Uint8Array[]> {
+    const snapshots: Uint8Array[] = [];
+    // Get current snapshot
+    snapshots.push(Y.encodeStateAsUpdate(this.doc));
+    // TODO: Implement proper snapshot history storage/retrieval
+    return snapshots;
+  }
+
 }
 
 export default DB;

@@ -1,6 +1,6 @@
 import {beforeEach, describe, expect, it} from 'vitest';
 import * as Y from 'yjs';
-import NObject from '../src/obj';
+import NObject from '../../src/obj';
 
 describe('NObject', () => {
     let doc: Y.Doc;

@@ -1,4 +1,4 @@
-import $ from 'jquery';
+import $ from 'jquery'
 import DB from '../../src/db';
 import NObject from '../../src/obj';
 

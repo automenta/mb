@@ -289,53 +289,53 @@ class MatchingView {
     }
 
     updateChart() {
-        // if (!this.chart) {
-            // const canvas = this.ele.find('#history-canvas')[0];
-            // if (!canvas || !(canvas instanceof HTMLCanvasElement)) return;
-            // const ctx = canvas.getContext('2d');
-            // this.chart = new Chart(ctx, {
-            //     type: 'line',
-            //     data: {
-            //         labels: [],
-            //         datasets: [
-            //             {
-            //                 label: 'Pages Processed',
-            //                 data: [],
-            //                 borderColor: 'rgba(75, 192, 192, 1)',
-            //                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            //             },
-            //             {
-            //                 label: 'Matches Found',
-            //                 data: [],
-            //                 borderColor: 'rgba(255, 99, 132, 1)',
-            //                 backgroundColor: 'rgba(255, 99, 132, 0.2)',
-            //             },
-            //             {
-            //                 label: 'Worker Capacity',
-            //                 data: [],
-            //                 borderColor: 'rgba(54, 162, 235, 1)',
-            //                 backgroundColor: 'rgba(54, 162, 235, 0.2)',
-            //             }
-            //         ]
-            //     },
-            //     options: {
-            //         responsive: true,
-            //         maintainAspectRatio: false,
-            //         scales: {
-            //             y: {
-            //                 beginAtZero: true
-            //             }
-            //         }
-            //     }
-            // });
-        // }
-        //
-        // const labels = this.history.timestamps.map(ts => new Date(ts).toLocaleTimeString());
-        // this.chart.data.labels = labels;
-        // this.chart.data.datasets[0].data = this.history.pagesProcessed;
-        // this.chart.data.datasets[1].data = this.history.matchesFound;
-        // this.chart.data.datasets[2].data = this.history.workerCapacity.map(c => c * 100);
-        // this.chart.update();
+        if (!this.chart) {
+            const canvas = this.ele.find('#history-canvas')[0];
+            if (!canvas || !(canvas instanceof HTMLCanvasElement)) return;
+            const ctx = canvas.getContext('2d');
+            this.chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Pages Processed',
+                            data: [],
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        },
+                        {
+                            label: 'Matches Found',
+                            data: [],
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        },
+                        {
+                            label: 'Worker Capacity',
+                            data: [],
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        const labels = this.history.timestamps.map(ts => new Date(ts).toLocaleTimeString());
+        this.chart.data.labels = labels;
+        this.chart.data.datasets[0].data = this.history.pagesProcessed;
+        this.chart.data.datasets[1].data = this.history.matchesFound;
+        this.chart.data.datasets[2].data = this.history.workerCapacity.map(c => c * 100);
+        this.chart.update();
     }
 }
 

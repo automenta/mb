@@ -1,5 +1,5 @@
-import $ from 'jquery';
-import * as Y from 'yjs';
+import $ from 'jquery'
+import Y from 'yjs';
 import { Awareness } from 'y-protocols/awareness';
 import DB from '../src/db';
 import NObject from '../src/obj';

@@ -94,5 +94,5 @@ export async function createServer(port = 3000) {
 }
 
 // Start server if not running in a test environment
-/* @ts-ignore */ if (import.meta.url === `file://${process.argv[1]}`)
+// /* @ts-ignore */ if (import.meta.url === `file://${process.argv[1]}`)
   createServer();

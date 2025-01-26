@@ -12,7 +12,7 @@ export default class Editor {
     private readonly toolbar: ToolbarManager;
     private readonly metadata: MetadataManager;
     private readonly awareness: AwarenessManager;
-    public readonly rootElement: JQuery;
+    public readonly rootElement: HTMLElement;
     private _darkMode = false;
 
     public currentObject?: NObject | Y.Map<any>;
@@ -21,7 +21,7 @@ export default class Editor {
     public toggleDarkMode(): void {
         this._darkMode = !this._darkMode;
         this.config.app.toggleDarkMode();
-        this.rootElement.toggleClass('dark-mode', this._darkMode);
+        this.rootElement.classList.toggle('dark-mode', this._darkMode);
     }
 
     private applyFormat(command: string, value: string | null = null): void {
@@ -39,7 +39,7 @@ export default class Editor {
     constructor(config: EditorConfig) {
         this.config = config;
         this.doc = new Y.Doc();
-        this.rootElement = config.ele;
+        this.rootElement = config.ele as HTMLElement; // Cast to HTMLElement
         this.isPublic = false;
 
         if (config.currentObject instanceof Y.Map) {
@@ -51,13 +51,15 @@ export default class Editor {
         // Initialize core components
         this.toolbar = new ToolbarManager(this);
         this.metadata = new MetadataManager(this.config.isReadOnly || false);
-        this.awareness = new AwarenessManager(this.config.getAwareness(), this.rootElement.find('.content-editor'));
         this.editorCore = new EditorCore(this.config, this);
 
         // Initialize document state
         this.initDocument();
         this.initUI();
         this.initNetwork();
+
+        this.awareness = new AwarenessManager(this.config.getAwareness(), this.rootElement.querySelector('.content-editor') as HTMLElement);
+
     }
 
     private initDocument(): void {
@@ -81,14 +83,15 @@ export default class Editor {
     }
 
     private initUI(): void {
-        this.rootElement.empty().append(this.renderUI());
+        this.rootElement.innerHTML = ''; // Replace empty() with innerHTML = ''
+        this.rootElement.append(this.renderUI());
     
         this.bindEditorEvents();
-        this.toolbar.init(this.rootElement);
+        this.toolbar.init($(this.rootElement)); //toolbar.init expects JQuery element
     
         // Render metadata after binding events
         if (this.currentObject) {
-            this.rootElement.find('.metadata-panel').append(this.currentObject instanceof Y.Map ? $('<div>') : this.metadata.renderMetadataPanel(this.currentObject));
+            this.rootElement.querySelector('.metadata-panel')!.append(this.currentObject instanceof Y.Map ? document.createElement('div') : this.metadata.renderMetadataPanel(this.currentObject)[0]); // Wrap with jQuery and use [0] to get HTMLElement
         }
     }
 
@@ -103,9 +106,10 @@ export default class Editor {
     }
 
     private bindEditorEvents(): void {
-        this.rootElement.find('.content-editor')
-            .on('input', () => this.awareness.updateLocalCursor())
-            .on('keydown', this.handleShortcuts.bind(this));
+        this.rootElement.querySelector('.content-editor')
+            ?.addEventListener('input', () => this.awareness.updateLocalCursor());
+        this.rootElement.querySelector('.content-editor')
+            ?.addEventListener('keydown', this.handleShortcuts.bind(this));
     }
 
     private initNetwork(): void {
@@ -115,7 +119,7 @@ export default class Editor {
         }
     }
 
-    private handleShortcuts(event: JQuery.KeyDownEvent): void {
+    private handleShortcuts(event: KeyboardEvent): void { // Changed to standard KeyboardEvent
         if (event.ctrlKey || event.metaKey) {
             switch (event.key.toLowerCase()) {
                 case 's':
@@ -136,7 +140,7 @@ export default class Editor {
     private saveCurrentObject() {
         if (this.currentObject instanceof Y.Map) {
             this.config.db.doc.transact(() => {
-                const content = this.rootElement.find('.content-editor').html();
+                const content = (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML;
                 (this.currentObject as Y.Map<any>).set('content', new Y.Text(content));
             });
         } else if (this.currentObject)

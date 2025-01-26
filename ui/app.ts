@@ -1,7 +1,6 @@
 import DB from '../src/db';
 import Network from '../src/net';
 import Matching from "../src/match.js";
-import { $ } from './imports';
 import { store, initializeStore, type AppState } from './store';
 import Sidebar from './sidebar';
 import Editor from "./editor/editor";
@@ -20,7 +19,7 @@ export default class App {
     sidebar: Sidebar;
     isDarkMode: boolean;
 
-    public ele: JQuery;
+    public ele: HTMLElement; // Changed to HTMLElement
 
     constructor(userID: string, channel: string) {
         if (!userID) {
@@ -33,9 +32,8 @@ export default class App {
         this.channel = channel;
 
         // Initialize theme from localStorage or default to dark
+        // Initialize theme from localStorage or default to dark
         const savedTheme = localStorage.getItem('themePreference') || 'dark';
-        this.ele = $('<div>').addClass(`container ${savedTheme === 'dark' ? 'dark-mode' : ''}`);
-        this.ele.attr('data-theme', savedTheme);
         this.isDarkMode = savedTheme === 'dark';
 
         this.initializeApp(userID);
@@ -64,10 +62,11 @@ export default class App {
     }
 
     private initializeEditor() {
-        const mainView = $('<div class="main-view"></div>');
-        this.ele.append(mainView);
+        const mainView = document.createElement('div'); // Vanilla JS element creation
+        mainView.className = 'main-view'; // Set class using className
+        this.ele.appendChild(mainView); // Vanilla JS appendChild
         this.editor = new Editor({
-            ele: mainView,
+            ele: mainView as HTMLElement, // Type assertion to HTMLElement
             db: this.db,
             getAwareness: this.net.awareness.bind(this.net),
             app: this,
@@ -77,7 +76,7 @@ export default class App {
 
     private initializeSidebar() {
         this.sidebar = new Sidebar(this.db, this);
-        this.ele.prepend(this.sidebar.ele);
+        this.ele.prepend(this.sidebar.ele); // prepend is standard DOM API
     }
 
     private initializeSocket() {
@@ -90,16 +89,16 @@ export default class App {
         this.initializeNetwork();
         this.initializeMatching();
         this.initializeStore();
-        this.initializeEditor();
-        this.initializeSidebar();
+        // this.initializeEditor();
+        // this.initializeSidebar();
 
-        console.log("App initialized:", {
+        /*console.log("App initialized:", {
             db: this.db,
             net: this.net,
             match: this.match,
             editor: this.editor,
             sidebar: this.sidebar
-        });
+        });*/
     }
 
     private setupSocket() {
@@ -113,20 +112,20 @@ export default class App {
             this.handleSocketEvent('connect', 'connected');
             store.setNetworkStatus('connected');
         });
-        
+
         socket.on('disconnect', () => {
             this.handleSocketEvent('disconnect', 'disconnected');
             store.setNetworkStatus('disconnected');
         });
-        
+
         socket.on('snapshot', (snap: any) => this.handleSocketEvent('snapshot', 'connected', snap));
-        
+
         // Ensure plugin events are properly handled
         socket.on('plugin-status', (plugins: any) => {
             this.handleSocketPluginStatus(plugins);
             store.updatePluginStatus(plugins);
         });
-        
+
         socket.on('plugin-error', (pluginName: string, error: any) => {
             this.handleSocketPluginError(pluginName, error);
             store.logError({
@@ -135,7 +134,7 @@ export default class App {
                 timestamp: Date.now()
             });
         });
-        
+
         // Add listener for 'error' event to handle connection issues
         socket.on('error', (err: any) => {
             console.error('Socket error:', err);
@@ -194,14 +193,20 @@ export default class App {
 
     toggleDarkMode(): void {
         this.isDarkMode = !this.isDarkMode;
-        this.ele.toggleClass('dark-mode', this.isDarkMode);
-        this.ele.attr('data-theme', this.isDarkMode ? 'dark' : 'light');
+        this.ele.classList.toggle('dark-mode', this.isDarkMode); // Vanilla JS classList.toggle
+        this.ele.setAttribute('data-theme', this.isDarkMode ? 'dark' : 'light'); // Vanilla JS setAttribute
         localStorage.setItem('themePreference', this.isDarkMode ? 'dark' : 'light');
     }
 
     mount(container: HTMLElement | null): void {
+        const savedTheme = localStorage.getItem('themePreference') || 'dark';
+        this.ele = document.createElement('div'); // Vanilla JS element creation
+        this.ele.className = `container ${savedTheme === 'dark' ? 'dark-mode' : ''}`; // Vanilla JS className and string template
+        this.ele.setAttribute('data-theme', savedTheme); // Vanilla JS setAttribute
         if (container) {
-            container.appendChild(this.ele[0]);
+            container.appendChild(this.ele); // Vanilla JS appendChild
         }
+        this.initializeEditor();
+        this.initializeSidebar();
     }
 }

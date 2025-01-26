@@ -23,7 +23,7 @@ export interface ToolbarItem {
 }
 
 export interface EditorConfig {
-  ele: JQuery;
+  ele: HTMLElement;
   db: DB;
   getAwareness: () => Awareness;
   app: App;

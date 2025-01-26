@@ -1,4 +1,4 @@
-import { $ } from '../imports';
+import $ from 'jquery';
 import Editor from './editor'
 
 interface ToolbarItem {
@@ -18,6 +18,10 @@ export class ToolbarManager {
     { command: 'strikeThrough', icon: 'S', title: 'Strikethrough', action: (editor) => editor.formatText('strikeThrough') },
     { command: 'insertOrderedList', icon: '1.', title: 'Ordered List', action: (editor) => editor.formatText('insertOrderedList') },
     { command: 'insertUnorderedList', icon: '•', title: 'Unordered List', action: (editor) => editor.formatText('insertUnorderedList') },
+    { command: 'heading1', icon: 'H1', title: 'Heading 1', action: (editor) => editor.formatText('heading1') },
+    { command: 'heading2', icon: 'H2', title: 'Heading 2', action: (editor) => editor.formatText('heading2') },
+    { command: 'heading3', icon: 'H3', title: 'Heading 3', action: (editor) => editor.formatText('heading3') },
+    { command: 'insertCode', icon: '{}', title: 'Code Block', action: (editor) => editor.formatText('insertCode') },
     {
       command: 'insertLink',
       icon: '🔗',
@@ -46,7 +50,6 @@ export class ToolbarManager {
   }
 
   init(root: JQuery) {
-    this.render();
     root.append(this.render());
   }
 }

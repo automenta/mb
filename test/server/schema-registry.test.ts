@@ -1,4 +1,4 @@
-import { SchemaRegistry } from '../schema/schema-registry';
+import { SchemaRegistry } from '../../schema/schema-registry';
 import { describe, it, expect } from 'vitest';
 
 describe('SchemaRegistry', () => {

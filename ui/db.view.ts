@@ -77,6 +77,15 @@ export default class DBView {
         $tbody.append(filteredPages.map(this.createRow.bind(this)).toArray());
     }
 
+    addObject(obj: any) {
+        this.handleNewObject(obj);
+    }
+
+    handleNewObject(obj: any) {
+        this.db.index.set(obj.id, obj);
+        this.updateTable();
+    }
+
     private createRow(page: any): JQuery {
         const $row = $('<tr>');
         $row.append($('<td>').text(page.pageId));

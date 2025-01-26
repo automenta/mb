@@ -12,10 +12,9 @@
     "dump": "git ls-files | xargs -I{} sh -c 'echo -e \"===== {} =====\\n\"; cat {}; echo -e \"\\n\"'",
     "dumpclip": "npm run dump | xclip -i",
     "test": "vitest --run",
-    "test:server": "vitest --run --config vitest.config.js",
-    "test:browser": "vitest --run --config vitest.browser.config.ts",
+    "test:server": "vitest --run --config vitest.server.config.ts",
+    "test:ui": "vitest --run --config vitest.ui.config.ts",
     "test:all": "npm run test:server && npm run test:browser",
-    "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
@@ -28,10 +27,12 @@
     "@libp2p/peer-id-factory": "latest",
     "@libp2p/webrtc-star": "latest",
     "@libp2p/websockets": "latest",
-    "@testing-library/dom": "latest",
     "@tiptap/core": "latest",
+    "@vitest/browser": "latest",
     "bittorrent-dht": "latest",
+    "chart.js": "latest",
     "cors": "latest",
+    "esbuild": "latest",
     "express": "latest",
     "ipfs-core": "latest",
     "jquery": "latest",
@@ -47,6 +48,10 @@
     "yjs": "latest"
   },
   "devDependencies": {
+    "@playwright/test": "latest",
+    "@testing-library/dom": "latest",
+    "@testing-library/react": "latest",
+    "@testing-library/jest-dom": "latest",
     "@types/express": "latest",
     "@types/jquery": "latest",
     "@types/node": "latest",
@@ -54,14 +59,14 @@
     "@types/ws": "latest",
     "@vitest/coverage-v8": "latest",
     "@vitest/ui": "latest",
-    "async-exit-hook": "^2.0.1",
-    "fake-indexeddb": "^6.0.0",
-    "happy-dom": "latest",
-    "jsdom": "^26.0.0",
+    "async-exit-hook": "latest",
+    "fake-indexeddb": "latest",
+    "jsdom": "latest",
     "localstorage-ponyfill": "latest",
+    "playwright": "latest",
     "vite": "latest",
-    "vite-plugin-node-polyfills": "^0.23.0",
+    "vite-plugin-node-polyfills": "latest",
     "vitest": "latest",
-    "wait-port": "^1.1.0"
+    "wait-port": "latest"
   }
 }
