@@ -1,6 +1,9 @@
 import DB from './db';
+import MatchingEngine from './matching-engine';
+import { ReplyManager } from './reply-manager';
 
 interface ProcessingState {
+    pageId: string;
     startTime: number;
 }
 
@@ -14,15 +17,21 @@ export default class ProcessingQueueManager {
     db: DB;
     matchingEngine: MatchingEngine;
     processingQueue: Map<string, ProcessingState> = new Map();
+    replyManager: ReplyManager; // Add ReplyManager
     lastProcessed: Map<string, number> = new Map();
     processInterval: number = 5000;
     processTimer: NodeJS.Timeout | null = null;
     workerCapacity: number = 0.5;
 
+
     constructor(db: DB, matchingEngine: MatchingEngine) {
         this.db = db;
         this.matchingEngine = matchingEngine;
+        this.processingQueue = new Map();
+        this.lastProcessed = new Map();
+        this.replyManager = new ReplyManager(db); // Initialize ReplyManager
     }
+
 
     /**
      * Main processing loop executed periodically.
@@ -167,6 +176,14 @@ export default class ProcessingQueueManager {
             const match = await this._findMatchesForPage(pageId, page, otherPage, properties, isQuery); // Pass isQuery flag
             if (match) {
                 matches.push(match);
+                if (isQuery) {
+                    console.log(`Match found for query page ${pageId} with page ${otherPage.id}`);
+                    // Create a reply object for query match
+                    const reply = this.replyManager.createReply(pageId, `Match for query: ${page.name}`);
+                    if (reply) {
+                        reply.setText(`Match found with page: ${otherPage.name} (ID: ${otherPage.id})`);
+                    }
+                }
             }
         }
 
