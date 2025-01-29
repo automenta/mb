@@ -159,11 +159,12 @@ export default class ProcessingQueueManager {
         const page = this.db.get(pageId);
         if (!page) return matches;
 
+        const isQuery = page.getMetadata('isQuery') === true; // Example: Check metadata for 'isQuery' flag
         const content = page.text.toString();
         const properties = this.matchingEngine.extractProperties(content);
 
-        for (const otherPage of this.db.list()) {
-            const match = await this._findMatchesForPage(pageId, page, otherPage, properties);
+        for (const otherPage of this.db.list()) { // Iterate through all pages in DB
+            const match = await this._findMatchesForPage(pageId, page, otherPage, properties, isQuery); // Pass isQuery flag
             if (match) {
                 matches.push(match);
             }
@@ -178,10 +179,11 @@ export default class ProcessingQueueManager {
      * @param page - NObject of the primary page.
      * @param otherPage - NObject of the page to compare with.
      * @param properties - Properties of the primary page.
+     * @param isQuery - Flag indicating if the primary page is a query.
      * @returns MatchResult if a match is found above the similarity threshold, null otherwise.
      * @private
      */
-    private async _findMatchesForPage(pageId: string, page: any, otherPage: any, properties: PageProperties): Promise<MatchResult | null> { // Made private
+    private async _findMatchesForPage(pageId: string, page: any, otherPage: any, properties: PageProperties, isQuery: boolean): Promise<MatchResult | null> { // Made private
         if (otherPage.id === pageId) return null;
 
         const otherContent = otherPage.text.toString();
@@ -192,7 +194,8 @@ export default class ProcessingQueueManager {
         if (similarity > this.matchingEngine.similarityThreshold) {
             return {
                 pageId: otherPage.id,
-                similarity,
+                similarity: similarity,
+                queryId: isQuery ? pageId : undefined, // Conditionally set queryId
                 timestamp: Date.now()
             };
         }
