@@ -12,7 +12,7 @@ export default class Editor {
     private readonly doc: Y.Doc;
     private readonly config: EditorConfig;
     private readonly toolbar: ToolbarManager;
-    private readonly metadata: MetadataManager;
+    private readonly meta MetadataManager;
     private readonly awareness: AwarenessManager;
     public readonly rootElement: HTMLElement;
     private tagSelector: TagSelector;
