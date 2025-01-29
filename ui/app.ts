@@ -10,6 +10,7 @@ import Matching from '../src/matching';
 import Network from '../src/net';
 import { initializeStore } from './store';
 import { Awareness } from 'y-protocols/awareness';
+import ViewManager from './view-manager';
 
 class ThemeManager {
     isDarkMode: boolean;
@@ -47,17 +48,19 @@ export default class App {
     db: DB | null = null;
     net: Network | null = null; // Ensure net is typed as Network
     match: Matching | null = null;
-    editor: Editor | null = null;
-    sidebar: Sidebar | null = null;
-    public store: ReturnType<typeof initializeStore>;
+    public store: ReturnType<typeof initializeStore>>;
     public ele: HTMLElement;
-    themeManager: ThemeManager; // Add ThemeManager instance
+    themeManager: ThemeManager;
+    private viewManager: ViewManager;
 
     constructor(channel: string, rootElement: HTMLElement) {
         this.channel = channel;
         this.ele = rootElement;
         this.store = initializeStore();
-        this.themeManager = new ThemeManager(this.ele); // Initialize ThemeManager
+        this.themeManager = new ThemeManager(this.ele);
+
+        this.viewManager = new ViewManager(this);
+        this.viewManager.registerViews();
 
         this.socket = io(); // Initialize socket connection
 
@@ -81,14 +84,7 @@ export default class App {
         this.net = new Network(channel, this.db);
         this.match = new Matching(this.db, this.net);
 
-        // Initialize UI components
-        this.sidebar = new Sidebar(this, $('#sidebar')[0]);
-        this.editor = new Editor(this, $('#editor')[0]);
 
-        // Mount views
-        new DBView($('#db-view')[0], this.db).render();
-        new NetView($('#net-view'), this.net).render();
-        new MatchView($('#match-view')[0], this.match).render();
 
 
         // Bind network to editor - after editor and network are initialized - ensure this.net is not null

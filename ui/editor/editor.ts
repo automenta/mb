@@ -1,11 +1,11 @@
 import { $, Y, Awareness, NObject, App } from '../imports';
 import { EditorConfig } from '../types';
-import TagSelector from './tag-selector';
 import type { Doc as YDoc } from 'yjs'; // Import Doc type
 import { ToolbarManager } from './toolbar-manager';
 import { MetadataManager } from './metadata-manager';
 import { AwarenessManager } from './awareness-manager';
 import EditorCore from './editor-core';
+import UIBuilder from './ui-builder';
 
 export default class Editor {
     public editorCore: EditorCore;
@@ -105,55 +105,39 @@ export default class Editor {
 
 
     private initUI(): void {
-        // this.rootElement.innerHTML = ''; // Replace empty() with innerHTML = '' - REMOVE THIS LINE
-        // console.log('Editor.initUI: rootElement:', this.rootElement);
-        this.rootElement.append(this.renderUI());
-        // console.log('Editor.initUI: rootElement.innerHTML after append:', this.rootElement.innerHTML);
-        // console.log('Editor.initUI: contentEditorElement:', this.rootElement.querySelector('.content-editor'));
+        const uiBuilder = new UIBuilder(this.config.isReadOnly ?? false);
+        const editorContainer = uiBuilder.createEditorContainer();
 
-        this.bindEditorEvents();
-        this.toolbar.init($(this.rootElement).find('.editor-container')); //toolbar.init expects JQuery element
+        this.rootElement.append(editorContainer);
 
-        // Render metadata after binding events
-        if (this.currentObject) {
-            // console.log('metadataPanel:', this.rootElement.querySelector('.metadata-panel')); // Debug log - THIS LINE IS NOW REDUNDANT
-            const metadataPanel = this.rootElement.querySelector('.metadata-panel');
-            if (!metadataPanel) {
-                console.error('Metadata panel not found!');
-                return; // Exit if metadataPanel is not found
-            }
-            metadataPanel.innerHTML = ''; // Clear existing content
-            metadataPanel.append(this.currentObject instanceof Y.Map ? document.createElement('div') : this.metadata.renderMetadataPanel(this.currentObject)[0]); // Append metadata content
+        this.bindEvents();
+        this.toolbar.init($(this.rootElement).find('.editor-container'));
+
+        this.renderMetadataPanel();
+    }
+
+    private renderMetadataPanel(): void {
+        const metadataPanel = this.rootElement.querySelector('.metadata-panel');
+        if (!metadataPanel) {
+            console.error('Metadata panel not found!');
+            return;
+        }
+        metadataPanel.innerHTML = '';
+        if (this.currentObject && !(this.currentObject instanceof Y.Map)) {
+            metadataPanel.append(this.metadata.renderMetadataPanel(this.currentObject)[0]);
         }
     }
-    private renderUI(): HTMLElement {
-        const editorContainer = document.createElement('div');
-        editorContainer.className = 'editor-container';
 
-        const titleEditor = document.createElement('input');
-        titleEditor.type = 'text';
-        titleEditor.className = 'document-title';
-        editorContainer.append(titleEditor);
+    private bindEvents(): void {
+        const contentEditor = this.rootElement.querySelector('.content-editor');
+        contentEditor?.addEventListener('input', () => {
+            this.awareness.updateLocalCursor();
+            this.saveDocument();
+        });
+        contentEditor?.addEventListener('keydown', this.handleShortcuts.bind(this));
 
-        const contentEditor = document.createElement('div');
-        contentEditor.className = 'content-editor';
-        contentEditor.contentEditable = 'true';
-        editorContainer.append(contentEditor);
-
-        const metadataPanel = document.createElement('div');
-        metadataPanel.className = 'metadata-panel';
-        metadataPanel.textContent = 'Metadata Panel Test';
-        editorContainer.append(metadataPanel);
-
-        const tagSelectorContainer = document.createElement('div');
-        tagSelectorContainer.className = 'tag-selector-container';
-        editorContainer.append(tagSelectorContainer);
-        this.tagSelector = new TagSelector(tagSelectorContainer, 'page'); // Pass schemaName 'page'
-        this.tagSelector.addTag('Category 1', 'Tag A');
-        this.tagSelector.addTag('Category 1', 'Tag B');
-        this.tagSelector.addTag('Category 2', 'Tag C');
-
-        return editorContainer;
+        const titleEditor = this.rootElement.querySelector('.document-title');
+        titleEditor?.addEventListener('input', this.handleTitleChange.bind(this));
     }
 
     private bindEditorEvents(): void {
@@ -163,6 +147,185 @@ export default class Editor {
             this.saveDocument(); // Call saveDocument on input event
         });
         contentEditor?.addEventListener('keydown', this.handleShortcuts.bind(this));
+
+        const titleEditor = this.rootElement.querySelector('.document-title');
+        titleEditor?.addEventListener('input', this.handleTitleChange.bind(this));
+    }
+
+    private handleTitleChange(event: Event): void {
+        const titleEditor = event.target as HTMLInputElement;
+        const newTitle = titleEditor.value;
+        if (this.currentObject) {
+            if (this.currentObject instanceof NObject) {
+                this.currentObject.name = newTitle;
+                this.config.app.store.setCurrentObject(this.currentObject);
+            } else if (this.currentObject instanceof Y.Map) {
+                this.currentObject.set('name', newTitle);
+            }
+        }
+    }
+
+    private initNetwork(): void {
+        if (this.config.net) {
+            this.config.net.bindDocument(this.doc);
+            this.awareness.awareness.setLocalStateField('user', this.config.app.user());
+        }
+    }
+
+    private handleShortcuts(event: KeyboardEvent): void {
+        if (event.ctrlKey || event.metaKey) {
+            switch (event.key.toLowerCase()) {
+                case 's':
+                    event.preventDefault();
+                    this.saveDocument();
+                    break;
+            }
+        }
+    }
+
+    public saveDocument(): void {
+        if (this.currentObject && this.config.db) {
+            this.saveCurrentObject();
+            this.metadata.showToast('Document saved');
+        }
+    }
+
+    private saveCurrentObject() {
+        if (this.currentObject instanceof Y.Map) {
+            this.config.db.doc.transact(() => {
+                const content = (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML;
+                (this.currentObject as Y.Map<any>).set('content', new Y.Text(content));
+                const tags = this.tagSelector.getTags();
+                (this.currentObject as Y.Map<any>).set('tags', tags);
+            });
+        } else if (this.currentObject instanceof NObject) {
+            const content = (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML;
+            this.currentObject.text = content;
+            this.currentObject.tags = this.tagSelector.getTags();
+            this.config.db.persistDocument(this.currentObject);
+        }
+    }
+
+    public loadDocument(object: NObject | Y.Map<any>): void {
+        this.currentObject = object;
+        if (object instanceof Y.Map) {
+            const title = object.get('name') || 'Untitled';
+            const content = object.get('content');
+            const contentEditor = this.rootElement.querySelector('.content-editor') as HTMLElement;
+            const titleEditor = this.rootElement.querySelector('.document-title') as HTMLInputElement;
+
+            if (titleEditor) titleEditor.value = title;
+
+            if (content instanceof Y.Text) {
+                contentEditor.innerHTML = content.toString();
+            } else if (content !== null && content !== undefined) {
+                contentEditor.innerHTML = content.toString();
+            } else {
+                if (!object.has('content')) {
+                    object.set('content', new Y.Text());
+                }
+                contentEditor.innerHTML = '';
+            }
+
+            if (titleEditor) titleEditor.value = title;
+
+            if (content instanceof Y.Text) {
+                contentEditor.innerHTML = content.toString();
+            } else {
+                if (!object.has('content')) {
+                    object.set('content', new Y.Text());
+                }
+                contentEditor.innerHTML = '';
+            }
+            const tags = object.get('tags');
+            if (tags) {
+                this.tagSelector.setTags(tags);
+            }
+        } else if (object instanceof NObject) {
+            (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML = object.text.toString();
+            (this.rootElement.querySelector('.document-title') as HTMLInputElement).value = object.name;
+            this.metadata.renderMetadataPanel(object);
+        } else {
+            (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML = '';
+            this.metadata.clearMetadataPanel();
+        }
+        this.updatePrivacy();
+    }
+
+    public togglePrivacy(): void {
+        this.isPublic = !this.isPublic;
+        this.updatePrivacy();
+        this.metadata.updatePrivacyIndicator(this.isPublic);
+    }
+
+    private updatePrivacy() {
+        if (this.currentObject instanceof Y.Map) {
+            this.currentObject.set('public', this.isPublic);
+        } else if (this.currentObject) {
+            this.currentObject.public = this.isPublic;
+        }
+
+    }
+
+    public clearIfCurrent(objectId: string): void {
+        const currentId = this.currentObject instanceof Y.Map ?
+            this.currentObject.get('id') :
+            this.currentObject?.id;
+
+        if (currentId === objectId) {
+            this.clear();
+        }
+    }
+
+    public clear(): void {
+        this.currentObject = undefined;
+        (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML = '';
+        this.metadata.clearMetadataPanel();
+    }
+
+    public loadSnapshot(snapshot: Uint8Array): void {
+        Y.applyUpdate(this.doc, snapshot);
+        this.metadata.showToast('State restored');
+    }
+
+    public onUpdate(callback: () => void): void {
+        this.doc.on('update', callback);
+    }
+
+    public getTestConfig(): Partial<EditorConfig> {
+        return {
+            db: this.config.db,
+            networkStatusCallback: this.config.networkStatusCallback,
+            getAwareness: () => this.config.getAwareness(),
+            app: this.config.app,
+            currentObject: this.currentObject
+        };
+    }
+}
+
+// Augment EditorConfig interface with network capabilities and other missing properties
+declare module '../types' {
+    interface EditorConfig {
+        net?: {
+            bindDocument: (doc: Y.Doc) => void;
+            syncAwareness: (state: Awareness) => void;
+        };
+        currentObject?: NObject | Y.Map<any>;
+        getAwareness: () => Awareness;
+        app: App;
+        ydoc: YDoc;
+    }
+}
+
+
+    }
+
+
+
+
+
+        return editorContainer;
+    }
 
         const titleEditor = this.rootElement.querySelector('.document-title');
         titleEditor?.addEventListener('input', this.handleTitleChange.bind(this));
