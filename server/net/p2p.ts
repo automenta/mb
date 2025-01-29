@@ -3,9 +3,6 @@ import { bootstrap } from '@libp2p/bootstrap';
 import { kadDHT } from '@libp2p/kad-dht';
 import { webRTCStar } from '@libp2p/webrtc-star';
 import { WebSocketServer, RawData } from 'ws';
-import { createHash } from 'crypto';
-import { createServer } from 'https';
-import { readFileSync } from 'fs';
 import * as Y from 'yjs';
 import { WebrtcProvider } from 'y-webrtc';
 import { GossipSub } from '@chainsafe/libp2p-gossipsub';
@@ -15,7 +12,6 @@ import { EventEmitter } from 'events';
 import { noise } from '@chainsafe/libp2p-noise';
 import { mplex } from '@libp2p/mplex';
 import { PeerId } from '@libp2p/interface-peer-id';
-import type { Libp2pOptions } from 'libp2p';
 import { pino } from 'pino'; // Import pino logger
 
 interface P2PNodeOptions {
