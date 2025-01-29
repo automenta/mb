@@ -93,61 +93,36 @@ export default class App {
     private setupSocketListeners(socket: Socket): void {
         if (!socket) return;
 
-        socket.on('connect', () => {
-            this.handleSocketEvent('connect', 'connected');
-            this.setNetworkStatus(true);
-        });
-        socket.on('disconnect', () => {
-            this.handleSocketEvent('disconnect', 'disconnected');
-            this.setNetworkStatus(false);
-        });
-        socket.on('snapshot', (snap: any) => this.handleSocketEvent('snapshot', 'connected', snap));
-        socket.on('plugin-status', (plugins: any) => {
-            this.handleSocketPluginStatus(plugins);
-            store.updatePluginStatus(plugins);
-        });
-        socket.on('plugin-error', (pluginName: string, error: any) => {
-            this.handleSocketPluginError(pluginName, error);
-            store.logError({ pluginName, error, timestamp: Date.now() });
-        });
-        socket.on('error', (err: any) => {
-            console.error('Socket error:', err);
-            store.logError({ pluginName: 'socket.io', error: err, timestamp: Date.now() });
-        });
+        socket.onAny((event, ...args) => this.handleSocketMessage(event, ...args));
     }
 
-    private handleSocketMessage(type: 'event' | 'plugin-status' | 'plugin-error', event: string, status: 'connected' | 'disconnected' | null, data?: any, pluginName?: string, error?: any): void {
-        switch (type) {
-            case 'event':
-                console.log(`Socket ${event}:`, data);
-                this.setNetworkStatus(status === 'connected');
-                if (event === 'snapshot' && data) {
-                    this.editor?.loadSnapshot(data);
-                }
+    private handleSocketMessage(event: string, data?: any): void {
+        switch (event) {
+            case 'connect':
+                console.log('Socket connected');
+                this.setNetworkStatus(true);
+                break;
+            case 'disconnect':
+                console.log('Socket disconnected');
+                this.setNetworkStatus(false);
+                break;
+            case 'snapshot':
+                console.log('Socket snapshot:', data);
+                this.editor?.loadSnapshot(data);
                 break;
             case 'plugin-status':
                 console.log('Plugin status:', data);
                 store.updatePluginStatus(data);
                 break;
             case 'plugin-error':
-                const pluginNameStr = pluginName || 'unknown-plugin';
-                console.error(`Plugin ${pluginNameStr} error:`, error);
-                store.logError({ pluginName: pluginNameStr, error, timestamp: Date.now() });
+                console.error('Plugin error:', data);
+                store.logError(data); // Assuming 'data' is { pluginName, error, timestamp }
                 break;
+            default:
+                console.log('Socket event:', event, data);
         }
     }
 
-    private handleSocketEvent(event: 'connect' | 'disconnect' | 'snapshot', status: 'connected' | 'disconnected', data?: any): void {
-        this.handleSocketMessage('event', event, status, data);
-    }
-
-    private handleSocketPluginStatus(plugins: any): void {
-        this.handleSocketMessage('plugin-status', '', null, plugins);
-    }
-
-    private handleSocketPluginError(pluginName: string, error: any): void {
-        this.handleSocketMessage('plugin-error', '', null, null, pluginName, error);
-    }
 
     private handleStoreUpdate(state: AppState): void {
         state.currentObject && this.editor?.loadDocument(state.currentObject);
@@ -157,7 +132,10 @@ export default class App {
     }
 
     private showErrors(errors: Array<{ pluginName: string; error: any; timestamp: number }>): void {
-        const errorContainer = document.getElementById('error-container');
+        this.updateVisibility('error-container', errors.length > 0);
+
+        // No need to check again if errorContainer exists, as updateVisibility handles it
+        const errorContainer = document.getElementById('error-container')!;
         const errorList = document.getElementById('error-list');
         if (errorContainer && errorList) {
             errorList.innerHTML = '';
@@ -166,26 +144,32 @@ export default class App {
                 errorItem.textContent = `${error.pluginName}: ${error.error}`;
                 errorList.appendChild(errorItem);
             });
-            errorContainer.style.display = errors.length > 0 ? 'block' : 'none';
         }
     }
 
     private showPluginStatus(plugins: Record<string, boolean>): void {
-        const pluginStatusContainer = document.getElementById('plugin-status-container');
+        this.updateVisibility('plugin-status-container', Object.keys(plugins).length > 0);
+
+        // No need to check again if pluginStatusContainer exists, updateVisibility handles it
+        const pluginStatusContainer = document.getElementById('plugin-status-container')!;
         const pluginStatusList = document.getElementById('plugin-status-list');
         pluginStatusContainer && pluginStatusList && (pluginStatusList.innerHTML = '', Object.entries(plugins).forEach(([pluginName, status]) => {
             const statusIcon = status ? '🟢' : '🔴';
             const pluginItem = document.createElement('li');
             pluginItem.textContent = `${pluginName}: ${statusIcon}`;
             pluginStatusList.appendChild(pluginItem);
-        }), pluginStatusContainer.style.display = 'block');
+        }));
+        // }, pluginStatusContainer.style.display = 'block'); // Removed redundant style setting, visibility is handled above
     }
 
     private showConnectionWarning(show: boolean): void {
-        const warningDiv = document.getElementById('connection-warning');
-        warningDiv && (warningDiv.style.display = show ? 'block' : 'none');
+        this.updateVisibility('connection-warning', show);
     }
 
+    private updateVisibility(elementId: string, visible: boolean): void {
+        const element = document.getElementById(elementId);
+        element && (element.style.display = visible ? 'block' : 'none');
+    }
     user(): UserInfo {
         return this.net?.user() ?? { userId: '', name: '', color: '' };
     }
