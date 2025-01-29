@@ -15,9 +15,6 @@ import MeView from './me.view';
 import NetView from './net.view';
 import MatchingView from './match.view';
 
-// Abstract Base Class for Components
-abstract class Component<T extends HTMLElement = HTMLElement> {
-    abstract mount(parent: JQuery<HTMLElement>): void; }
 
 // Theme Management Class
 class ThemeManager {
@@ -47,7 +44,7 @@ class ThemeManager {
 }
 
 
-export default class App extends Component {
+export default class App {
     private readonly channel: string;
     private socket: Socket;
     db: DB | null = null;
@@ -62,7 +59,6 @@ export default class App extends Component {
 
 
     constructor(userID: string, channel: string) {
-        super();
         this._userID = userID;
         this.channel = channel;
         this.ele = document.createElement('div');
@@ -132,8 +128,9 @@ export default class App extends Component {
             networkStatusCallback: this.setNetworkStatus.bind(this),
             isReadOnly: this.isReadOnlyDocument(),
             ydoc: this.db.doc,
-        }
+        });
     }
+
     private initializeSocket(): void {
         this.setupSocketListeners(this.socket);
     }
@@ -233,7 +230,7 @@ export default class App extends Component {
         this.initializeSocket();
         this.store = initializeStore(this.db!);
 
-        this.components.forEach(component => component.mount( $(this.ele) );
+        this.components.forEach(component => component.mount( $(this.ele) ));
         this.loadUserProfile();
     }
 
