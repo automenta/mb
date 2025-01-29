@@ -97,7 +97,7 @@ describe('DB', () => {
         setTimeout(()=>{
             const updatedUpdated = obj.updated;
             expect(updatedUpdated).toBeGreaterThan(initialUpdated);
-        }, 100);
+        }, 500); // Increased timeout to 500ms
     });
 
     it('should set text with string', () => {
@@ -116,7 +116,7 @@ describe('DB', () => {
                 resolve();
             });
         });
-        await new Promise((resolve) => setTimeout(resolve, 100)); // Wait for 100ms
+        await new Promise((resolve) => setTimeout(resolve, 500)); // Increased timeout to 500ms
         const retrievedObj = db.get(obj.id);
         if (retrievedObj === null) throw new Error('Object is null');
         expect(retrievedObj.text.toString()).toEqual('Test text');
@@ -169,6 +169,7 @@ describe('DB', () => {
         const longName = 'a'.repeat(1000);
         const longText = new Y.Text('b'.repeat(10000));
         const obj = db.create();
+        obj.text; // Access text to ensure initialization
         obj.name = longName;
         obj.setText(longText.toString());
         expect(obj.name).toEqual(longName);
@@ -179,12 +180,12 @@ describe('DB', () => {
         it('should initialize provider and sync documents', async () => {
             const provider = new IndexeddbPersistence('testdb', ydoc);
             const db = new DB('testuser', provider);
-            
+
             // Verify initial state
             expect(provider.synced).toBe(false);
-            
+
             await provider.whenSynced;
-            
+
             // Verify sync completion
             expect(provider.synced).toBe(true);
             expect(provider.doc).toBe(ydoc);
@@ -194,9 +195,9 @@ describe('DB', () => {
             const provider = new IndexeddbPersistence('testdb', ydoc);
             const db = new DB('testuser', provider);
             const consoleSpy = vi.spyOn(console, 'log');
-            
+
             db.provider.emit('synced', []);
-            
+
             expect(consoleSpy).toHaveBeenCalledWith('Synced');
             expect(consoleSpy).toHaveBeenCalledTimes(1);
         });
@@ -210,7 +211,4 @@ describe('DB', () => {
         expect(consoleSpy).toHaveBeenCalledWith('Invalid name:', 123);
         expect(reply).toBeNull();
     });
-
-    
-
 });

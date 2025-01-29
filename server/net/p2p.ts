@@ -19,7 +19,7 @@ interface P2PNodeOptions {
     bootstrapList?: string[];
 }
 
-class P2PNode extends EventEmitter {
+export default class P2PNode extends EventEmitter { // Changed to default export
     private node: Libp2p | undefined;
     private dht: MainlineDHT;
     private wss: WebSocketServer;
