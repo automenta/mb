@@ -9,14 +9,40 @@ import { EditorConfig, UserInfo } from './types';
 import { io, Socket } from 'socket.io-client';
 import '../ui/css/app.css';
 
-const initializeComponent = (component: any, ...args: any[]): void => {
-    if (component === null) {
-        throw new Error(`Component not initialized`);
-    }
-    component.apply(null, args);
-};
+// Abstract Component Base Class
+abstract class Component {
+    abstract mount(container: HTMLElement | null): void;
+}
 
-export default class App {
+// Theme Manager Class
+class ThemeManager {
+    isDarkMode: boolean;
+    appElement: HTMLElement;
+
+    constructor(appElement: HTMLElement) {
+        this.appElement = appElement;
+        this.isDarkMode = localStorage.getItem('themePreference') === 'dark';
+        this.applyTheme();
+    }
+
+    toggleTheme(): void {
+        this.isDarkMode = !this.isDarkMode;
+        this.applyTheme();
+        localStorage.setItem('themePreference', this.isDarkMode ? 'dark' : 'light');
+    }
+
+    private applyTheme(): void {
+        this.appElement.classList.toggle('light-mode', !this.isDarkMode);
+        this.appElement.setAttribute('data-theme', this.isDarkMode ? 'dark' : 'light');
+    }
+
+    get currentTheme(): 'dark' | 'light' {
+        return this.isDarkMode ? 'dark' : 'light';
+    }
+}
+
+
+export default class App extends Component {
     private readonly channel: string;
     private socket: Socket;
     db: DB | null = null;
@@ -24,16 +50,19 @@ export default class App {
     match: Matching | null = null;
     editor: Editor | null = null;
     sidebar: Sidebar | null = null;
-    isDarkMode: boolean;
     private _userID: string;
     public store: ReturnType<typeof initializeStore>;
     public ele: HTMLElement;
+    private themeManager: ThemeManager; // Theme Manager instance
+    private components: Component[] = []; // Component registry
+
 
     constructor(userID: string, channel: string) {
+        super(); // Call Component constructor
         this._userID = userID;
         this.channel = channel;
-        this.isDarkMode = localStorage.getItem('themePreference') === 'dark';
         this.ele = document.createElement('div');
+        this.themeManager = new ThemeManager(this.ele); // Initialize ThemeManager
         this.socket = io();
         this.initializeDB(userID);
         this.store = initializeStore(this.db!);
@@ -42,6 +71,7 @@ export default class App {
         if (!userID || !channel)
             throw new Error('Invalid user ID or channel ID');
     }
+
 
     private setNetworkStatus(status: boolean): void {
         store.setNetworkStatus(status ? 'connected' : 'disconnected');
@@ -92,7 +122,6 @@ export default class App {
 
     private setupSocketListeners(socket: Socket): void {
         if (!socket) return;
-
         socket.onAny((event, ...args) => this.handleSocketMessage(event, ...args));
     }
 
@@ -134,7 +163,6 @@ export default class App {
     private showErrors(errors: Array<{ pluginName: string; error: any; timestamp: number }>): void {
         this.updateVisibility('error-container', errors.length > 0);
 
-        // No need to check again if errorContainer exists, as updateVisibility handles it
         const errorContainer = document.getElementById('error-container')!;
         const errorList = document.getElementById('error-list');
         if (errorContainer && errorList) {
@@ -150,7 +178,6 @@ export default class App {
     private showPluginStatus(plugins: Record<string, boolean>): void {
         this.updateVisibility('plugin-status-container', Object.keys(plugins).length > 0);
 
-        // No need to check again if pluginStatusContainer exists, updateVisibility handles it
         const pluginStatusContainer = document.getElementById('plugin-status-container')!;
         const pluginStatusList = document.getElementById('plugin-status-list');
         pluginStatusContainer && pluginStatusList && (pluginStatusList.innerHTML = '', Object.entries(plugins).forEach(([pluginName, status]) => {
@@ -159,7 +186,6 @@ export default class App {
             pluginItem.textContent = `${pluginName}: ${statusIcon}`;
             pluginStatusList.appendChild(pluginItem);
         }));
-        // }, pluginStatusContainer.style.display = 'block'); // Removed redundant style setting, visibility is handled above
     }
 
     private showConnectionWarning(show: boolean): void {
@@ -170,6 +196,7 @@ export default class App {
         const element = document.getElementById(elementId);
         element && (element.style.display = visible ? 'block' : 'none');
     }
+
     user(): UserInfo {
         return this.net?.user() ?? { userId: '', name: '', color: '' };
     }
@@ -179,25 +206,33 @@ export default class App {
     }
 
     toggleDarkMode(): void {
-        this.isDarkMode = !this.isDarkMode;
-        this.ele.classList.toggle('light-mode', !this.isDarkMode);
-        this.ele.setAttribute('data-theme', this.isDarkMode ? 'dark' : 'light');
-        localStorage.setItem('themePreference', this.isDarkMode ? 'dark' : 'light');
+        this.themeManager.toggleTheme();
     }
 
     mount(container: HTMLElement | null): void {
-        const savedTheme = localStorage.getItem('themePreference') || 'dark';
-        this.ele.className = `container ${savedTheme === 'dark' ? 'dark-mode' : ''}`;
-        this.ele.setAttribute('data-theme', savedTheme);
+        this.ele.className = `container ${this.themeManager.currentTheme === 'dark' ? 'dark-mode' : ''}`;
+        this.ele.setAttribute('data-theme', this.themeManager.currentTheme);
         container?.appendChild(this.ele);
+
+        // Initialize and register components
         this.initializeDB(this._userID);
         this.initializeNetwork();
         this.initializeMatching();
-        this.loadUserProfile();
         this.initializeEditor();
         this.initializeSidebar();
-        this.store = initializeStore(this.db!);
         this.initializeSocket();
+        this.store = initializeStore(this.db!);
+
+        this.components = [ // Register components for easier management
+            this.sidebar!,
+            this.editor!,
+            // ... other components if we add more
+        ];
+
+        // Mount components
+        this.components.forEach(component => component.mount(this.ele));
+
+        this.loadUserProfile();
     }
 
     private isReadOnlyDocument(): boolean {
