@@ -163,6 +163,18 @@ class Network {
         }
     }
 
+    async enableEncryption(): Promise<void> {
+      // Stub for enabling end-to-end encryption
+      console.log('Enabling end-to-end encryption... (not implemented yet)');
+      // Future implementation will handle key exchange and message encryption/decryption
+    }
+
+    async enableLibp2pDiscovery(): Promise<void> {
+      // Stub for enabling libp2p peer discovery
+      console.log('Enabling libp2p peer discovery... (not implemented yet)');
+      // Future implementation will integrate libp2p for peer discovery
+    }
+
     getNetworkStats() {
         return {
             ...this.metrics,
