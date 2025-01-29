@@ -16,6 +16,7 @@ import { noise } from '@chainsafe/libp2p-noise';
 import { mplex } from '@libp2p/mplex';
 import { PeerId } from '@libp2p/interface-peer-id';
 import type { Libp2pOptions } from 'libp2p';
+import { pino } from 'pino'; // Import pino logger
 
 interface P2PNodeOptions {
     peerId: PeerId;
@@ -89,6 +90,7 @@ class P2PNode extends EventEmitter {
             "/dns4/bootstrap.libp2p.io/tcp/443/wss/p2p-webrtc-star/",
             "/dns4/bootstrap.libp2p.io/tcp/443/wss/p2p-webrtc-star/"
         ];
+        const logger = pino(); // Create pino logger instance
 
         return await createLibp2p({
             addresses: {
@@ -110,7 +112,7 @@ class P2PNode extends EventEmitter {
             ],
             dht: kadDHT(),
             pubsub: new GossipSub({
-                logger: console,
+                logger: logger, // Use pino logger
                 // Additional configuration if necessary
             }),
         });

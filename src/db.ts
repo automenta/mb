@@ -6,6 +6,7 @@ import {ReplyManager} from './reply-manager';
 import ConfigManager from './config-manager';
 import { PersistenceManager } from './persistence-manager';
 import Network from './net';
+import { events } from './events'; // Import events
 
 export default class DB {
   readonly doc: Y.Doc;
@@ -28,6 +29,11 @@ export default class DB {
     this.replyManager = new ReplyManager(this);
     this.configManager = new ConfigManager(this.doc); // Added
     this.persistenceManager = new PersistenceManager(this.doc); // Added
+
+    this.provider.on('synced', () => { // Listen for 'synced' event
+      console.log('Synced');
+      events.emit('db-synced'); // Emit a 'db-synced' event
+    });
 
 
     // Initialize Yjs types
@@ -57,7 +63,7 @@ export default class DB {
     get(id: string): NObject | null {
         const objectId = this.index.get(id);
         if (!objectId) return null;
-    
+
         const obj = new NObject(this.doc, objectId);
         obj.loadContent(); // Ensure content is loaded
         return obj;
@@ -85,12 +91,12 @@ export default class DB {
       // Cleanup metadata and references
       const metadataKeys = obj.getMetadataKeys();
       metadataKeys.forEach(key => obj.setMetadata(key, null));
-      
+
       // Cleanup awareness state if exists
       if (this.provider.awareness) {
         this.provider.awareness.setLocalState(null);
       }
-      
+
       // Cleanup any related network connections
       if (this.net) {
         this.net.unshareObject(id);
@@ -118,7 +124,7 @@ export default class DB {
     this.query()
       .where(obj => obj.author === author)
       .execute();
-  
+
   /**
    * Searches for NObjects matching the query.
    * @param query The search query string.
@@ -140,8 +146,14 @@ export default class DB {
    * @param name Optional name for the reply.
    * @returns The created reply NObject if successful, else null.
    */
-  createReply = (parentId: string, name: string): NObject | null =>
-    this.replyManager.createReply(parentId, name);
+  createReply = (parentId: string, name: string): NObject | null => {
+    if (typeof name !== 'string' || name.trim() === '') { // Validate name
+      console.error('Invalid name:', name);
+      return null;
+    }
+    return this.replyManager.createReply(parentId, name);
+  }
+
 
   getReplies = (id: string): NObject[] => this.replyManager.getReplies(id);
 

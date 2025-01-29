@@ -5,7 +5,7 @@ export default class NObject {
   public readonly id: string;
   public readonly doc: Y.Doc;
   public readonly root: Y.Map<any>;
-  protected readonly metadata: Y.Map<any>;
+  protected readonly meta Y.Map<any>;
   private readonly links: Y.Map<Y.Array<string>>;
 
   constructor(doc: Y.Doc, id?: string) {
@@ -27,7 +27,7 @@ export default class NObject {
       ['replyTo', new Y.Array<string>()]
     ]);
 
-    this.root.set('content', new Y.Text());
+    this.getOrInitSubMap('content'); // Ensure content map is initialized
   }
   private getOrInitSubMap(key: string, initialData: [string, any][] = []): Y.Map<any> {
     return this.root.has(key) && this.root.get(key) instanceof Y.Map ? this.root.get(key) : this.root.set(key, new Y.Map<any>(initialData)) as Y.Map<any>;
@@ -58,7 +58,7 @@ export default class NObject {
     get public(): boolean { return this.metadata.get('public'); }
     get author(): string { return this.metadata.get('author'); }
     get text(): Y.Text {
-        if (!this.root.has('content')) {
+        if (!this.root.has('content') || !(this.root.get('content') instanceof Y.Text)) { // Check if content exists and is Y.Text
             this.root.set('content', new Y.Text());
         }
         return this.root.get('content');
@@ -67,7 +67,7 @@ export default class NObject {
     get sharedWith(): Y.Array<string> { return this.metadata.get('sharedWith'); }
     get replies(): Y.Array<string> { return this.links.get('reply') || new Y.Array<string>(); }
     get repliesTo(): Y.Array<string> { return this.links.get('replyTo') || new Y.Array<string>(); }
-  
+
     // Setters
     set name(v: string) { this.updateMetadata({ name: v }); }
     set public(v: boolean) { this.updateMetadata({ public: v }); }
@@ -80,7 +80,7 @@ export default class NObject {
             this.updateMetadata({});
         });
     }
-  
+
     setText(newText: string | Y.Text) {
       this.doc.transact(() => {
         const t = this.text;
@@ -89,7 +89,7 @@ export default class NObject {
         this.updateMetadata({}); // Just to update 'updated'
       });
     }
-  
+
     // Helper method for adding to Y.Array
     private updateArray(arr: Y.Array<string>, item: string, add: boolean) {
       this.doc.transact(() => {
@@ -102,7 +102,7 @@ export default class NObject {
         this.updateMetadata({}); // Just to update 'updated'
       });
     }
-  
+
     // Methods using the helpers
     addTag(tag: string) { this.updateArray(this.tags, tag, true); }
     removeTag(tag: string) { this.updateArray(this.tags, tag, false); }
@@ -116,11 +116,11 @@ export default class NObject {
     observe(fn: (events: Y.YEvent<any>[]) => void) {
       this.root.observeDeep(fn);
     }
-  
+
     unobserve(fn: (events: Y.YEvent<any>[]) => void) {
       this.root.unobserveDeep(fn);
     }
-  
+
     toJSON(): any {
       return this.root.toJSON();
     }
