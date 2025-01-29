@@ -131,7 +131,13 @@ export default class NObject {
 
     async evolveToAgent(): Promise<void> {
       // Stub for future implementation of thought evolution to agent
-      console.log(`Evolving object ${this.id} to agent... (basic implementation)`);
+      console.log(`Evolving object ${this.id} (name: ${this.name}) to agent...`);
+      this.doc.transact(() => {
+        this.setMetadata('isAgent', true); // Mark object as agent
+        this.setMetadata('agentStatus', 'evolving'); // Set initial agent status
+        this.setMetadata('agentCapabilities', ['basic_thinking', 'information_retrieval']); // Example capabilities
+      });
+      // Future implementations will include more sophisticated agent capabilities and background processing.
     }
 
     getMetadata(key: string): any {
