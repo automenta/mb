@@ -65,17 +65,25 @@ class NetworkMetrics {
 }
 
 
+const MESSAGE_SENT = Symbol('message-sent');
+const MESSAGE_RECEIVED = Symbol('message-received');
+const PEER_CONNECTED = Symbol('peer-connected');
+const PEER_DISCONNECTED = Symbol('peer-disconnected');
+const AWARENESS_UPDATE = Symbol('awareness-update');
+const OBJECT_SHARED = Symbol('object-shared');
+const OBJECT_UNSHARED = Symbol('object-unshared');
+
 /**
  * Union type of all possible network event types
  */
 type NetworkEventType =
-    | 'message-sent'
-    | 'message-received'
-    | 'peer-connected'
-    | 'peer-disconnected'
-    | 'awareness-update'
-    | 'object-shared'
-    | 'object-unshared';
+    | typeof MESSAGE_SENT
+    | typeof MESSAGE_RECEIVED
+    | typeof PEER_CONNECTED
+    | typeof PEER_DISCONNECTED
+    | typeof AWARENESS_UPDATE
+    | typeof OBJECT_SHARED
+    | typeof OBJECT_UNSHARED;
 
 
 /**
@@ -118,10 +126,10 @@ class Network {
             this.metrics.incrementBytesTransferred(update.length);
             if (origin === this.net!) {
                 this.metrics.incrementMessagesSent();
-                this.emit('message-sent', { bytes: update.length });
+                this.emit(MESSAGE_SENT, { bytes: update.length });
             } else {
                 this.metrics.incrementMessagesReceived();
-                this.emit('message-received', { bytes: update.length });
+                this.emit(MESSAGE_RECEIVED, { bytes: update.length });
             }
         });
 
@@ -159,15 +167,15 @@ class Network {
         this.net.on('peers', ({added, removed}) => {
             added.forEach(id => {
                 this.metrics.addPeerConnected(id);
-                this.emit('peer-connected', {peerId: id});
+                this.emit(PEER_CONNECTED, {peerId: id});
             });
             removed.forEach(id => {
                 this.metrics.removePeerConnected(id);
-                this.emit('peer-disconnected', {peerId: id});
+                this.emit(PEER_DISCONNECTED, {peerId: id});
             });
         });
 
-        this.net.awareness.on('change', (changes: any) => this.emit('awareness-update', {changes}));
+        this.net.awareness.on('change', (changes: any) => this.emit(AWARENESS_UPDATE, {changes}));
 
         this.enableEncryption(); // Call enableEncryption after reset
      }
@@ -209,19 +217,19 @@ class Network {
             return;
         }
         this.docsShared.add(pageId);
-        this.emit('object-shared', { pageId });
+        this.emit(OBJECT_SHARED, { pageId });
     }
 
     unshareObject(pageId:string) {
         if (!this.docsShared.has(pageId)) {
-            console.warn(`Document "${pageId}" not currently shared.`);
+            console.warn(`Object "${pageId}" not currently shared.`);
             return;
         }
         this.docsShared.delete(pageId);
-        this.emit('object-unshared', { pageId });
+        this.emit(OBJECT_UNSHARED, { pageId });
     }
 
-    getNetworkStats() {
+    getNetworkStats(): ReturnType<NetworkMetrics['getMetrics']> & { awareness: any[] } {
         const metricsData = this.metrics.getMetrics();
         return {
             messagesSent: metricsData.messagesSent,
@@ -241,11 +249,11 @@ class Network {
 
 
     on(event: NetworkEventType, listener: ( NetworkEventData) => void): void {
-        events.on(`network-${event}`, listener);
+        events.on(event, listener); // No prefix needed, using Symbols directly
     }
 
     emit(event: NetworkEventType,  NetworkEventData): void {
-        events.emit(`network-${event}`, { ...NetworkEventData, stats: this.getNetworkStats() });
+        events.emit(event, { ...NetworkEventData, stats: this.getNetworkStats() }); // No prefix needed, using Symbols directly
         events.emit('networkActivity', { type: event,  ...NetworkEventData, stats: this.getNetworkStats(), timestamp: Date.now() });
     }
 }
