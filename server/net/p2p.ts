@@ -25,7 +25,7 @@ class P2PNode extends EventEmitter {
     private wss: WebSocketServer;
     private provider: WebrtcProvider;
 
-    constructor(options: P2PNodeOptions) {
+    constructor(options: P2PNodeOptions, roomName: string = 'your-room-name') { // Added roomName parameter with default
         super();
         this.dht = new MainlineDHT();
         this.wss = new WebSocketServer({ port: 8080 });
@@ -47,7 +47,7 @@ class P2PNode extends EventEmitter {
 
         // Initialize y-webrtc provider
         const ydoc = new Y.Doc();
-        this.provider = new WebrtcProvider('your-room-name', ydoc, {
+        this.provider = new WebrtcProvider(roomName, ydoc, { // Use roomName parameter
             signaling: ['ws://localhost:8080'],
             // Add additional configuration as needed
         });
