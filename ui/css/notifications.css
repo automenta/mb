@@ -1,0 +1,26 @@
+.notifications-view {
+    padding: 10px;
+}
+
+.notifications-list {
+    list-style: none;
+    padding: 0;
+}
+
+.notifications-list li {
+    padding: 8px 10px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+}
+
+.notifications-list li:last-child {
+    border-bottom: none;
+}
+
+.notifications-list li:hover {
+    background-color: #f9f9f9;
+}
+
+.notifications-list li.unread {
+    font-weight: bold; /* Make unread notifications bold */
+}

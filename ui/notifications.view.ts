@@ -40,8 +40,12 @@ export default class NotificationsView extends BaseView {
             replies.forEach(reply => {
                 const replyView = new ObjViewMini(reply);
                 const listItem = $('<li>').append(replyView.ele);
+                if (!reply.read) {
+                    listItem.addClass('unread'); // Add 'unread' class for unread notifications
+                }
                 listItem.on('click', () => {
                     console.log(`Notification clicked, object ID: ${reply.id}`);
+                    this.markAsRead(reply); // Mark as read when clicked
                     this.loadDocument(reply); // Call loadDocument to open in editor
                 });
                 this.notificationsList.append(listItem);
@@ -52,5 +56,10 @@ export default class NotificationsView extends BaseView {
 
     getReplyObjects() {
         return this.db.list().filter(obj => obj.repliesTo.length > 0); // Filter for reply objects
+    }
+
+    markAsRead(reply: NObject) {
+        reply.read = true; // Set the 'read' metadata to true
+        this.updateNotificationsList(); // Re-render to update UI
     }
 }
