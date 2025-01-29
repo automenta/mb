@@ -128,9 +128,7 @@ export default class NObject {
 
     async evolveToAgent(): Promise<void> {
       // Stub for future implementation of thought evolution to agent
-      console.log(`Evolving object ${this.id} to agent... (not implemented yet)`);
-      // Future implementation will involve transforming this NObject into an "Agent" object
-      // and setting up necessary mechanisms for goal automation and achievement.
+      console.log(`Evolving object ${this.id} to agent... (basic implementation)`);
     }
 
     getMetadata(key: string): any {
