@@ -39,11 +39,11 @@ class BootstrapView {
     }
 
     update(): void {
-        this.$nodeList.empty().append(this.net.signalingServers.map(this.renderNode.bind(this)));
+        this.$nodeList.empty().append(this.net.signalingServers.map(url => this.renderNode(url)));
     }
 
     renderNode(url: string): JQuery<HTMLElement> {
-        return $(`<li>${url}<button class="remove-node" data-url="${url}">Remove</button></li>`) as JQuery<HTMLElement>;
+        return $(`<li>${url}<button class="remove-server" data-url="${url}">Remove</button></li>`) as JQuery<HTMLElement>;
     }
 
     panel(): JQuery<HTMLElement> {
