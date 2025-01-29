@@ -1,5 +1,6 @@
 import { $, Y, Awareness, NObject, App } from '../imports';
 import { EditorConfig } from '../types';
+import TagSelector from './tag-selector';
 import type { Doc as YDoc } from 'yjs'; // Import Doc type
 import { ToolbarManager } from './toolbar-manager';
 import { MetadataManager } from './metadata-manager';
@@ -14,6 +15,7 @@ export default class Editor {
     private readonly metadata: MetadataManager;
     private readonly awareness: AwarenessManager;
     public readonly rootElement: HTMLElement;
+    private tagSelector: TagSelector;
     private _darkMode = false;
 
     public currentObject?: NObject | Y.Map<any>;
@@ -25,7 +27,7 @@ export default class Editor {
         this.rootElement.classList.toggle('dark-mode', this._darkMode);
     }
 
-    private applyFormat(command: string, value: string | null = null): void {
+    private applyFormat(command: string, value: string | undefined = undefined): void {
         document.execCommand(command, false, value);
     }
 
@@ -43,7 +45,8 @@ export default class Editor {
         // console.log('Editor.constructor: this.doc:', this.doc); // Add log
         this.rootElement = config.ele as HTMLElement; // Cast to HTMLElement
         this.isPublic = false;
-        // console.log('Editor.constructor: rootElement:', this.rootElement); 
+        // console.log('Editor.constructor: rootElement:', this.rootElement);
+        this.tagSelector = new TagSelector(this.rootElement);
 
         if (config.currentObject instanceof Y.Map) {
             this.isPublic = config.currentObject.get('public') || false;
@@ -53,8 +56,8 @@ export default class Editor {
 
         // Initialize core components
         this.toolbar = new ToolbarManager(this);
-        this.metadata = new MetadataManager(this.config.isReadOnly || false);
-        this.editorCore = new EditorCore(this.config, this, this.config.isReadOnly);
+        this.metadata = new MetadataManager(this.config.isReadOnly ?? false);
+        this.editorCore = new EditorCore(this.config, this, this.config.isReadOnly ?? false);
 
         // Initialize UI and then document state
         this.initUI();
@@ -87,7 +90,7 @@ export default class Editor {
             newDoc = yMapObjects.get(newId);
         }
     
-        return newDoc;
+        return newDoc || new Y.Map();
     }
 
     private initializeContent(): void {
@@ -142,6 +145,14 @@ export default class Editor {
         metadataPanel.textContent = 'Metadata Panel Test';
         editorContainer.append(metadataPanel);
 
+        const tagSelectorContainer = document.createElement('div');
+        tagSelectorContainer.className = 'tag-selector-container';
+        editorContainer.append(tagSelectorContainer);
+        this.tagSelector = new TagSelector(tagSelectorContainer, 'page'); // Pass schemaName 'page'
+        this.tagSelector.addTag('Category 1', 'Tag A');
+        this.tagSelector.addTag('Category 1', 'Tag B');
+        this.tagSelector.addTag('Category 2', 'Tag C');
+
         return editorContainer;
     }
 
@@ -163,19 +174,9 @@ export default class Editor {
        if (this.currentObject) {
            if (this.currentObject instanceof NObject) {
                this.currentObject.name = newTitle;
-               this.config.db.persistDocument(this.currentObject);
                this.config.app.store.setCurrentObject(this.currentObject);
            } else if (this.currentObject instanceof Y.Map) {
                this.currentObject.set('name', newTitle);
-               // Find and update the corresponding object in the store's objects array
-               const objects = this.config.app.store.getState().objects;
-               const updatedObjects = objects.map(obj => {
-                   if (this.currentObject instanceof Y.Map && obj.id === this.currentObject.get('id')) {
-                       return this.config.db.get(obj.id); // Fetch updated object from db
-                   }
-                   return obj;
-               });
-               this.config.app.store.update(state => ({ ...state, objects: updatedObjects }));
            }
        }
    }
@@ -210,10 +211,13 @@ export default class Editor {
             this.config.db.doc.transact(() => {
                 const content = (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML;
                 (this.currentObject as Y.Map<any>).set('content', new Y.Text(content));
+                const tags = this.tagSelector.getTags();
+                (this.currentObject as Y.Map<any>).set('tags', tags);
             });
         } else if (this.currentObject instanceof NObject) {
             const content = (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML;
             this.currentObject.text = content;
+            this.currentObject.tags = this.tagSelector.getTags();
             this.config.db.persistDocument(this.currentObject);
         }
     }
@@ -230,11 +234,28 @@ export default class Editor {
 
             if (content instanceof Y.Text) {
                 contentEditor.innerHTML = content.toString();
+            } else if (content !== null && content !== undefined) {
+                contentEditor.innerHTML = content.toString();
             } else {
                 if (!object.has('content')) {
                     object.set('content', new Y.Text());
                 }
                 contentEditor.innerHTML = '';
+            }
+
+            if (titleEditor) titleEditor.value = title;
+
+            if (content instanceof Y.Text) {
+                contentEditor.innerHTML = content.toString();
+            } else {
+                if (!object.has('content')) {
+                    object.set('content', new Y.Text());
+                }
+                contentEditor.innerHTML = '';
+            }
+            const tags = object.get('tags');
+            if (tags) {
+                this.tagSelector.setTags(tags);
             }
         } else if (object instanceof NObject) {
             (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML = object.text.toString();
