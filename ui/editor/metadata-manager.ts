@@ -12,32 +12,16 @@ export class MetadataManager {
           class: 'metadata-panel form-container',
         }).append(
           new Form({
-            schema: {
-              properties: {
-                name: { type: 'string', description: 'Name' },
-                public: { type: 'boolean', description: 'Public' },
-                author: { type: 'string', description: 'Author' },
-                id: { type: 'string', description: 'Page ID' },
-                created: { type: 'string', description: 'Created' },
-                updated: { type: 'string', description: 'Last Updated' },
-              },
-            },
-             {
-              name: currentObject.name,
-              public: currentObject.public,
-              author: currentObject.author,
-              id: currentObject.id,
-              created: new Date(currentObject.created).toLocaleString(),
-              updated: new Date(currentObject.updated).toLocaleString(),
-            },
-            mode: this.isReadOnly ? 'read' : 'edit',
-            onChange: (newData: any) => {
-              if (currentObject) {
-                currentObject.name = newData.name;
-                currentObject.public = newData.public;
-                // Author, ID, Created, Updated are read-only and not meant to be changed here.
-              }
-            },
+            fields: [
+              { type: 'text', label: 'Name', value: currentObject.name, propKey: 'name' },
+              { type: 'checkbox', label: 'Public', value: currentObject.public, propKey: 'public' },
+              { type: 'text', label: 'Author', value: currentObject.author, propKey: 'author', isReadOnly: true },
+              { type: 'text', label: 'Page ID', value: currentObject.id, propKey: 'id', isReadOnly: true },
+              { type: 'text', label: 'Created', value: new Date(currentObject.created).toLocaleString(), propKey: 'created', isReadOnly: true },
+              { type: 'text', label: 'Last Updated', value: new Date(currentObject.updated).toLocaleString(), propKey: 'updated', isReadOnly: true },
+            ],
+            isReadOnly: this.isReadOnly,
+            currentObject: currentObject
           }).getElement(),
           $('<div>', { class: 'metadata-tags' }).append(
             $('<span>', { text: 'Tags: ' }),
