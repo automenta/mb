@@ -1,5 +1,6 @@
 import $ from 'jquery';
 import NObject from '../../src/obj';
+import { Form } from '../util/form';
 
 export class MetadataManager {
   constructor(private readonly isReadOnly: boolean) {}
@@ -8,28 +9,36 @@ export class MetadataManager {
     return !currentObject
       ? $('<div>')
       : $('<div>', {
-          class: 'metadata-panel',
+          class: 'metadata-panel form-container',
         }).append(
-          $('<div>', { class: 'metadata-row' }).append(
-            $('<span>', { text: 'Created: ' }),
-            $('<span>', {
-              text: new Date(currentObject.created).toLocaleString(),
-            })
-          ),
-          $('<div>', { class: 'metadata-row' }).append(
-            $('<span>', { text: 'Last Updated: ' }),
-            $('<span>', {
-              text: new Date(currentObject.updated).toLocaleString(),
-            })
-          ),
-          $('<div>', { class: 'metadata-row' }).append(
-            $('<span>', { text: 'Author: ' }),
-            $('<span>', { text: currentObject.author })
-          ),
-          $('<div>', { class: 'metadata-row' }).append(
-            $('<span>', { text: 'Page ID: ' }),
-            $('<span>', { text: currentObject.id })
-          ),
+          new Form({
+            schema: {
+              properties: {
+                name: { type: 'string', description: 'Name' },
+                public: { type: 'boolean', description: 'Public' },
+                author: { type: 'string', description: 'Author' },
+                id: { type: 'string', description: 'Page ID' },
+                created: { type: 'string', description: 'Created' },
+                updated: { type: 'string', description: 'Last Updated' },
+              },
+            },
+             {
+              name: currentObject.name,
+              public: currentObject.public,
+              author: currentObject.author,
+              id: currentObject.id,
+              created: new Date(currentObject.created).toLocaleString(),
+              updated: new Date(currentObject.updated).toLocaleString(),
+            },
+            mode: this.isReadOnly ? 'read' : 'edit',
+            onChange: (newData: any) => {
+              if (currentObject) {
+                currentObject.name = newData.name;
+                currentObject.public = newData.public;
+                // Author, ID, Created, Updated are read-only and not meant to be changed here.
+              }
+            },
+          }).getElement(),
           $('<div>', { class: 'metadata-tags' }).append(
             $('<span>', { text: 'Tags: ' }),
             this.renderTagsEditor(currentObject)
@@ -86,14 +95,14 @@ export class MetadataManager {
             this.updateTagsDisplay(container, currentObject);
           })
         );
-      
+
 
       tagsDiv.append(tagElement);
     });
 
     if (!container.find('.tags-list').length)
       container.append(tagsDiv);
-  
+
   }
 
   showToast(message: string) {
