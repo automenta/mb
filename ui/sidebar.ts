@@ -93,21 +93,21 @@ export default class Sidebar {
     private dbView: DBView | null = null;
     private matchingView: MatchingView | null = null;
 
-    constructor(db: DB, app: App) {
-        this.ele = $('<div>').addClass('sidebar');
-        this.store = initializeStore(db);
+    constructor(app: App, ele: HTMLElement) {
+        this.ele = $(ele).addClass('sidebar');
+        this.store = initializeStore(app.db);
         this.store.app = app;
         this.contextMenu = new PageContextMenu(this.store);
         this.pageList = $('<ul>', { class: 'page-list' });
-        this.friendsView = new FriendsView($('.main-view'), app.awareness.bind(app));
+        this.friendsView = new FriendsView($('.main-view'), app.getAwareness.bind(app)); // Use getAwareness() to get awareness instance
         this.netView = new NetView($('.main-view'), app.net);
         if (app.match) {
             this.matchingView = new MatchingView($('.main-view'), app.match);
         }
 
         if (app.db) {
-            this.meView = new MeView($('.main-view'), app.user.bind(app), app.awareness.bind(app), app.db);
-            this.dbView = new DBView($('.main-view')[0], app.db);
+            this.meView = new MeView($('.main-view'), app.user.bind(app), app.getAwareness.bind(app), app.db); // Use getAwareness()
+            this.dbView = new DBView($('.main-view')[0], app.db); // Pass app.db, not just db
         }
 
 

@@ -42,10 +42,10 @@ class ThemeManager {
 
 
 export default class App {
-    private readonly channel: string;
+    readonly channel: string;
     private socket: Socket;
     db: DB | null = null;
-    net: Network | null = null;
+    net: Network | null = null; // Ensure net is typed as Network
     match: Matching | null = null;
     editor: Editor | null = null;
     sidebar: Sidebar | null = null;
@@ -91,7 +91,7 @@ export default class App {
         new MatchView($('#match-view')[0], this.match).render();
 
 
-        // Bind network to editor - after editor and network are initialized
+        // Bind network to editor - after editor and network are initialized - ensure this.net is not null
         if (this.net) {
             this.editor?.editorCore.bindNetwork(this.net);
         }

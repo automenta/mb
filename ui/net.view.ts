@@ -1,5 +1,6 @@
 import $ from 'jquery';
 import { events } from '../src/events';
+import Network from '../src/net'; // Import Network class
 import '/ui/css/net.css';
 import { NETWORK_ACTIVITY } from '../src/net'; // Import Symbol
 
@@ -21,13 +22,13 @@ function createStatBox(title: string, ...contentLines: { label: string, classNam
     return box;
 }
 
-class BootstrapView {
-    net: any; // Type 'any' for 'net' as its type is not defined in provided files
+class BootstrapView { // Corrected class definition
+    net: Network;
     addButton: JQuery<HTMLElement>;
     $input: JQuery<HTMLElement>;
     $nodeList: JQuery<HTMLElement>;
 
-    constructor(net: any) {
+    constructor(net: Network) {
         this.net = net;
         this.addButton = $('<button>').text("+") as JQuery<HTMLElement>;
         this.$input = $('<input>').attr('placeholder', 'bootstrap') as JQuery<HTMLElement>;
@@ -71,17 +72,19 @@ class BootstrapView {
 }
 
 
-class NetViewer {
-    net: any; // Type 'any' for 'net' as its type is not defined in provided files
+class NetViewer { // Corrected class definition
+    net: Network;
     ele: JQuery<HTMLElement>;
     events: any[] = []; // Type 'any[]' for 'events' as its type is not defined
     maxEvents: number = 100;
     bootstrap: BootstrapView;
+    $peerList: JQuery<HTMLElement>; // Declare $peerList
 
-    constructor(net: any) {
+    constructor(net: Network) {
         this.net = net;
         this.ele = $('<div>').addClass('net-viewer') as JQuery<HTMLElement>;
         this.bootstrap = new BootstrapView(net);
+        this.$peerList = $('<ul>').addClass('peer-list'); // Initialize $peerList
         this.render();
         events.on(NETWORK_ACTIVITY, (e: any) => this.update((e as CustomEvent<any>).detail)); // Use Symbol
     }
@@ -99,7 +102,13 @@ class NetViewer {
                 <strong>Events</strong>
                 <div class="event-log"></div>
             </div>
-        `, this.bootstrap.panel());
++            <div class="stat-box">
++                <strong>Peers</strong>
++                <div class="peers"></div>
++                <div class="peer-list"></div>  <!-- Add peer list container here -->
++            </div>
+         `, this.bootstrap.panel());
++        this.ele.find('.peer-list').append(this.$peerList); // Append $peerList to the container
 
         // Append stat boxes to the stats-grid div
         const statsGrid = this.ele.find('.stats-grid');
@@ -135,6 +144,13 @@ class NetViewer {
         }
 
 
++        // Update peer list in $peerList
++        this.$peerList.empty(); // Clear existing list
++        if (this.net.peers) { // Check if peers map exists
++            this.$peerList.append(Array.from(this.net.peers.values()).map(this.renderPeerListItem.bind(this))); // Render peer list items
++        }
++
+
         this.events.unshift({ type, timestamp, data });
         this.events = this.events.slice(0, this.maxEvents);
 
@@ -148,16 +164,20 @@ class NetViewer {
         return $(`<div class="peer-badge">${peer.metadata.clientID} (${new Date(peer.lastActive).toLocaleTimeString()})</div>`) as JQuery<HTMLElement>;
     }
 
-    renderEventEntry(event: any): JQuery<HTMLElement> { // Type 'any' for event as its type is not defined
-        return $(`<div class="event-entry ${event.type}>[${new Date(event.timestamp).toLocaleTimeString()}] ${event.type} ${event.data.peerId ? `(Peer: ${event.data.peerId})` : ''} ${event.data.bytes ? `(${event.data.bytes} bytes)` : ''}</div>`) as JQuery<HTMLElement>;
-    }
++    renderPeerListItem(peer: any): JQuery<HTMLElement> { // Type 'any' for peer, adjust if you have Peer interface available
++        return $(`<li>${peer.address}:${peer.port} - Last Seen: ${new Date(peer.lastSeen).toLocaleTimeString()}</li>`) as JQuery<HTMLElement>;
++    }
++
+     renderEventEntry(event: any): JQuery<HTMLElement> { // Type 'any' for event as its type is not defined
+         return $(`<div class="event-entry ${event.type}>[${new Date(event.timestamp).toLocaleTimeString()}] ${event.type} ${event.data.peerId ? `(Peer: ${event.data.peerId})` : ''} ${event.data.bytes ? `(${event.data.bytes} bytes)` : ''}</div>`) as JQuery<HTMLElement>;
+     }
 }
 
 export default class NetView {
     ele: JQuery<HTMLElement>;
-    net: any; // Type 'any' for 'net' as its type is not defined in provided files
+    net: Network;
 
-    constructor(ele: JQuery<HTMLElement>, net: any) {
+    constructor(ele: JQuery<HTMLElement>, net: Network) { // Corrected constructor type
         this.ele = ele;
         this.net = net;
     }
