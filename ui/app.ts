@@ -15,11 +15,11 @@ import MeView from './me.view';
 import NetView from './net.view';
 import MatchingView from './match.view';
 
-// Abstract Component Base Class
+// Abstract Base Class for Components
 abstract class Component<T extends HTMLElement = HTMLElement> {
-}
+    abstract mount(parent: JQuery<HTMLElement>): void; }
 
-// Theme Manager Class
+// Theme Management Class
 class ThemeManager {
     isDarkMode: boolean;
     appElement: HTMLElement;
@@ -233,7 +233,7 @@ export default class App extends Component {
         this.initializeSocket();
         this.store = initializeStore(this.db!);
 
-        this.components.forEach(component => component.mount(this.ele));
+        this.components.forEach(component => component.mount( $(this.ele) );
         this.loadUserProfile();
     }
 

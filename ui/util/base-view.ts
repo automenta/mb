@@ -1,17 +1,24 @@
 import { $ } from '../imports';
+import { Component } from '../app';
 
-export default abstract class BaseView {
+export default abstract class BaseView extends Component {
+    ele: JQuery<HTMLElement>;
     root: JQuery<HTMLElement>;
 
     constructor(root: JQuery<HTMLElement>) {
+        super();
         this.root = root;
+        this.ele = $('<div>').addClass(this.getViewClass()) as JQuery<HTMLElement>; // Initialize ele
     }
 
-    protected getViewClass(): string {
+    getViewClass(): string { // Made getViewClass public to be accessible in Component
         return 'base-view'; // Default class
     }
 
-    abstract render(): void;
+    render(): JQuery<HTMLElement> | void { // Modified render to return JQuery or void
+        this.clearView();
+        return this.ele;
+    }
 
     protected renderHeader(title: string): JQuery<HTMLElement> {
         return $('<h2>').text(title);
@@ -28,4 +35,8 @@ export default abstract class BaseView {
     protected findElement(selector: string): JQuery<HTMLElement> {
         return this.root.find(selector);
     }
+}
+
+interface BaseViewConstructor {
+    new (root: JQuery<HTMLElement>): BaseView;
 }
