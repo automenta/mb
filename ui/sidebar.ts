@@ -7,6 +7,7 @@ import type DB from '../src/db';
 import MeView from "./me.view";
 import FriendsView from "./friends.view";
 import NetView from "./net.view.js";
+import NotificationsView from './notifications.view';
 import DBView from "./db.view";
 import MatchingView from "./match.view.js";
 import AgentsView from "./agents.view";
@@ -91,6 +92,7 @@ export default class Sidebar {
     private friendsView: FriendsView;
     private netView: NetView;
     private dbView: DBView | null = null;
+    private notificationsView: NotificationsView; // Add NotificationsView
     private matchingView: MatchingView | null = null;
 
     constructor(app: App, ele: HTMLElement) {
@@ -108,6 +110,7 @@ export default class Sidebar {
         if (app.db) {
             this.meView = new MeView($('.main-view'), app.user.bind(app), app.getAwareness.bind(app), app.db); // Use getAwareness()
             this.dbView = new DBView($('.main-view')[0], app.db); // Pass app.db, not just db
+            this.notificationsView = new NotificationsView($('.main-view')[0], app.db); // Initialize NotificationsView
         }
 
 
@@ -128,6 +131,7 @@ export default class Sidebar {
         'friends': this.friendsView,
         'network': this.netView,
         'matching': this.matchingView,
+        'notifications': this.notificationsView,
     };
 
     switchListViewMode(mode: string) {
@@ -190,6 +194,7 @@ export default class Sidebar {
             $('<option>', { value: 'friends', text: 'Friends' }),
             $('<option>', { value: 'network', text: 'Network' }),
             $('<option>', { value: 'matching', text: 'Matching' }),
+            $('<option>', { value: 'notifications', text: 'Notifications' }),
             // Add more options as needed
         ).change(() => {
             const selectedMode = listModeDropdown.val() as string;
