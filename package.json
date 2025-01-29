@@ -34,7 +34,6 @@
     "diff": "latest",
     "esbuild": "latest",
     "express": "latest",
-    "happy-dom": "^16.7.3",
     "ipfs-core": "latest",
     "jquery": "latest",
     "libp2p": "latest",
@@ -46,7 +45,8 @@
     "y-leveldb": "latest",
     "y-webrtc": "latest",
     "y-websocket": "latest",
-    "yjs": "latest"
+    "yjs": "latest",
+    "pino": "latest"
   },
   "devDependencies": {
     "@playwright/test": "latest",
@@ -67,7 +67,7 @@
     "playwright": "latest",
     "vite": "latest",
     "vite-plugin-node-polyfills": "latest",
-    "vitest": "^3.0.4",
+    "vitest": "latest",
     "wait-port": "latest"
   }
 }
