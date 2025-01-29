@@ -1,5 +1,4 @@
 import DB from './db';
-import NObject from './obj';
 
 interface PageProperties {
     topics: string[];
@@ -14,6 +13,10 @@ interface MatchResult {
     timestamp: number;
 }
 
+/**
+ * Core matching engine that handles semantic analysis and matching of pages
+ * using topic-based similarity scoring.
+ */
 export default class MatchingEngine {
     db: DB;
     similarityThreshold: number = 0.5; // Default similarity threshold
@@ -22,7 +25,15 @@ export default class MatchingEngine {
         this.db = db;
     }
 
-    // Extract semantic properties from content (consider using NLP libraries or more advanced techniques)
+    /**
+     * Extracts semantic properties from text content
+     * @param content - The text content to analyze
+     * @returns PageProperties object containing:
+     *          - topics: array of significant words
+     *          - length: character count
+     *          - complexity: sentence count
+     *          - timestamp: current time
+     */
     extractProperties(content: string): PageProperties {
         // Simplified example - in reality would use more sophisticated NLP
         const topics = new Set(content.toLowerCase()
@@ -37,7 +48,15 @@ export default class MatchingEngine {
         };
     }
 
-    // Find matching pages (consider different matching algorithms and filtering options)
+    /**
+     * Finds pages that match the given page based on semantic similarity
+     * @param pageId - ID of the page to find matches for
+     * @param properties - Extracted properties of the page
+     * @returns Array of MatchResult objects containing:
+     *          - pageId: ID of matching page
+     *          - similarity: similarity score (0-1)
+     *          - timestamp: time of match
+     */
     async findMatches(pageId: string, properties: PageProperties): Promise<MatchResult[]> {
         const matches: MatchResult[] = [];
 

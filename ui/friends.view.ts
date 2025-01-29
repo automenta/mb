@@ -28,23 +28,23 @@ export default class FriendsView extends BaseView {
     }
 
     private updateFriends() {
-        const searchTerm = (Array.isArray(this.root.find('.friends-search').val()) ? '' : (this.root.find('.friends-search').val() ?? '').toString()).toLowerCase();
+        const searchTerm = this.root.find('.friends-search').val();
+        const searchTermStr = (searchTerm as string ?? '').toLowerCase();
         const awarenessStates = this.getAwareness().getStates();
         const users = Array.from(awarenessStates.entries())
             .filter(([, state]) => state && state.user)
             .map(([, state]) => state.user);
-        const filteredUsers = users.filter(user => user.name?.toLowerCase().includes(searchTerm));
+        const filteredUsers = users.filter(user => user.name?.toLowerCase().includes(searchTermStr));
         this.renderFriendsList(filteredUsers);
     }
 
     private renderFriendsList(users: UserInfo[]) {
-        const ul = this.root.find('ul.friends-list').empty(); 
+        const ul = this.root.find('ul.friends-list').empty();
+        let statusIcon = '🔴';
         users.forEach(user => {
-            let statusIcon = '';
             switch (user.status) {
                 case 'online': statusIcon = '🟢'; break;
                 case 'away': statusIcon = '🌙'; break;
-                default: statusIcon = '🔴';
             }
             ul.append($('<li>').html(`${user.name} <span class="status">${statusIcon}</span>`));
         });

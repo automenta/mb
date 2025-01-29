@@ -47,14 +47,14 @@ export default class MeView {
   }
 
   private handleAvatarUpload(e: Event) {
-    const file = (e.target as HTMLInputElement).files[0];
+    const file = (e.target as HTMLInputElement)?.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = (event: any) => { // Type event as any to access target.result
         const user = this.getUser();
         this.awareness().setLocalStateField('user', {
           ...user,
-          avatar: event.target.result as string
+          avatar: event?.target?.result as string
         });
       };
       reader.readAsDataURL(file);
@@ -68,7 +68,7 @@ export default class MeView {
   private updateUserField(fieldPath: string, value: any) { // Updated updateUserField to be used with schemaForm
     const user = this.getUser();
     const pathParts = fieldPath.split('.');
-    let current = user;
+    let current: any = user; // Type cast to any for flexible property access
 
     for (let i = 0; i < pathParts.length - 1; i++) {
       const part = pathParts[i];
@@ -81,9 +81,10 @@ export default class MeView {
     const field = pathParts[pathParts.length - 1];
 
     if (userSchema && typeof userSchema === 'object') {
-      const schemaProps = (userSchema as { properties: any }).properties[field] || (field === 'social' && (userSchema as { properties: { social: { properties: any } } }).properties.social?.properties ? (userSchema as { properties: { social: { properties: any } } }).properties.social.properties[pathParts[pathParts.length - 2]] : undefined);
+      const socialSchemaProperties = (userSchema as { properties: { social: { properties: any } } }).properties.social?.properties;
+      const schemaProps = (userSchema as { properties: any }).properties[field] || (field === 'social' && socialSchemaProperties ? socialSchemaProperties[pathParts[pathParts.length - 2]] : undefined);
       if (schemaProps) {
-        current[field] = value;
+        (current as any)[field] = value; // Type cast to any for flexible property access
         this.awareness().setLocalStateField('user', user);
       }
     }
@@ -145,7 +146,7 @@ export default class MeView {
         $('<div/>', { class: 'profile-actions' }).append(
           $('<button/>', { class: 'save-btn', text: '💾 Save Changes' }).on('click', () => {
             const user = this.getUser();
-            this.db.config?.set('userProfile', user); // Save user profile to db.config
+            this.db.config?.setUserProfile(user); // Fixed error 7, using setUserProfile
             alert('Profile changes saved!');
           }),
           $('<button/>', { class: 'cancel-btn', text: '❌ Cancel' }).on('click', () => {
@@ -155,5 +156,5 @@ export default class MeView {
         )
       )
     )
-  };
+  }
 }

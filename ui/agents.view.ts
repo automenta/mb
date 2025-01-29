@@ -15,6 +15,7 @@ export default class AgentsView extends BaseView {
         this.root.append(agentsList);
 
         const db = store.getState().db;
-        (db?.query().where(obj => obj.tags.toArray().includes('agent')).execute() || []).forEach((agent: NObject) => agentsList.append(new ObjViewMini(agent).ele));
+        const agents = db?.query().where(obj => obj.tags.toArray().includes('agent')).execute() || [];
+        agents.forEach((agent: NObject) => agentsList.append(new ObjViewMini(agent).ele));
     }
 }

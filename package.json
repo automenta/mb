@@ -12,8 +12,8 @@
     "dump": "git ls-files | xargs -I{} sh -c 'echo -e \"===== {} =====\\n\"; cat {}; echo -e \"\\n\"'",
     "dumpclip": "npm run dump | xclip -i",
     "test": "vitest --run",
-    "test:server": "vitest --run --config vitest.server.config.ts --dangerouslyIgnoreUnhandledErrors",
-    "test:ui": "vitest --run --config vitest.ui.config.ts --printConsoleTrace --dangerouslyIgnoreUnhandledErrors",
+    "test:server": "npx vitest --run --config vitest.server.config.ts --dangerouslyIgnoreUnhandledErrors",
+    "test:ui": "npx vitest --run --config vitest.ui.config.ts --printConsoleTrace --dangerouslyIgnoreUnhandledErrors",
     "test:all": "npm run test:server && npm run test:browser",
     "test:coverage": "vitest run --coverage"
   },
@@ -21,7 +21,6 @@
     "@chainsafe/libp2p-gossipsub": "latest",
     "@chainsafe/libp2p-noise": "latest",
     "@libp2p/bootstrap": "latest",
-    "@libp2p/interface-peer-id": "latest",
     "@libp2p/kad-dht": "latest",
     "@libp2p/mplex": "latest",
     "@libp2p/peer-id-factory": "latest",
@@ -32,9 +31,10 @@
     "bittorrent-dht": "latest",
     "chart.js": "latest",
     "cors": "latest",
-    "diff": "^7.0.0",
+    "diff": "latest",
     "esbuild": "latest",
     "express": "latest",
+    "happy-dom": "^16.7.3",
     "ipfs-core": "latest",
     "jquery": "latest",
     "libp2p": "latest",
@@ -67,7 +67,7 @@
     "playwright": "latest",
     "vite": "latest",
     "vite-plugin-node-polyfills": "latest",
-    "vitest": "latest",
+    "vitest": "^3.0.4",
     "wait-port": "latest"
   }
 }

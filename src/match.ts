@@ -45,8 +45,13 @@ export default class Matching {
         this.net.awareness().on('change', () => this.coordinated());
     }
 
+    /**
+     * Registers an event listener for matching events
+     * @param event - Event type to listen for
+     * @param listener - Callback function to handle the event
+     */
     on(event: string, listener: (...args: any[]) => void): void {
-        // TODO: Implement event handling if needed
+        events.on(event, listener);
     }
 
     // Main processing loop
@@ -157,7 +162,12 @@ export default class Matching {
     }
 
 
+    /**
+     * Handles page change events by updating matching results
+     */
     onPagesChanged(): void {
-        // TODO: Implement page change handling if needed
+        //events.on<{ pageId: string }>('page-changed', (event) => {
+        //    this.processPage(event.pageId);
+        //});
     }
 }

@@ -161,11 +161,11 @@ export default class App {
         const errorList = document.getElementById('error-list');
         if (errorContainer && errorList) {
             errorList.innerHTML = '';
-            errors.length > 0 ? errors.forEach(error => {
+            errors.length > 0 && errors.forEach(error => {
                 const errorItem = document.createElement('li');
                 errorItem.textContent = `${error.pluginName}: ${error.error}`;
                 errorList.appendChild(errorItem);
-            }) : null;
+            });
             errorContainer.style.display = errors.length > 0 ? 'block' : 'none';
         }
     }

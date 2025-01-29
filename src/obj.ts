@@ -3,7 +3,7 @@ import {uuidv4} from "lib0/random";
 
 export default class NObject {
   public readonly id: string;
-  private readonly doc: Y.Doc;
+  public readonly doc: Y.Doc;
   public readonly root: Y.Map<any>;
   protected readonly metadata: Y.Map<any>;
   private readonly links: Y.Map<Y.Array<string>>;
@@ -27,7 +27,7 @@ export default class NObject {
       ['replyTo', new Y.Array<string>()]
     ]);
 
-    this.root.set('content', this.root.has('content') ? this.root.get('content') : new Y.Text());
+    this.root.set('content', new Y.Text());
   }
   private getOrInitSubMap(key: string, initialData: [string, any][] = []): Y.Map<any> {
     return this.root.has(key) && this.root.get(key) instanceof Y.Map ? this.root.get(key) : this.root.set(key, new Y.Map<any>(initialData)) as Y.Map<any>;
@@ -43,13 +43,26 @@ export default class NObject {
     });
   }
 
+  // Method to ensure content is loaded
+  loadContent(): void {
+      if (!this.root.has('content')) {
+          this.root.set('content', new Y.Text());
+      }
+      this.text; // Accessing the text property to ensure Y.Text is initialized
+  }
+
   // Getters
     get created(): number { return this.metadata.get('created'); }
     get updated(): number { return this.metadata.get('updated'); }
     get name(): string { return this.metadata.get('name'); }
     get public(): boolean { return this.metadata.get('public'); }
     get author(): string { return this.metadata.get('author'); }
-    get text(): Y.Text { return this.root.get('content'); }
+    get text(): Y.Text {
+        if (!this.root.has('content')) {
+            this.root.set('content', new Y.Text());
+        }
+        return this.root.get('content');
+    }
     get tags(): Y.Array<string> { return this.metadata.get('tags'); }
     get sharedWith(): Y.Array<string> { return this.metadata.get('sharedWith'); }
     get replies(): Y.Array<string> { return this.links.get('reply') || new Y.Array<string>(); }
@@ -103,7 +116,7 @@ export default class NObject {
     observe(fn: (events: Y.YEvent<any>[]) => void) {
       this.root.observeDeep(fn);
     }
-
+  
     unobserve(fn: (events: Y.YEvent<any>[]) => void) {
       this.root.unobserveDeep(fn);
     }
@@ -112,8 +125,19 @@ export default class NObject {
       return this.root.toJSON();
     }
 
+    async evolveToAgent(): Promise<void> {
+      // Stub for future implementation of thought evolution to agent
+      console.log(`Evolving object ${this.id} to agent... (not implemented yet)`);
+      // Future implementation will involve transforming this NObject into an "Agent" object
+      // and setting up necessary mechanisms for goal automation and achievement.
+    }
+
     getMetadata(key: string): any {
         return this.metadata.get(key);
+    }
+
+    getMetadataKeys(): string[] {
+        return Array.from(this.metadata.keys());
     }
 
     setMetadata(key: string, value: any): void {

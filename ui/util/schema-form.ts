@@ -8,7 +8,7 @@ import { UserSchema } from '../schema';
 // Define types and interfaces related to schema form utility here
 
 
-export function renderSchemaForm(schema: UserSchema, data: UserInfo, updateCallback: (fieldPath: string, value: any) => void): JQuery {
+export function renderSchemaForm(schema: any, data: any, updateCallback: (fieldPath: string, value: any) => void): JQuery {
   const form = $('<div/>').addClass('schema-form');
 
   if (schema && schema.properties) {

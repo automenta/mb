@@ -1,7 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {mitt as Emitter} from '../../src/events';
 
-interface TestEvents {
+interface TestEvents extends Record<string | symbol, unknown> {
     foo: string;
     bar: number;
     'network:error': Error;
@@ -185,14 +185,43 @@ describe('mitt', () => {
 
     describe('type safety', () => {
         it('should enforce correct event types', () => {
-            e.on('foo', (s: string) => s.toLowerCase());
-            e.on('bar', (n: number) => n.toFixed());
-            e.on('network:error', (e: Error) => e.message);
+            const fooSpy = vi.fn((s: string) => s.toLowerCase());
+            const barSpy = vi.fn((n: number) => n.toFixed());
+            const errorSpy = vi.fn((e: Error) => e.message);
+            
+            e.on('foo', fooSpy);
+            e.on('bar', barSpy);
+            e.on('network:error', errorSpy);
+            
+            e.emit('foo', 'TEST');
+            e.emit('bar', 42);
+            e.emit('network:error', new Error('Test error'));
+            
+            expect(fooSpy).toHaveBeenCalledWith('TEST');
+            expect(fooSpy).toHaveReturnedWith('test');
+            expect(barSpy).toHaveBeenCalledWith(42);
+            expect(barSpy).toHaveReturnedWith('42');
+            expect(errorSpy).toHaveBeenCalledWith(new Error('Test error'));
+            expect(errorSpy).toHaveReturnedWith('Test error');
         });
 
-        it('should allow void events', () => {
-            e.on('auth:logout', () => {});
+        it('should allow void events without payload', () => {
+            const logoutSpy = vi.fn();
+            e.on('auth:logout', logoutSpy);
+            
             e.emit('auth:logout');
+            
+            expect(logoutSpy).toHaveBeenCalledTimes(1);
+            expect(logoutSpy).toHaveBeenCalledWith(undefined);
+        });
+
+        it('should throw type errors for incorrect event payloads', () => {
+            // @ts-expect-error - Testing invalid type
+            e.emit('foo', 42);
+            // @ts-expect-error - Testing invalid type
+            e.emit('bar', 'not a number');
+            // @ts-expect-error - Testing invalid type
+            e.emit('network:error', 'not an error');
         });
     });
 });

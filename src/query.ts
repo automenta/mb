@@ -1,6 +1,6 @@
 import * as Y from 'yjs';
 import NObject from './obj';
-import DB from './db'; // Import DB class from db.ts
+import DB from './db';
 
 type FilterPredicate = (obj: NObject) => boolean;
 type SortPredicate = (a: NObject, b: NObject) => number;

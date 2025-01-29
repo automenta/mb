@@ -1,21 +1,21 @@
-// src/db.ts
 import * as Y from 'yjs';
 import {IndexeddbPersistence} from 'y-indexeddb';
 import NObject from './obj';
 import {QueryBuilder} from './query';
 import {ReplyManager} from './reply-manager';
 import ConfigManager from './config-manager';
-import { PersistenceManager } from './persistence-manager'; // Added import
+import { PersistenceManager } from './persistence-manager';
+import Network from './net';
 
 export default class DB {
   readonly doc: Y.Doc;
   public readonly index: Y.Map<string>;
-  // public readonly config: Y.Map<unknown>; // Removed
-  public readonly provider: IndexeddbPersistence;
+  public readonly provider: IndexeddbPersistence & { awareness?: any };
   public readonly store: Y.Doc;
-  private persistenceManager: PersistenceManager; // Added
+  private persistenceManager: PersistenceManager;
   private replyManager: ReplyManager;
-  private configManager: ConfigManager; // Added
+  private configManager: ConfigManager;
+  private net?: Network; // Add network reference
   public get config(): ConfigManager { // Added public getter for configManager
     return this.configManager;
   }
@@ -24,13 +24,11 @@ export default class DB {
     this.doc = new Y.Doc();
     this.store = new Y.Doc();
     this.provider = provider || new IndexeddbPersistence('main-db', this.doc);
-    // this.config = this.doc.getMap('config'); // Removed
     this.index = this.doc.getMap<string>('objects');
     this.replyManager = new ReplyManager(this);
     this.configManager = new ConfigManager(this.doc); // Added
     this.persistenceManager = new PersistenceManager(this.doc); // Added
 
-    // console.log('DB.constructor: this.doc:', this.doc);
 
     // Initialize Yjs types
     const yarray = this.doc.getArray('yarray-initializer');
@@ -56,10 +54,14 @@ export default class DB {
    * @param id The ID of the object.
    * @returns The NObject if found, otherwise null.
    */
-  get(id: string): NObject | null {
-    const objectId = this.index.get(id); // Get object ID from index
-    return objectId ? new NObject(this.doc, objectId) : null; // Create new NObject instance
-  }
+    get(id: string): NObject | null {
+        const objectId = this.index.get(id);
+        if (!objectId) return null;
+    
+        const obj = new NObject(this.doc, objectId);
+        obj.loadContent(); // Ensure content is loaded
+        return obj;
+    }
 
   /**
    * Deletes an NObject by ID.
@@ -80,7 +82,19 @@ export default class DB {
       // Delete the object itself
       this.index.delete(id);
       this.doc.share.delete(id);
-      // TODO any other cleanup?
+      // Cleanup metadata and references
+      const metadataKeys = obj.getMetadataKeys();
+      metadataKeys.forEach(key => obj.setMetadata(key, null));
+      
+      // Cleanup awareness state if exists
+      if (this.provider.awareness) {
+        this.provider.awareness.setLocalState(null);
+      }
+      
+      // Cleanup any related network connections
+      if (this.net) {
+        this.net.unshareObject(id);
+      }
     });
     return true;
   }
@@ -104,7 +118,7 @@ export default class DB {
     this.query()
       .where(obj => obj.author === author)
       .execute();
-
+  
   /**
    * Searches for NObjects matching the query.
    * @param query The search query string.
@@ -133,10 +147,6 @@ export default class DB {
 
   getRepliesTo = (id: string): NObject[] => this.replyManager.getRepliesTo(id);
 
-  // // Uncomment if observation needed
-  // // observe = (fn: Observer): void => this.index.observe(fn);
-  // // observeObject = (id: string, fn: Observer): void =>
-  // //     this.get(id)?.observe(fn);
 
   /**
    * Retrieves the text of an object by its page ID.

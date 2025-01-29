@@ -4,7 +4,6 @@ import * as Y from 'yjs';
 import DB from '../../src/db';
 import NObject from '../../src/obj';
 
-
 describe('DB', () => {
     let db: DB;
     let ydoc: Y.Doc;
@@ -109,9 +108,15 @@ describe('DB', () => {
         expect(obj.text.toString()).toEqual('Y.Text content');
     });
 
-    it('should set and get object text', () => {
+    it('should set and get object text', async () => {
         const obj = db.create();
-        obj.setText('Test text');
+        await new Promise<void>((resolve) => {
+            obj.doc.transact(() => {
+                obj.setText('Test text');
+                resolve();
+            });
+        });
+        await new Promise((resolve) => setTimeout(resolve, 100)); // Wait for 100ms
         const retrievedObj = db.get(obj.id);
         if (retrievedObj === null) throw new Error('Object is null');
         expect(retrievedObj.text.toString()).toEqual('Test text');
@@ -160,11 +165,6 @@ describe('DB', () => {
         expect(db.get('non-existent-id')).toBeNull();
     });
 
-    // it('should handle invalid inputs gracefully', () => {
-    //     expect(() => db.createReply('invalid-id')).toThrow();
-    //     expect(() => db.objName('invalid-id', 'Name')).toThrow();
-    // });
-
     it('should handle edge cases with long names and text', () => {
         const longName = 'a'.repeat(1000);
         const longText = new Y.Text('b'.repeat(10000));
@@ -175,20 +175,31 @@ describe('DB', () => {
         expect(obj.text.toString()).toEqual(longText.toString());
     });
 
-    // New tests for provider initialization
-    it('should initialize provider and sync', async () => {
-        const provider = new IndexeddbPersistence('testdb', ydoc);
-        const db = new DB('testuser', provider);
-        await provider.whenSynced;
-        expect(true).toBeTruthy(); // If whenSynced resolves, the provider is initialized
-    });
+    describe('Provider Integration', () => {
+        it('should initialize provider and sync documents', async () => {
+            const provider = new IndexeddbPersistence('testdb', ydoc);
+            const db = new DB('testuser', provider);
+            
+            // Verify initial state
+            expect(provider.synced).toBe(false);
+            
+            await provider.whenSynced;
+            
+            // Verify sync completion
+            expect(provider.synced).toBe(true);
+            expect(provider.doc).toBe(ydoc);
+        });
 
-    it('should log synced event', () => {
-        const provider = new IndexeddbPersistence('testdb', ydoc);
-        const db = new DB('testuser', provider);
-        const consoleSpy = vi.spyOn(console, 'log');
-        db.provider.emit('synced', []);
-        expect(consoleSpy).toHaveBeenCalledWith('Synced');
+        it('should log synced event when provider completes synchronization', () => {
+            const provider = new IndexeddbPersistence('testdb', ydoc);
+            const db = new DB('testuser', provider);
+            const consoleSpy = vi.spyOn(console, 'log');
+            
+            db.provider.emit('synced', []);
+            
+            expect(consoleSpy).toHaveBeenCalledWith('Synced');
+            expect(consoleSpy).toHaveBeenCalledTimes(1);
+        });
     });
 
     // New test for error handling in createReply
@@ -201,18 +212,5 @@ describe('DB', () => {
     });
 
     
-    /*
-    // New test for filterList method - Method filterList does not exist in DB class
-    it('should filter objects by a given predicate', () => {
-        const obj1 = db.create();
-        const obj2 = db.create();
-        const obj3 = db.create();
-        obj1.name = 'filterTest1';
-        obj2.name = 'filterTest2';
-        obj3.name = 'noFilter';
-        const filteredList = db.filterList((obj: NObject) => obj.name.startsWith('filterTest'));
-        expect(JSON.stringify(filteredList)).equals(JSON.stringify([obj1, obj2])); //and not obj3
-    });
-    */
 
 });

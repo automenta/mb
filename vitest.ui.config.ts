@@ -19,7 +19,7 @@ export default defineConfig({
       headless: true,
       isolate: false,
     },
-    environment: 'happy-dom',
+    environment: 'jsdom',
     setupFiles: ['./test/ui/test-setup.ts'],
     globals: true,
     restoreMocks: true,

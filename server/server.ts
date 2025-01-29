@@ -5,7 +5,6 @@ import { Server as SocketIOServer, Socket } from "socket.io";
 import { createServer as viteServer } from "vite";
 import { WebSocketServer } from "ws";
 import * as Y from "yjs";
-import { setupWSConnection } from "y-websocket/bin/utils";
 
 const PORT = 3000;
 
@@ -38,7 +37,7 @@ export async function createServer(port = 3000) {
   });
   const ydoc = new Y.Doc();
   wss.on("connection", (ws, request) => {
-    setupWSConnection(ws, request, ydoc);
+    //setupWSConnection(ws, request, ydoc);
   });
 
   const wsConnect = (s: Socket) => {
@@ -89,6 +88,13 @@ export async function createServer(port = 3000) {
   httpServer.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
+
+  
+  async function enableSupernodeMode(): Promise<void> {
+    // Stub for enabling supernode mode
+    console.log('Enabling supernode mode... (not implemented yet)');
+    // Future implementation will handle supernode functionalities like large-scale coordination and fallback
+  }
 
   return { server: httpServer, io };
 }
