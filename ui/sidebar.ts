@@ -210,7 +210,7 @@ export default class Sidebar {
             if (item.view) {
                 return this.createMenuButton({ ...item, mainView });
             }
-        }).filter(item => item !== undefined) as JQuery[]; // Filter out undefined and cast
+        }).filter(Boolean) as JQuery[]; // More concise filter and cast
     }
 
     private createToggleDarkModeButton(): JQuery {

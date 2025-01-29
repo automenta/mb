@@ -15,6 +15,7 @@ import MeView from './me.view';
 import NetView from './net.view';
 import MatchingView from './match.view';
 
+// Abstract Component Base Class
 abstract class Component<T extends HTMLElement = HTMLElement> {
 }
 
@@ -54,7 +55,6 @@ export default class App extends Component {
     match: Matching | null = null;
     editor: Editor | null = null;
     sidebar: Sidebar | null = null;
-    private _userID: string;
     public store: ReturnType<typeof initializeStore>;
     public ele: HTMLElement;
     private themeManager: ThemeManager = new ThemeManager(this.ele);
@@ -62,7 +62,7 @@ export default class App extends Component {
 
 
     constructor(userID: string, channel: string) {
-        super(); // Call Component constructor
+        super();
         this._userID = userID;
         this.channel = channel;
         this.ele = document.createElement('div');
@@ -81,6 +81,8 @@ export default class App extends Component {
         store.setNetworkStatus(status ? 'connected' : 'disconnected');
     }
 
+    private _userID: string;
+
     private initializeDB(userID: string): void {
         this.db = new DB(userID);
         this.store = initializeStore(this.db);
@@ -93,51 +95,43 @@ export default class App extends Component {
 
     private initializeMatching(): void {
         this.match = new Matching(this.db!, this.net!);
-    }
-
-    private initializeEditor(): void {
-        const mainView = document.createElement('div');
-        mainView.className = 'main-view';
-        this.ele.appendChild(mainView);
-        this.editor = new Editor({
-            ele: mainView as HTMLElement,
-            db: this.db!,
-            getAwareness: this.net!.awareness.bind(this.net),
-            app: this,
-            networkStatusCallback: this.setNetworkStatus.bind(this),
-            isReadOnly: this.isReadOnlyDocument(),
-            ydoc: this.db!.doc,
-        });
-    }
-
-    private initializeSidebar(): void {
-        this.sidebar = new Sidebar(this.db!, this);
-        this.ele.prepend(this.sidebar.ele[0]);
+        if (this.match) console.log('Matching initialized'); // Conditional logging
     }
 
     private initializeViews(): void {
         const mainView = $('.main-view');
 
         this.sidebar = new Sidebar(this.db!, this);
-        this.ele.prepend(this.sidebar.ele[0]);
+        this.editor = this.createEditor(mainView[0]);
 
-        if (this.db) {
-            this.components.push(
-                this.sidebar,
-                this.editor = this.createEditor(mainView[0]),
+        this.components = [
+            this.sidebar,
+            this.editor,
+            ...(this.db ? [ // Conditionally include DB related views
                 new MeView(mainView, this.user.bind(this), this.awareness.bind(this), this.db),
                 new DBView(mainView[0], this.db),
                 new AgentsView(mainView),
-            );
-        }
-        this.components.push(
+            ] : []),
             new FriendsView(mainView, this.awareness.bind(this)),
             new NetView(mainView, this.net),
-        );
-        if (this.match) {
-            this.components.push(
+            ...(this.match ? [ // Conditionally include Matching view
                 new MatchingView(mainView, this.match)
-            );
+            ] : [])
+        ];
+
+        this.ele.prepend(this.sidebar.ele[0]); // Ensure sidebar is always prepended
+    }
+
+    private createEditor(mainView: HTMLElement): Editor {
+        if (!this.db || !this.net) throw new Error("DB or Net not initialized yet");
+        return new Editor({
+            ele: mainView as HTMLElement,
+            db: this.db,
+            getAwareness: this.net.awareness.bind(this.net),
+            app: this,
+            networkStatusCallback: this.setNetworkStatus.bind(this),
+            isReadOnly: this.isReadOnlyDocument(),
+            ydoc: this.db.doc,
         }
     }
     private initializeSocket(): void {
@@ -149,52 +143,26 @@ export default class App extends Component {
         storedProfile && this.net?.awareness().setLocalStateField('user', storedProfile);
     }
 
-    private setupSocketListeners(socket: Socket): void {
-        if (!socket) return;
-        socket.onAny((event, ...args) => this.handleSocketMessage(event, ...args));
-    }
-
-    private createEditor(mainView: HTMLElement): Editor {
-        return new Editor({
-            ele: mainView as HTMLElement,
-            db: this.db!,
-            getAwareness: this.net!.awareness.bind(this.net),
-            app: this,
-            networkStatusCallback: this.setNetworkStatus.bind(this),
-            isReadOnly: this.isReadOnlyDocument(),
-            ydoc: this.db!.doc,
-        });
-    }
-
     private themeManager: ThemeManager = new ThemeManager(this.ele);
     get theme() {
     }
 
     private handleSocketMessage(event: string, data?: any): void {
-        switch (event) {
-            case 'connect':
-                console.log('Socket connected');
-                this.setNetworkStatus(true);
-                break;
-            case 'disconnect':
-                console.log('Socket disconnected');
-                this.setNetworkStatus(false);
-                break;
-            case 'snapshot':
-                console.log('Socket snapshot:', data);
-                this.editor?.loadSnapshot(data);
-                break;
-            case 'plugin-status':
-                console.log('Plugin status:', data);
-                store.updatePluginStatus(data);
-                break;
-            case 'plugin-error':
-                console.error('Plugin error:', data);
-                store.logError(data); // Assuming 'data' is { pluginName, error, timestamp }
-                break;
-            default:
-                console.log('Socket event:', event, data);
-        }
+        const handlers: Record<string, ( any) => void> = {
+            'connect': () => { console.log('Socket connected'); this.setNetworkStatus(true); },
+            'disconnect': () => { console.log('Socket disconnected'); this.setNetworkStatus(false); },
+            'snapshot': (data) => { console.log('Socket snapshot:', data); this.editor?.loadSnapshot(data); },
+            'plugin-status': (data) => { console.log('Plugin status:', data); store.updatePluginStatus(data); },
+            'plugin-error': (data) => { console.error('Plugin error:', data); store.logError(data); },
+            'default': (event, data) => console.log('Socket event:', event, data),
+        };
+
+        const handler = handlers[event] || (( any) => handlers.default(event, data)); // Default handler
+        handler(data);
+    }
+    private setupSocketListeners(socket: Socket): void {
+        if (!socket) return;
+        socket.onAny((event, ...args) => this.handleSocketMessage(event, ...args));
     }
 
     private updateUIState(state: AppState): void {
