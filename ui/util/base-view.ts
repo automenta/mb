@@ -15,12 +15,6 @@ export default class BaseView {
         // To be overridden by subclasses
         console.warn('render() method not implemented in subclass');
     }
-
-    bindEvents(): void {
-        // To be overridden by subclasses
-        console.warn('bindEvents() method not implemented in subclass');
-    }
-
     protected renderHeader(title: string): JQuery<HTMLElement> {
         return $('<h2>').text(title);
     }

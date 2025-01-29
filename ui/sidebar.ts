@@ -12,22 +12,6 @@ import MatchingView from "./match.view.js";
 import AgentsView from "./agents.view";
 import App from './app';
 
-/**
- * Creates a menu button with given properties.
- */
-function createMenuButton({ id, title, view, isView = false, mainView }: {
-    id: string; title: string; view: any; isView?: boolean; mainView: JQuery;
-}): JQuery<HTMLElement> {
-    return $('<button>', {
-        id: `menu-${id}`,
-        class: 'menubar-button',
-        text: title,
-        title: title
-    }).click(() => {
-        mainView.empty();
-        isView ? view.render() : mainView.append(view.render());
-    });
-}
 class PageContextMenu {
     readonly ele: JQuery;
     private selectedPageId: string | null = null;
@@ -151,43 +135,45 @@ export default class Sidebar {
         listViewContainer.append(view);
     }
 
-    menu() {
-        const menuBar = $('<div>', { class: 'menubar' }).append(
-            $('<button>', {
-                class: 'menubar-button add-page-button',
-                text: '+',
-                title: 'Add New Page'
-            }).click(() => {
-                const db = this.store.getState().db;
-                if (db) {
-                    const newObj = db.create();
-                    newObj.name = 'Untitled';
-                    this.store.addObject(newObj);
-                    this.store.setCurrentObject(newObj);
-                    this.store.getState().awareness?.setLocalState({
-                        type: 'object-created',
-                        id: newObj.id,
-                        timestamp: Date.now()
-                    });
-                    this.store.app?.editor?.loadDocument(newObj); // Load new object into editor
-                }
-            }),
-            $('<button>', {
-                class: 'menubar-button',
-                text: 'Test Add Object',
-                title: 'Test Add Object'
-            }).click(() => {
-                const db = this.store.getState().db;
-                if (db) {
-                    const newObj = db.create();
-                    newObj.name = 'Test Object';
-                    this.store.addObject(newObj);
-                    console.log('Test object added:', newObj.id);
-                }
-            })
-        );
+    private createAddPageButton(): JQuery {
+        return $('<button>', {
+            class: 'menubar-button add-page-button',
+            text: '+',
+            title: 'Add New Page'
+        }).click(() => {
+            const db = this.store.getState().db;
+            if (db) {
+                const newObj = db.create();
+                newObj.name = 'Untitled';
+                this.store.addObject(newObj);
+                this.store.setCurrentObject(newObj);
+                this.store.getState().awareness?.setLocalState({
+                    type: 'object-created',
+                    id: newObj.id,
+                    timestamp: Date.now()
+                });
+                this.store.app?.editor?.loadDocument(newObj); // Load new object into editor
+            }
+        });
+    }
 
-        // Add a dropdown for list view modes
+    private createTestAddObjectButton(): JQuery {
+        return $('<button>', {
+            text: 'Test Add Object',
+            title: 'Test Add Object'
+        }).click(() => {
+            const db = this.store.getState().db;
+            if (db) {
+                const newObj = db.create();
+                newObj.name = 'Test Object';
+                this.store.addObject(newObj);
+                console.log('Test object added:', newObj.id);
+            }
+        });
+    }
+
+    private createListViewModeDropdown(): JQuery {
+        // Dropdown for list view modes
         const listModeDropdown = $('<select>', {
             id: 'list-mode-dropdown',
             title: 'Select List View Mode'
@@ -200,43 +186,64 @@ export default class Sidebar {
             const selectedMode = listModeDropdown.val() as string;
             this.switchListViewMode(selectedMode);
         });
+        return listModeDropdown;
+    }
 
-        menuBar.append(listModeDropdown);
-
-        const app = this.store.app;
-        if (!app) {
-            console.error('App instance not found in store');
-            return menuBar;
-        }
-
-        let $main = $('.main-view');
+    private createMenuItems(mainView: JQuery): JQuery[] {
+        const $main = $('.main-view');
         const menuItems = [{ id: 'profile', title: 'Me', view: this.meView, isView: false },
             { id: 'friends', title: 'Friends', view: this.friendsView, isView: false },
             { id: 'network', title: 'Net', view: this.netView, isView: false },
             { id: 'database', title: 'DB', view: this.dbView, isView: true },
             { id: 'agents', title: 'Agents', view: new AgentsView($main), isView: true },
         ];
-        menuItems.forEach(item => {
+        return menuItems.map(item => {
             if (item.view) {
-                menuBar.append(createMenuButton({ ...item, mainView: $main }));
+                return this.createMenuButton({ ...item, mainView });
             }
-        });
+        }).filter(item => item !== undefined) as JQuery[]; // Filter out undefined and cast
+    }
 
-        // Add a button to toggle dark mode
+    private createToggleDarkModeButton(): JQuery {
+        return $('<button>', {
+            class: 'menubar-button',
+            text: 'Toggle Dark Mode',
+            title: 'Toggle Dark Mode'
+        }).click(() => {
+            this.store.app?.toggleDarkMode();
+        });
+    }
+
+    /**
+     * Creates a menu button with given properties.
+     */
+    private createMenuButton({ id, title, view, isView = false, mainView }: {
+        id: string; title: string; view: any; isView?: boolean; mainView: JQuery;
+    }): JQuery<HTMLElement> {
+        return $('<button>', {
+            id: `menu-${id}`,
+            class: 'menubar-button',
+            text: title,
+            title: title
+        }).click(() => {
+            mainView.empty();
+            isView ? view.render() : mainView.append(view.render());
+        });
+    }
+
+    menu() {
+        const menuBar = $('<div>', { class: 'menubar' });
         menuBar.append(
-            $('<button>', {
-                class: 'menubar-button',
-                text: 'Toggle Dark Mode',
-                title: 'Toggle Dark Mode'
-            }).click(() => {
-                this.store.app?.toggleDarkMode();
-            })
+            this.createAddPageButton(),
+            this.createTestAddObjectButton(),
+            this.createListViewModeDropdown(),
+            ...this.createMenuItems($('.main-view')),
+            this.createToggleDarkModeButton()
         );
 
-        // Add a placeholder for the list view
+        // Placeholder for the list view
         const listViewContainer = $('<div>', { id: 'list-view-container' });
         this.ele.append(listViewContainer);
-
         return menuBar;
     }
 

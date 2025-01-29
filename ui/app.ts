@@ -152,35 +152,33 @@ export default class App extends Component {
         }
     }
 
-
-    private handleStoreUpdate(state: AppState): void {
-        state.currentObject && this.editor?.loadDocument(state.currentObject);
+    private updateUIState(state: AppState): void {
         this.showConnectionWarning(state.networkStatus === 'disconnected');
         this.showErrors(state.errors);
         this.showPluginStatus(state.pluginStatus);
     }
 
+    private handleStoreUpdate(state: AppState): void {
+        state.currentObject && this.editor?.loadDocument(state.currentObject);
+        this.updateUIState(state);
+    }
+
     private showErrors(errors: Array<{ pluginName: string; error: any; timestamp: number }>): void {
         this.updateVisibility('error-container', errors.length > 0);
-
-        const errorContainer = document.getElementById('error-container')!;
         const errorList = document.getElementById('error-list');
-        if (errorContainer && errorList) {
-            errorList.innerHTML = '';
-            errors.length > 0 && errors.forEach(error => {
-                const errorItem = document.createElement('li');
-                errorItem.textContent = `${error.pluginName}: ${error.error}`;
-                errorList.appendChild(errorItem);
-            });
-        }
+        if (!errorList) return;
+        errorList.innerHTML = ''; // Clear existing errors
+        errors.forEach(error => {
+            const errorItem = document.createElement('li');
+            errorItem.textContent = `${error.pluginName}: ${error.error}`;
+            errorList.appendChild(errorItem);
+        });
     }
 
     private showPluginStatus(plugins: Record<string, boolean>): void {
         this.updateVisibility('plugin-status-container', Object.keys(plugins).length > 0);
-
-        const pluginStatusContainer = document.getElementById('plugin-status-container')!;
         const pluginStatusList = document.getElementById('plugin-status-list');
-        pluginStatusContainer && pluginStatusList && (pluginStatusList.innerHTML = '', Object.entries(plugins).forEach(([pluginName, status]) => {
+        pluginStatusList && (pluginStatusList.innerHTML = '', Object.entries(plugins).forEach(([pluginName, status]) => {
             const statusIcon = status ? '🟢' : '🔴';
             const pluginItem = document.createElement('li');
             pluginItem.textContent = `${pluginName}: ${statusIcon}`;
@@ -223,14 +221,7 @@ export default class App extends Component {
         this.initializeSocket();
         this.store = initializeStore(this.db!);
 
-        this.components = [ // Register components for easier management
-            this.sidebar!,
-            this.editor!,
-            // ... other components if we add more
-        ];
-
-        // Mount components
-        this.components.forEach(component => component.mount(this.ele));
+        [this.sidebar, this.editor].forEach(comp => comp?.mount(this.ele)); // Mount components
 
         this.loadUserProfile();
     }
