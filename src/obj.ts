@@ -6,7 +6,7 @@ export default class NObject {
   public readonly doc: Y.Doc;
   public readonly root: Y.Map<any>;
   protected readonly meta: Y.Map<any>;
-  private readonly links: Y.Map<Y.Array<string>>;
+  protected readonly links: Y.Map<Y.Array<string>>;
 
   constructor(doc: Y.Doc, id?: string) {
     this.doc = doc;
@@ -29,7 +29,8 @@ export default class NObject {
 
     this.getOrInitSubMap('content'); // Ensure content map is initialized
   }
-  private getOrInitSubMap(key: string, initialData: [string, any][] = []): Y.Map<any> {
+
+  protected getOrInitSubMap(key: string, initialData: [string, any][] = []): Y.Map<any> {
     return this.root.has(key) && this.root.get(key) instanceof Y.Map ? this.root.get(key) : this.root.set(key, new Y.Map<any>(initialData)) as Y.Map<any>;
   }
 
@@ -91,7 +92,7 @@ export default class NObject {
     }
 
     // Helper method for adding to Y.Array
-    private updateArray(arr: Y.Array<string>, item: string, add: boolean) {
+    protected updateArray(arr: Y.Array<string>, item: string, add: boolean) {
       this.doc.transact(() => {
         const index = arr.toArray().indexOf(item);
         if (add && index === -1) {
