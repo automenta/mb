@@ -1,12 +1,69 @@
 /**
  * Interface representing network metrics collected by the Network class
  */
-interface NetworkMetrics {
+interface NetworkMetricsData {
     bytesTransferred: number;
     messagesSent: number;
     messagesReceived: number;
     peersConnected: Set<string>;
 }
+
+/**
+ * Class to manage network metrics.
+ */
+class NetworkMetrics {
+    private  NetworkMetricsData;
+
+    constructor() {
+        this.data = {
+            bytesTransferred: 0,
+            messagesSent: 0,
+            messagesReceived: 0,
+            peersConnected: new Set(),
+        };
+    }
+
+    incrementBytesTransferred(bytes: number): void {
+        this.data.bytesTransferred += bytes;
+    }
+
+    incrementMessagesSent(): void {
+        this.data.messagesSent += 1;
+    }
+
+    incrementMessagesReceived(): void {
+        this.data.messagesReceived += 1;
+    }
+
+    addPeerConnected(peerId: string): void {
+        this.data.peersConnected.add(peerId);
+    }
+
+    removePeerConnected(peerId: string): void {
+        this.data.peersConnected.delete(peerId);
+    }
+
+    getMetrics(): NetworkMetricsData {
+        return { ...this.data }; // Return a copy to prevent direct modification
+    }
+
+    getPeersConnected(): Set<string> {
+        return new Set(this.data.peersConnected); // Return a copy
+    }
+
+    getMessagesSent(): number {
+        return this.data.messagesSent;
+    }
+
+    getMessagesReceived(): number {
+        return this.data.messagesReceived;
+    }
+
+    getBytesTransferred(): number {
+        return this.data.bytesTransferred;
+    }
+}
+
 
 /**
  * Union type of all possible network event types
@@ -46,7 +103,7 @@ class Network {
     readonly channel: string;
     private db: DB;
     private docsShared: Set<string>;
-    private readonly metrics: NetworkMetrics;
+    private readonly metrics: NetworkMetrics; // Use the NetworkMetrics class
     net!: WebrtcProvider;
     private readonly signalingServers: string[];
 
@@ -55,20 +112,15 @@ class Network {
         this.db = db;
 
         this.docsShared = new Set();
-        this.metrics = {
-            messagesSent: 0,
-            messagesReceived: 0,
-            bytesTransferred: 0,
-            peersConnected: new Set(),
-        };
+        this.metrics = new NetworkMetrics(); // Initialize NetworkMetrics
 
         this.db.doc.on('update', (update, origin) => {
-            this.metrics.bytesTransferred += update.length;
+            this.metrics.incrementBytesTransferred(update.length);
             if (origin === this.net!) {
-                this.metrics.messagesSent++;
+                this.metrics.incrementMessagesSent();
                 this.emit('message-sent', { bytes: update.length });
             } else {
-                this.metrics.messagesReceived++;
+                this.metrics.incrementMessagesReceived();
                 this.emit('message-received', { bytes: update.length });
             }
         });
@@ -106,11 +158,11 @@ class Network {
         // Track peer connections
         this.net.on('peers', ({added, removed}) => {
             added.forEach(id => {
-                this.metrics.peersConnected.add(id);
+                this.metrics.addPeerConnected(id);
                 this.emit('peer-connected', {peerId: id});
             });
             removed.forEach(id => {
-                this.metrics.peersConnected.delete(id);
+                this.metrics.removePeerConnected(id);
                 this.emit('peer-disconnected', {peerId: id});
             });
         });
@@ -170,11 +222,12 @@ class Network {
     }
 
     getNetworkStats() {
+        const metricsData = this.metrics.getMetrics();
         return {
-            messagesSent: this.metrics.messagesSent,
-            messagesReceived: this.metrics.messagesReceived,
-            bytesTransferred: this.metrics.bytesTransferred,
-            peersConnected: Array.from(this.metrics.peersConnected), // Convert Set to Array for easier serialization
+            messagesSent: metricsData.messagesSent,
+            messagesReceived: metricsData.messagesReceived,
+            bytesTransferred: metricsData.bytesTransferred,
+            peersConnected: Array.from(this.metrics.getPeersConnected()), // Use getter
             awareness: Array.from(this.net!.awareness.getStates().values())
                 .map(state => ({
                     clientID: state.user?.id,
