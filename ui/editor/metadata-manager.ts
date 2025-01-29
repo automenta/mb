@@ -13,6 +13,11 @@ export class MetadataManager {
         }).append(
           new Form({
             fields: [
+              {
+                type: 'checkbox',
+                label: 'Is Query',
+                propKey: 'isQuery',
+              },
               { type: 'text', label: 'Name', value: currentObject.name, propKey: 'name' },
               { type: 'checkbox', label: 'Public', value: currentObject.public, propKey: 'public' },
               { type: 'text', label: 'Author', value: currentObject.author, propKey: 'author', isReadOnly: true },

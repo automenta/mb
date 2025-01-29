@@ -18,6 +18,7 @@ export default class NObject {
       ['created', Date.now()],
       ['updated', Date.now()],
       ['public', false],
+      ['isQuery', false],
       ['author', ''],
       ['tags', new Y.Array<string>()],
       ['sharedWith', new Y.Array<string>()]
@@ -57,6 +58,7 @@ export default class NObject {
     get updated(): number { return this.metadata.get('updated'); }
     get name(): string { return this.metadata.get('name'); }
     get public(): boolean { return this.metadata.get('public'); }
+    get isQuery(): boolean { return this.metadata.get('isQuery'); }
     get author(): string { return this.metadata.get('author'); }
     get text(): Y.Text {
         if (!this.root.has('content') || !(this.root.get('content') instanceof Y.Text)) { // Check if content exists and is Y.Text
@@ -72,6 +74,7 @@ export default class NObject {
     // Setters
     set name(v: string) { this.updateMetadata({ name: v }); }
     set public(v: boolean) { this.updateMetadata({ public: v }); }
+    set isQuery(v: boolean) { this.updateMetadata({ isQuery: v }); }
     set author(v: string) { this.updateMetadata({ author: v }); }
     set text(newText: string) {
         this.doc.transact(() => {

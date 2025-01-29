@@ -1,5 +1,6 @@
 import $ from "jquery";
 import BaseView from './util/base-view';
+import ObjViewMini from '../obj-view-mini';
 
 import '/ui/css/db.css';
 
@@ -100,6 +101,12 @@ export default class DBView extends BaseView {
             console.log('Edit button clicked for pageId:', page.pageId);
         });
         $row.append($('<td>').append(editButton));
+
+        const objViewMini = new ObjViewMini(page);
+        const listItem = $('<li>').append(objViewMini.ele);
+
+        const name = page.name + (page.isQuery ? ' (Query)' : ''); // Add "(Query)" if isQuery is true
+        objViewMini.ele.find('.obj-name').text(name); // Update object name in ObjViewMini
         return $row;
     }
 
