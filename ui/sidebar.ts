@@ -12,6 +12,22 @@ import MatchingView from "./match.view.js";
 import AgentsView from "./agents.view";
 import App from './app';
 
+/**
+ * Creates a menu button with given properties.
+ */
+function createMenuButton({ id, title, view, isView = false, mainView }: {
+    id: string; title: string; view: any; isView?: boolean; mainView: JQuery;
+}): JQuery<HTMLElement> {
+    return $('<button>', {
+        id: `menu-${id}`,
+        class: 'menubar-button',
+        text: title,
+        title: title
+    }).click(() => {
+        mainView.empty();
+        isView ? view.render() : mainView.append(view.render());
+    });
+}
 class PageContextMenu {
     readonly ele: JQuery;
     private selectedPageId: string | null = null;
@@ -194,8 +210,7 @@ export default class Sidebar {
         }
 
         let $main = $('.main-view');
-        const menuItems = [
-            { id: 'profile', title: 'Me', view: this.meView, isView: false },
+        const menuItems = [{ id: 'profile', title: 'Me', view: this.meView, isView: false },
             { id: 'friends', title: 'Friends', view: this.friendsView, isView: false },
             { id: 'network', title: 'Net', view: this.netView, isView: false },
             { id: 'database', title: 'DB', view: this.dbView, isView: true },
@@ -203,7 +218,7 @@ export default class Sidebar {
         ];
         menuItems.forEach(item => {
             if (item.view) {
-                menuBar.append(this.createMenuButton(item));
+                menuBar.append(createMenuButton({ ...item, mainView: $main }));
             }
         });
 
@@ -225,19 +240,7 @@ export default class Sidebar {
         return menuBar;
     }
 
-    private createMenuButton({ id, title, view, isView = false }: { id: string; title: string; view: any; isView?: boolean }): JQuery<HTMLElement> {
-        const button = $('<button>', {
-            id: `menu-${id}`,
-            class: 'menubar-button',
-            text: title,
-            title: title
-        }).click(() => {
-            const mainView = $('.main-view');
-            mainView.empty();
-            isView ? view.render() : mainView.append(view.render());
-        });
-        return button;
-    }
+
     updatePageList(objects: NObject[]) {
         console.log('updatePageList called with', objects.length, 'objects');
         this.pageList.empty().append(objects.map(obj => {

@@ -192,8 +192,8 @@ class Network {
     }
 
     emit(event: NetworkEventType,  NetworkEventData): void {
-        events.emit(`network-${event}`, { ...data, stats: this.getNetworkStats() });
-        events.emit('networkActivity', { type: event,  { ...data, stats: this.getNetworkStats() }, timestamp: Date.now() });
+        events.emit(`network-${event}`, { ...NetworkEventData, stats: this.getNetworkStats() });
+        events.emit('networkActivity', { type: event,  ...NetworkEventData, stats: this.getNetworkStats(), timestamp: Date.now() });
     }
 }
 

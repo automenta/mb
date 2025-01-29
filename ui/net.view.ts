@@ -2,6 +2,24 @@ import $ from 'jquery';
 import { events } from '../src/events';
 import '/ui/css/net.css';
 
+/**
+ * Creates a stat box element.
+ */
+function createStatBox(title: string, ...contentLines: { label: string, className: string }[]): JQuery<HTMLElement> {
+    const box = $('<div>').addClass('stat-box').append(
+        $('<strong>').text(title)
+    );
+    contentLines.forEach(({ label, className }) => {
+        box.append(
+            $('<div>').append(
+                `${label}: `,
+                $('<span class="' + className + '">0</span>')
+            )
+        );
+    });
+    return box;
+}
+
 class BootstrapView {
     net: any; // Type 'any' for 'net' as its type is not defined in provided files
     addButton: JQuery<HTMLElement>;
@@ -70,17 +88,8 @@ class NetViewer {
     render(): void {
         this.ele.append(`
             <h3>Network</h3>
-            <div class="stats-grid">
-                <div class="stat-box messages">
-                    <strong>Messages</strong>
-                    <div>Sent: <span class="sent">0</span></div>
-                    <div>Received: <span class="received">0</span></div>
-                </div>
-                <div class="stat-box bandwidth">
-                    <strong>Bandwidth</strong>
-                    <div>Total: <span class="bytes">0</span> bytes</div>
-                </div>
-            </div>
+            <div class="stats-grid"></div>
+
             <div class="stat-box">
                 <strong>Connections</strong>
                 <div class="peers"></div>
@@ -90,7 +99,15 @@ class NetViewer {
                 <div class="event-log"></div>
             </div>
         `, this.bootstrap.panel());
+
+        // Append stat boxes to the stats-grid div
+        const statsGrid = this.ele.find('.stats-grid');
+        statsGrid.append(
+            createStatBox('Messages', { label: 'Sent', className: 'sent' }, { label: 'Received', className: 'received' }),
+            createStatBox('Bandwidth', { label: 'Total', className: 'bytes' })
+        );
     }
+
 
     update(eventData: any): void { // Type 'any' for eventData as its structure is not defined
         const { type, data, timestamp } = eventData;
