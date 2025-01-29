@@ -116,8 +116,85 @@ class Network {
         });
 
         this.net.awareness.on('change', (changes: any) => this.emit('awareness-update', {changes}));
-+
-+        this.enableEncryption(); // Call enableEncryption after reset
+
+        this.enableEncryption(); // Call enableEncryption after reset
      }
 
-     addBootstrap(url:string) {
+    private enableEncryption() {
+        console.log("Encryption is being enabled (feature not fully implemented yet).");
+        // Future implementation will handle encryption setup for WebRTC
+    }
+    addBootstrap(url:string) {
+        const urlObj = new URL(url);
+        if (!urlObj.protocol.startsWith('ws')) {
+            console.warn("Invalid bootstrap URL protocol:", urlObj.protocol);
+            return;
+        }
+        if (this.signalingServers.includes(url)) {
+            console.warn("Bootstrap URL already added:", url);
+            return;
+        }
+
+        this.signalingServers.push(url);
+        localStorage.setItem('signalingServers', JSON.stringify(this.signalingServers));
+        console.log("Bootstrap URL added:", url);
+        this.reset(); // Reconnect with new signaling servers
+    }
+
+    removeBootstrap(url:string) {
+        const index = this.signalingServers.indexOf(url);
+        if (index > -1) {
+            this.signalingServers.splice(index, 1);
+            localStorage.setItem('signalingServers', JSON.stringify(this.signalingServers));
+            console.log("Bootstrap URL removed:", url);
+            this.reset(); // Reconnect without the removed signaling server
+        }
+    }
+
+    shareObject(pageId:string) {
+        if (this.docsShared.has(pageId)) {
+            console.warn(`Document "${pageId}" already shared.`);
+            return;
+        }
+        this.docsShared.add(pageId);
+        this.emit('object-shared', { pageId });
+    }
+
+    unshareObject(pageId:string) {
+        if (!this.docsShared.has(pageId)) {
+            console.warn(`Document "${pageId}" not currently shared.`);
+            return;
+        }
+        this.docsShared.delete(pageId);
+        this.emit('object-unshared', { pageId });
+    }
+
+    getNetworkStats() {
+        return {
+            messagesSent: this.metrics.messagesSent,
+            messagesReceived: this.metrics.messagesReceived,
+            bytesTransferred: this.metrics.bytesTransferred,
+            peersConnected: Array.from(this.metrics.peersConnected), // Convert Set to Array for easier serialization
+            awareness: Array.from(this.net!.awareness.getStates().values())
+                .map(state => ({
+                    clientID: state.user?.id,
+                    userName: state.user?.name,
+                    userColor: state.user?.color,
+                    lastActive: state.lastActive,
+                    // ... any other relevant awareness info
+                }))
+        };
+    }
+
+
+    on(event: NetworkEventType, listener: ( NetworkEventData) => void): void {
+        events.on(`network-${event}`, listener);
+    }
+
+    emit(event: NetworkEventType,  NetworkEventData): void {
+        events.emit(`network-${event}`, { ...data, stats: this.getNetworkStats() });
+        events.emit('networkActivity', { type: event,  { ...data, stats: this.getNetworkStats() }, timestamp: Date.now() });
+    }
+}
+
+export default Network;
