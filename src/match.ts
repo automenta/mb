@@ -14,6 +14,15 @@ interface Metrics {
     peersCount?: number;
 }
 
+export const MATCHING_METRICS_UPDATED = Symbol('matching-metrics'); // Define Symbol for 'matching-metrics'
+
+/**
+ * Union type of all possible matching event types
+ */
+type MatchingEventType =
+    | typeof MATCHING_METRICS_UPDATED
+    | 'activity'; // Keep 'activity' as string for now, if it's not yet a Symbol
+
 
 export default class Matching {
     db: DB;
@@ -40,7 +49,7 @@ export default class Matching {
 
         // Listen for new/changed pages (consider if this should be enabled by default or configurable)
         this.onPagesChanged();
-        
+
         // Network coordination (consider if this should be enabled by default or configurable)
         this.net.awareness().on('change', () => this.coordinated());
     }
@@ -50,7 +59,7 @@ export default class Matching {
      * @param event - Event type to listen for
      * @param listener - Callback function to handle the event
      */
-    on(event: string, listener: (...args: any[]) => void): void {
+    on(event: MatchingEventType | string, listener: (...args: any[]) => void): void { // Use MatchingEventType
         events.on(event, listener);
     }
 
@@ -121,7 +130,7 @@ export default class Matching {
         this.metrics.peersCount = this.net.awareness()?.getStates()?.size; // Update peers count
 
         // Emit metrics for dashboard (consider throttling or batching metrics emissions)
-        events.emit('matching-metrics', {
+        events.emit(MATCHING_METRICS_UPDATED, { // Use Symbol here
             detail: this.metrics // Send the entire metrics object
         });
     }

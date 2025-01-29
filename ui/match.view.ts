@@ -2,6 +2,8 @@ import $ from 'jquery';
 import '/ui/css/match.css';
 import { events } from '../src/events';
 import Chart from 'chart.js/auto';
+import { MATCHING_METRICS_UPDATED } from '../src/match'; // Import MATCHING_METRICS_UPDATED Symbol
+
 
 interface MatchingSettings {
     isProcessing: boolean;
@@ -91,7 +93,7 @@ class MatchingView {
         const handleMatchingMetrics = (e: any) => this.updateMetrics(e.detail as MatchingMetrics);
         const handleActivity = (e: any) => this.logActivity(e.detail as ActivityEvent);
 
-        events.on('matching-metrics', handleMatchingMetrics);
+        events.on(MATCHING_METRICS_UPDATED, handleMatchingMetrics); // Use Symbol
         events.on('activity', handleActivity);
     }
 
@@ -324,18 +326,18 @@ class MatchingView {
             if (!ctx) return;
             this.chart = new Chart(ctx, {
                 type: 'line',
-                data: {
+                 {
                     labels: [],
                     datasets: [
                         {
                             label: 'Pages Processed',
-                            data: [],
+                             [],
                             borderColor: 'rgba(75, 192, 192, 1)',
                             backgroundColor: 'rgba(75, 192, 192, 0.2)',
                         },
                         {
                             label: 'Matches Found',
-                            data: [],
+                             [],
                             borderColor: 'rgba(255, 99, 132, 1)',
                             backgroundColor: 'rgba(255, 99, 132, 0.2)',
                         },
