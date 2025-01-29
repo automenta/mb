@@ -12,43 +12,23 @@ export class ReplyManager {
      * @returns The created reply NObject if successful, else null.
      */
     createReply(parentId: string, name: string): NObject | null {
-        const parent = this.db.get(parentId);
-        if (!parent) return null;
+        const parentObject = this.db.get(parentId);
+        if (!parentObject) {
+            console.warn(`Parent object with ID ${parentId} not found.`);
+            return null;
+        }
 
-        const reply = this.db.create();
-        reply.name = name;
-        reply.addReplyTo(parentId);
-        parent.addReply(reply.id);
-        return reply;
-    }
+        const replyObject = this.db.create();
+        if (!replyObject) {
+            console.error("Failed to create reply NObject.");
+            return null;
+        }
 
-    /**
-     * Gets all replies to a specific object.
-     * @returns Array of reply NObjects.
-     */
-    private getObjectsFromIds(ids: YArray<string>): NObject[] {
-        return Array.from(ids.toArray())
-            .map(id => this.db.get(id))
-            .filter((obj): obj is NObject => obj !== null);
-    }
+        replyObject.name = name || `Reply to ${parentObject.name}`;
+        replyObject.addReplyTo(parentId);
+        parentObject.addReply(replyObject.id);
+        replyObject.setMetadata('read', false); // Initialize 'read' to false
 
-    /**
-     * Gets all replies to a specific object.
-     * @param id The ID of the parent object.
-     * @returns Array of reply NObjects.
-     */
-    getReplies(id: string): NObject[] {
-        const parent = this.db.get(id);
-        return parent ? this.getObjectsFromIds(parent.replies) : [];
-    }
-
-    /**
-     * Gets all objects that this object is replying to.
-     * @param id The ID of the object.
-     * @returns Array of parent NObjects.
-     */
-    getRepliesTo(id: string): NObject[] {
-        const obj = this.db.get(id);
-        return obj ? this.getObjectsFromIds(obj.repliesTo) : [];
+        return replyObject;
     }
 }
