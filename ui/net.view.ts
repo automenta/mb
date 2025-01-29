@@ -1,6 +1,7 @@
 import $ from 'jquery';
 import { events } from '../src/events';
 import '/ui/css/net.css';
+import { NETWORK_ACTIVITY } from '../src/net'; // Import Symbol
 
 /**
  * Creates a stat box element.
@@ -82,7 +83,7 @@ class NetViewer {
         this.ele = $('<div>').addClass('net-viewer') as JQuery<HTMLElement>;
         this.bootstrap = new BootstrapView(net);
         this.render();
-        events.on('networkActivity', (e: any) => this.update((e as CustomEvent<any>).detail)); // Type assertion to suppress error
+        events.on(NETWORK_ACTIVITY, (e: any) => this.update((e as CustomEvent<any>).detail)); // Use Symbol
     }
 
     render(): void {
