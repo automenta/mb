@@ -108,7 +108,7 @@ class P2PNode extends EventEmitter {
             ],
             dht: kadDHT(),
             pubsub: new GossipSub({
-                logger: logger, // Use pino logger
+                //logger: logger, // Use pino logger - Removed logger config
                 // Additional configuration if necessary
             }),
         });
@@ -158,5 +158,3 @@ class P2PNode extends EventEmitter {
         return this.node?.getAddresses() || [];
     }
 }
-
-export default P2PNode;

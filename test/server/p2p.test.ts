@@ -3,6 +3,7 @@ import {waitFor} from '@testing-library/dom';
 import P2PNode from '../../server/net/p2p';
 import {createEd25519PeerId} from '@libp2p/peer-id-factory';
 import {PeerId} from '@libp2p/interface-peer-id';
+import { v4 as uuidv4 } from 'uuid'; // Import uuidv4
 
 describe('P2PNode', () => {
     let peerId1: PeerId, peerId2: PeerId;
@@ -13,11 +14,13 @@ describe('P2PNode', () => {
     });
 
     it('should discover each other and log connection', async () => {
+        const roomName1 = uuidv4(); // Generate unique room name for node1
+        const roomName2 = uuidv4(); // Generate unique room name for node2
         const node1 = new P2PNode({
             peerId: peerId1,
             bootstrapList: ['/ip4/127.0.0.1/tcp/0/ws/p2p/' + peerId2.toString()],
-        });
-        const node2 = new P2PNode({ peerId: peerId2 });
+        }, roomName1); // Pass roomName1 to P2PNode constructor
+        const node2 = new P2PNode({ peerId: peerId2 }, roomName2); // Pass roomName2 to P2PNode constructor
 
         const capturedLogs: string[] = [];
         const originalConsoleLog = console.log;
@@ -63,11 +66,13 @@ describe('P2PNode', () => {
     });
 
     it('should handle connection failures gracefully', async () => {
+        const roomName1 = uuidv4(); // Generate unique room name for node1
+        const roomName2 = uuidv4(); // Generate unique room name for node2
         const node1 = new P2PNode({
             peerId: peerId1,
             bootstrapList: ['/ip4/127.0.0.1/tcp/0/ws/p2p/' + peerId2.toString()],
-        });
-        const node2 = new P2PNode({ peerId: peerId2 });
+        }, roomName1); // Pass roomName1 to P2PNode constructor
+        const node2 = new P2PNode({ peerId: peerId2 }, roomName2); // Pass roomName2 to P2PNode constructor
 
         await node1.start({peerId: peerId1});
         await node2.start({peerId: peerId2});
