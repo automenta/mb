@@ -110,7 +110,7 @@ export default class Sidebar {
         if (app.db) {
             this.meView = new MeView($('.main-view'), app.user.bind(app), app.getAwareness.bind(app), app.db); // Use getAwareness()
             this.dbView = new DBView($('.main-view')[0], app.db); // Pass app.db, not just db
-            this.notificationsView = new NotificationsView($('.main-view')[0], app.db); // Initialize NotificationsView
+            this.notificationsView = new NotificationsView($('.main-view')[0], app.db, app.editor!.loadDocument.bind(app.editor!)); // Initialize NotificationsView and pass loadDocument
         }
 
 
