@@ -65,6 +65,7 @@ class NetworkMetrics {
 }
 
 
+export const NETWORK_ACTIVITY = Symbol('network-activity'); // Export NETWORK_ACTIVITY
 const MESSAGE_SENT = Symbol('message-sent');
 const MESSAGE_RECEIVED = Symbol('message-received');
 const PEER_CONNECTED = Symbol('peer-connected');
