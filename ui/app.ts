@@ -8,10 +8,14 @@ import { store, initializeStore } from './store';
 import { EditorConfig, UserInfo } from './types';
 import { io, Socket } from 'socket.io-client';
 import '../ui/css/app.css';
+import AgentsView from './agents.view';
+import DBView from './db.view';
+import FriendsView from './friends.view';
+import MeView from './me.view';
+import NetView from './net.view';
+import MatchingView from './match.view';
 
-// Abstract Component Base Class
-abstract class Component {
-    abstract mount(container: HTMLElement | null): void;
+abstract class Component<T extends HTMLElement = HTMLElement> {
 }
 
 // Theme Manager Class
@@ -53,7 +57,7 @@ export default class App extends Component {
     private _userID: string;
     public store: ReturnType<typeof initializeStore>;
     public ele: HTMLElement;
-    private themeManager: ThemeManager; // Theme Manager instance
+    private themeManager: ThemeManager = new ThemeManager(this.ele);
     private components: Component[] = []; // Component registry
 
 
@@ -62,7 +66,7 @@ export default class App extends Component {
         this._userID = userID;
         this.channel = channel;
         this.ele = document.createElement('div');
-        this.themeManager = new ThemeManager(this.ele); // Initialize ThemeManager
+        this.themeManager = new ThemeManager(this.ele);
         this.socket = io();
         this.initializeDB(userID);
         this.store = initializeStore(this.db!);
@@ -111,6 +115,31 @@ export default class App extends Component {
         this.ele.prepend(this.sidebar.ele[0]);
     }
 
+    private initializeViews(): void {
+        const mainView = $('.main-view');
+
+        this.sidebar = new Sidebar(this.db!, this);
+        this.ele.prepend(this.sidebar.ele[0]);
+
+        if (this.db) {
+            this.components.push(
+                this.sidebar,
+                this.editor = this.createEditor(mainView[0]),
+                new MeView(mainView, this.user.bind(this), this.awareness.bind(this), this.db),
+                new DBView(mainView[0], this.db),
+                new AgentsView(mainView),
+            );
+        }
+        this.components.push(
+            new FriendsView(mainView, this.awareness.bind(this)),
+            new NetView(mainView, this.net),
+        );
+        if (this.match) {
+            this.components.push(
+                new MatchingView(mainView, this.match)
+            );
+        }
+    }
     private initializeSocket(): void {
         this.setupSocketListeners(this.socket);
     }
@@ -123,6 +152,22 @@ export default class App extends Component {
     private setupSocketListeners(socket: Socket): void {
         if (!socket) return;
         socket.onAny((event, ...args) => this.handleSocketMessage(event, ...args));
+    }
+
+    private createEditor(mainView: HTMLElement): Editor {
+        return new Editor({
+            ele: mainView as HTMLElement,
+            db: this.db!,
+            getAwareness: this.net!.awareness.bind(this.net),
+            app: this,
+            networkStatusCallback: this.setNetworkStatus.bind(this),
+            isReadOnly: this.isReadOnlyDocument(),
+            ydoc: this.db!.doc,
+        });
+    }
+
+    private themeManager: ThemeManager = new ThemeManager(this.ele);
+    get theme() {
     }
 
     private handleSocketMessage(event: string, data?: any): void {
@@ -216,13 +261,11 @@ export default class App extends Component {
         this.initializeDB(this._userID);
         this.initializeNetwork();
         this.initializeMatching();
-        this.initializeEditor();
-        this.initializeSidebar();
+        this.initializeViews();
         this.initializeSocket();
         this.store = initializeStore(this.db!);
 
-        [this.sidebar, this.editor].forEach(comp => comp?.mount(this.ele)); // Mount components
-
+        this.components.forEach(component => component.mount(this.ele));
         this.loadUserProfile();
     }
 

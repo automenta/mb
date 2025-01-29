@@ -11,6 +11,7 @@ import DBView from "./db.view";
 import MatchingView from "./match.view.js";
 import AgentsView from "./agents.view";
 import App from './app';
+import BaseView from './util/base-view';
 
 class PageContextMenu {
     readonly ele: JQuery;
@@ -90,7 +91,7 @@ export default class Sidebar {
     private friendsView: FriendsView;
     private netView: NetView;
     private dbView: DBView | null = null;
-    private matchingView: MatchingView;
+    private matchingView: MatchingView | null = null;
 
     constructor(db: DB, app: App) {
         this.ele = $('<div>').addClass('sidebar');
@@ -100,7 +101,9 @@ export default class Sidebar {
         this.pageList = $('<ul>', { class: 'page-list' });
         this.friendsView = new FriendsView($('.main-view'), app.awareness.bind(app));
         this.netView = new NetView($('.main-view'), app.net);
-        this.matchingView = new MatchingView($('.main-view'), app.match);
+        if (app.match) {
+            this.matchingView = new MatchingView($('.main-view'), app.match);
+        }
 
         if (app.db) {
             this.meView = new MeView($('.main-view'), app.user.bind(app), app.awareness.bind(app), app.db);
@@ -120,19 +123,24 @@ export default class Sidebar {
 
     private currentListViewMode: string = 'my-objects'; // Default mode
 
+    private listViewModeViews: Record<string, BaseView | null> = {
+        'my-objects': null, // Page list is directly appended
+        'friends': this.friendsView,
+        'network': this.netView,
+        'matching': this.matchingView,
+    };
+
     switchListViewMode(mode: string) {
         this.currentListViewMode = mode;
         const listViewContainer = $('#list-view-container');
         listViewContainer.empty();
 
-        let view = null;
-        switch (mode) {
-            case 'my-objects': view = this.pageList; break;
-            case 'friends': view = this.friendsView.render(); break;
-            case 'network': view = this.netView.render(); break;
-            default: view = $('<div>').text(`Unknown mode: ${mode}`);
+        const view = this.listViewModeViews[mode];
+        if (mode === 'my-objects') {
+            listViewContainer.append(this.pageList);
+        } else if (view) {
+            listViewContainer.append(view.render());
         }
-        listViewContainer.append(view);
     }
 
     private createAddPageButton(): JQuery {
@@ -181,6 +189,7 @@ export default class Sidebar {
             $('<option>', { value: 'my-objects', text: 'My Objects' }),
             $('<option>', { value: 'friends', text: 'Friends' }),
             $('<option>', { value: 'network', text: 'Network' }),
+            $('<option>', { value: 'matching', text: 'Matching' }),
             // Add more options as needed
         ).change(() => {
             const selectedMode = listModeDropdown.val() as string;

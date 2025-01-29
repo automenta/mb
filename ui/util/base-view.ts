@@ -1,6 +1,6 @@
 import { $ } from '../imports';
 
-export default class BaseView {
+export default abstract class BaseView {
     root: JQuery<HTMLElement>;
 
     constructor(root: JQuery<HTMLElement>) {
@@ -11,10 +11,8 @@ export default class BaseView {
         return 'base-view'; // Default class
     }
 
-    render(): void {
-        // To be overridden by subclasses
-        console.warn('render() method not implemented in subclass');
-    }
+    abstract render(): void;
+
     protected renderHeader(title: string): JQuery<HTMLElement> {
         return $('<h2>').text(title);
     }
