@@ -59,7 +59,7 @@ export default class App {
 
         this.socket = io(); // Initialize socket connection
         this.viewManager = new ViewManager(this, this.store);
-        this.viewManager.registerViews();
+        // this.viewManager.registerViews();
         this.setupViewSwitching();
 
         this.socket.on('connect_error', (err) => {
