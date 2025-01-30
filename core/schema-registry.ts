@@ -27,36 +27,13 @@ export class SchemaRegistry {
                 const filePath = path.join(schemaDir, file);
                 const schemaContent = fs.readFileSync(filePath, 'utf-8');
                 try {
-                    let schema = JSON.parse(schemaContent);
-                    schema = this.transformSchema(schema);
+                    const schema = JSON.parse(schemaContent);
                     this.registerSchema(schemaName, schema);
                 } catch (error) {
                     console.error(`Error parsing schema file ${file}: ${error}`);
                 }
             }
         });
-    }
-
-    private transformSchema(schema: any): any {
-        if (!schema.$schema) {
-            schema.$schema = "http://json-schema.org/draft-07/schema#";
-        }
-
-        if (!schema.properties) {
-            // If 'properties' is missing, assume the entire schema represents the properties
-            schema = {
-                "$schema": schema.$schema,
-                "properties": schema
-            };
-        } else if (schema.properties && !schema.type) {
-            schema.type = "object";
-        }
-
-        if (schema.type === "object" && schema.properties) {
-            delete schema.type;
-        }
-
-        return schema;
     }
 }
 
