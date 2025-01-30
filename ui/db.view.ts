@@ -1,16 +1,17 @@
-import $ from "jquery";
+import $ from 'jquery';
 import BaseView from './util/base-view';
 import ObjViewMini from './util/obj.view.mini';
+import pageSchema from '../schema/page.schema.json';
 
 import '/ui/css/db.css';
 
 export default class DBView extends BaseView {
-    ele: JQuery;
     sortKey: string;
     sortOrder: string;
     filterText: string;
     filterValues: Record<string, string> = {};
     db: any;
+
     constructor(root: HTMLElement, db: any) {
         super($(root).find('.main-view'));
         this.db = db;
@@ -22,8 +23,6 @@ export default class DBView extends BaseView {
 
     render() {
         this.root.empty().append(this.ele);
-
-        const pageSchema = require('../schema/page.schema.json');
 
         let tableHeadersHTML = '';
         pageSchema?.properties && Object.entries(pageSchema.properties).forEach(([field, property]) => {
@@ -92,7 +91,6 @@ export default class DBView extends BaseView {
 
     private createRow(page: any): JQuery {
         const $row = $('<tr>');
-        const pageSchema = require('../schema/page.schema.json');
         pageSchema?.properties && Object.entries(pageSchema.properties).forEach(([field, property]) => {
             $row.append($('<td>').text(page[field] || ''));
         });
@@ -111,12 +109,11 @@ export default class DBView extends BaseView {
 
     private renderFilterControls(): string {
         let filterControlsHTML = '';
-        const pageSchema = require('../schema/page.schema.json');
         pageSchema?.properties && Object.entries(pageSchema.properties).forEach(([field, property]) => {
             filterControlsHTML += `
                 <div class="filter-group">
-                    <label for="filter-${field}">${(property as {description:string}).description}:</label>
-                    <input type="text" class="filter-input" id="filter-${field}" data-field="${field}" placeholder="Filter by ${(property as {description:string}).description}">
+                    <label for="filter-${field}">${(property as { description: string }).description}:</label>
+                    <input type="text" class="filter-input" id="filter-${field}" data-field="${field}" placeholder="Filter by ${(property as { description: string }).description}">
                 </div>`;
         });
         return filterControlsHTML;
