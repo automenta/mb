@@ -26,7 +26,7 @@ class ThemeManager {
     }
 
     applyTheme() {
-        if (this.isDarkMode) this.appElement.classList.add('dark-mode'); else this.appElement.classList.remove('dark-mode');
+        if (this.isDarkMode) $(this.appElement).addClass('dark-mode'); else $(this.appElement).removeClass('dark-mode');
     }
 
     toggleTheme() {

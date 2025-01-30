@@ -181,7 +181,6 @@ class Network {
      }
 
     private enableEncryption() {
-        console.log("Encryption is being enabled (feature not fully implemented yet).");
         // Future implementation will handle encryption setup for WebRTC
     }
     addBootstrap(url:string) {

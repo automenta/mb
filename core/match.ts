@@ -51,7 +51,7 @@ export default class Matching {
         this.onPagesChanged();
 
         // Network coordination (consider if this should be enabled by default or configurable)
-        this.net.awareness.on('update', () => this.coordinated());
+        this.net.net?.awareness.on('update', () => this.coordinated());
     }
 
     // Main processing loop
@@ -98,8 +98,8 @@ export default class Matching {
     // Coordinate processing with other nodes (consider more sophisticated coordination mechanisms)
     coordinated(): void {
         if (!this.autoAdjustCapacity) return;
-        const peers = Array.from(this.net.awareness().getStates().keys());
-        const myPosition = peers.indexOf(this.net.awareness.clientID);
+        const peers = Array.from(this.net.net.awareness.getStates().keys());
+        const myPosition = peers.indexOf(this.net.net.awareness.clientID);
 
         if (myPosition === -1) return;
 
@@ -118,7 +118,7 @@ export default class Matching {
         this.metrics.processingTime += this.processingQueueManager.getProcessInterval();
         this.metrics.queueSize = this.processingQueueManager.getQueueSize(); // Update queue size
         this.metrics.workerCapacity = this.processingQueueManager.getWorkerCapacity(); // Update worker capacity
-        this.metrics.peersCount = this.net.awareness?.getStates()?.size; // Update peers count
+        this.metrics.peersCount = this.net.net.awareness?.getStates()?.size; // Update peers count
 
         // Emit metrics for dashboard (consider throttling or batching metrics emissions)
         events.emit(MATCHING_METRICS_UPDATED, { // Use Symbol here
