@@ -122,6 +122,7 @@ describe('DB', () => {
 
     it('set and get object text', () => {
         const obj = db.create();
+        const obj = db.create();
         obj.text.insert(0, 'Test text');
         const retrievedObj = db.get(obj.id);
         if (retrievedObj === null) throw new Error('Object is null');
