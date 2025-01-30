@@ -108,6 +108,26 @@ export default class App {
                 </div>
             </div>
         `;
+        this.setupViewSwitching();
+    }
+
+    private setupViewSwitching(): void {
+        $('#db-view-link').on('click', () => {
+            this.showView('db-view');
+        });
+
+        $('#net-view-link').on('click', () => {
+            this.showView('net-view');
+        });
+
+        $('#match-view-link').on('click', () => {
+            this.showView('match-view');
+        });
+    }
+
+    private showView(viewId: string): void {
+        $('.main-view > div').hide(); // Hide all views
+        $(`#${viewId}`).show(); // Show the selected view
         this.viewManager.registerViews();
     }
 
