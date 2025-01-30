@@ -186,9 +186,13 @@ class MatchingView {
 
    render(): JQuery {
         this.ele.empty().html(this.template());
-        this.root.append(this.ele);
-        this.bindControls();
-        this.startUpdates();
+        if (this.root && this.root.length) {
+            this.root.append(this.ele);
+            this.bindControls();
+            this.startUpdates();
+        } else {
+            console.error('Root element for MatchingView is undefined or not found.');
+        }
         return this.ele;
     }
 
