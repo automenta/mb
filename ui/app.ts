@@ -84,14 +84,45 @@ export default class App {
             this.themeManager.toggleTheme();
         });
 
+        this.render();
         console.log('App initialized', this);
+    }
+
+    public render(): void {
+        this.ele.innerHTML = `
+            <div class="container">
+                <div class="sidebar">
+                    <div class="logo">Logo</div>
+                    <ul class="menubar">
+                        <li id="db-view-link" class="active">Database</li>
+                        <li id="net-view-link">Network</li>
+                        <li id="match-view-link">Matching</li>
+                        <li>Profile</li>
+                        <li>Settings</li>
+                    </ul>
+                </div>
+                <div class="main-view">
+                    <div id="db-view"></div>
+                    <div id="net-view" style="display: none;"></div>
+                    <div id="match-view" style="display: none;"></div>
+                </div>
+            </div>
+        `;
+        this.viewManager.registerViews();
     }
 
     getAwareness(): Awareness {
         return this.net!.net.awareness;
     }
+    mount(ele: HTMLElement) {
+        $(ele).append(this.ele);
+    }
 
-    getObject(id: string) {
+    getAwareness(): Awareness | null {
+        return this.net ? this.net.getAwareness() : null;
+    }
+
+    getObject(id: string): any {
         return this.db?.get(id);
     }
 }
