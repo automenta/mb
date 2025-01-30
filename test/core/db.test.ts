@@ -17,7 +17,7 @@ describe('DB', () => {
 
     afterEach(async () => {
         // Destroy the provider to clean up
-        provider.destroy();
+        await provider.destroy();
         vi.clearAllMocks();
     });
 

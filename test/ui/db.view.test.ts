@@ -3,7 +3,6 @@ import { expectTypeOf } from 'vitest';
 import { setupAppTest, waitFor } from './test-utils';
 import DBView from '../../ui/db.view';
 import { store } from '../../ui/store';
-import DB from '../../core/db';
 
 describe('Database View', () => {
   let testSetup: Awaited<ReturnType<typeof setupAppTest>>;

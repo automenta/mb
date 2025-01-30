@@ -3,7 +3,6 @@ import { store, initializeStore } from './store';
 import NObject from '../core/obj';
 import ObjViewMini from './util/obj.view.mini';
 import '../ui/css/sidebar.css';
-import type DB from '../core/db';
 import MeView from "./me.view";
 import FriendsView from "./friends.view";
 import NetView from "./net.view.js";
@@ -88,12 +87,12 @@ export default class Sidebar {
     private contextMenu: PageContextMenu;
     private readonly pageList: JQuery;
     private readonly store: ReturnType<typeof initializeStore> & { app?: App; };
-    private meView: MeView | null = null;
-    private friendsView: FriendsView;
-    private netView: NetView;
-    private dbView: DBView | null = null;
-    private notificationsView: NotificationsView; // Add NotificationsView
-    private matchingView: MatchingView | null = null;
+    private readonly meView: MeView | null = null;
+    private readonly friendsView: FriendsView;
+    private readonly netView: NetView;
+    private readonly dbView: DBView | null = null;
+    private readonly notificationsView: NotificationsView; // Add NotificationsView
+    private readonly matchingView: MatchingView | null = null;
 
     constructor(app: App, ele: HTMLElement) {
         this.ele = $(ele).addClass('sidebar');
@@ -101,16 +100,16 @@ export default class Sidebar {
         this.store.app = app;
         this.contextMenu = new PageContextMenu(this.store);
         this.pageList = $('<ul>', { class: 'page-list' });
-        this.friendsView = new FriendsView($('.main-view'), app.getAwareness.bind(app)); // Use getAwareness() to get awareness instance
-        this.netView = new NetView($('.main-view'), app.net);
-        if (app.match) {
-            this.matchingView = new MatchingView($('.main-view'), app.match);
-        }
+        const $mainView = $('.main-view');
+        this.friendsView = new FriendsView($mainView, app.getAwareness.bind(app)); // Use getAwareness() to get awareness instance
+        this.netView = new NetView($mainView, app.net);
+        if (app.match)
+            this.matchingView = new MatchingView($mainView, app.match);
 
         if (app.db) {
-            this.meView = new MeView($('.main-view'), app.user.bind(app), app.getAwareness.bind(app), app.db); // Use getAwareness()
-            this.dbView = new DBView($('.main-view')[0], app.db); // Pass app.db, not just db
-            this.notificationsView = new NotificationsView($('.main-view')[0], app.db, app.editor!.loadDocument.bind(app.editor!)); // Initialize NotificationsView and pass loadDocument
+            this.meView = new MeView($mainView, app.user.bind(app), app.getAwareness.bind(app), app.db); // Use getAwareness()
+            this.dbView = new DBView($mainView[0], app.db); // Pass app.db, not just db
+            this.notificationsView = new NotificationsView($mainView[0], app.db, app.editor!.loadDocument.bind(app.editor!)); // Initialize NotificationsView and pass loadDocument
         }
 
 
@@ -119,9 +118,7 @@ export default class Sidebar {
         $(document.body).append(this.contextMenu.ele);
 
         // Subscribe to store changes
-        this.store.subscribe(state => {
-            this.updatePageList(state.objects);
-        });
+        this.store.subscribe(state => this.updatePageList(state.objects));
     }
 
     private currentListViewMode: string = 'my-objects'; // Default mode
@@ -233,7 +230,7 @@ export default class Sidebar {
      */
     private createMenuButton({ id, title, view, isView = false, mainView }: {
         id: string; title: string; view: any; isView?: boolean; mainView: JQuery;
-    }): JQuery<HTMLElement> {
+    }): JQuery {
         return $('<button>', {
             id: `menu-${id}`,
             class: 'menubar-button',

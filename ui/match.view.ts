@@ -1,8 +1,7 @@
 import $ from 'jquery';
 import '/ui/css/match.css';
-import { events } from '../core/events';
-import Chart from 'chart.js/auto';
-import { MATCHING_METRICS_UPDATED } from '../core/match'; // Import MATCHING_METRICS_UPDATED Symbol
+import {events} from '../core/events';
+import {MATCHING_METRICS_UPDATED} from '../core/match'; // Import MATCHING_METRICS_UPDATED Symbol
 
 
 interface MatchingSettings {
@@ -63,8 +62,8 @@ interface MatchingInterface {
 
 class MatchingView {
     matching: MatchingInterface;
-    root: JQuery<HTMLElement>;
-    ele: JQuery<HTMLElement>;
+    root: JQuery;
+    ele: JQuery;
     updateInterval: number = 1000;
     maxLogEntries: number = 50;
     maxHistoryPoints: number = 100;
@@ -83,10 +82,10 @@ class MatchingView {
     updateTimer: any;
     chart: any;
 
-    constructor(root: JQuery<HTMLElement>, matching: MatchingInterface) {
+    constructor(root: JQuery, matching: MatchingInterface) {
         this.matching = matching;
         this.root = root;
-        this.ele = $('<div>').addClass('matching-dashboard') as JQuery<HTMLElement>;
+        this.ele = $('<div>').addClass('matching-dashboard') as JQuery;
         this.settings.workerCapacity = matching.workerCapacity;
         this.settings.processInterval = matching.processInterval / 1000;
 
@@ -185,7 +184,7 @@ class MatchingView {
             </div>`;
     }
 
-    render(): JQuery<HTMLElement> {
+    render(): JQuery {
         this.ele.empty();
         this.root.find('.main-view').empty().append(this.ele);
         this.ele.html(this.template());
@@ -360,8 +359,7 @@ class MatchingView {
             // });
         }
 
-        const labels = this.history.timestamps.map(ts => new Date(ts).toLocaleTimeString());
-        this.chart.data.labels = labels;
+        this.chart.data.labels = this.history.timestamps.map(ts => new Date(ts).toLocaleTimeString());
         this.chart.data.datasets[0].data = this.history.pagesProcessed;
         this.chart.data.datasets[1].data = this.history.matchesFound;
         this.chart.data.datasets[2].data = this.history.workerCapacity.map(c => c * 100);

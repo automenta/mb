@@ -40,13 +40,11 @@ import {
     mkdirSync,
     statSync,
     createReadStream,
-    createWriteStream,
-    unlinkSync
+    createWriteStream
 } from 'fs';
 import {
     resolve,
-    basename,
-    dirname
+    basename
 } from 'path';
 
 /**
@@ -485,12 +483,12 @@ class UI {
     private input = new QLineEdit();
     private userList = new QListWidget();
     private statusBar = new QStatusBar();
-    private network: Network;
+    private readonly network: Network;
     private messages: string[] = [];
     private tray: QSystemTrayIcon;
     private sendFileButton: QPushButton;
     private fileTransferList = new QListWidget();
-    private localNodeId: string = '';
+    private readonly localNodeId: string = '';
 
     constructor(port: number) {
         ensureDataDir();
@@ -608,7 +606,7 @@ class UI {
     }
 
     private newQLabel(s: string):QLabel {
-        var q = new QLabel();
+        const q = new QLabel();
         q.setText(s);
         return q;
     }

@@ -1,8 +1,8 @@
-import { $, NObject, SchemaRegistry } from '../imports';
+import { SchemaRegistry } from '../imports';
 import TagSelector from './tag-selector';
 
 export default class UIBuilder {
-    private isReadOnly: boolean;
+    private readonly isReadOnly: boolean;
     private schemaRegistry: SchemaRegistry;
 
     constructor(isReadOnly: boolean, schemaRegistry: SchemaRegistry) {

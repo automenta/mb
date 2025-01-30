@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 export class SchemaRegistry {
-    private schemas: Record<string, any>;
+    private readonly schemas: Record<string, any>;
 
     constructor() {
         this.schemas = {};

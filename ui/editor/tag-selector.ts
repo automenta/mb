@@ -1,4 +1,3 @@
-import {$, Y} from '../imports';
 import { SchemaRegistry } from '../../core/schema-registry';
 import { renderSchemaForm } from '../util/schema-form';
 

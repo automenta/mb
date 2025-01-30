@@ -41,8 +41,7 @@ export default class DBView extends BaseView {
     bindEvents() {
         this.ele.find('.filter-controls').on('input', '.filter-input', (e) => {
             const field = $(e.target).data('field');
-            const value = ($(e.target).val() as string);
-            this.filterValues[field] = value;
+            this.filterValues[field] = ($(e.target).val() as string);
             this.updateTable();
         });
 
@@ -123,11 +122,11 @@ export default class DBView extends BaseView {
         return filterControlsHTML;
     }
 
-    private createHeader(): JQuery<HTMLElement> {
+    private createHeader(): JQuery {
         return $('<h3>').text('Database Statistics');
     }
 
-    private createControls(filterControlsHTML: string): JQuery<HTMLElement> {
+    private createControls(filterControlsHTML: string): JQuery {
         const $controls = $('<div>').addClass('db-controls');
         $controls.append($('<div>').addClass('filter-controls').html(filterControlsHTML));
         $controls.append($('<select>').addClass('sort-select').append($('<option>').text('Title').val('title'), $('<option>').text('Page ID').val('pageId')));
@@ -135,7 +134,7 @@ export default class DBView extends BaseView {
         return $controls;
     }
 
-    private createTable(tableHeadersHTML: string): JQuery<HTMLElement> {
+    private createTable(tableHeadersHTML: string): JQuery {
         const $table = $('<table>').addClass('database-table');
         const $thead = $('<thead>');
         $thead.append($('<tr>').html(tableHeadersHTML));

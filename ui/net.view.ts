@@ -6,7 +6,7 @@ import '/ui/css/net.css';
 /**
  * Creates a stat box element.
  */
-function createStatBox(title: string, ...contentLines: { label: string, className: string }[]): JQuery<HTMLElement> {
+function createStatBox(title: string, ...contentLines: { label: string, className: string }[]): JQuery {
     const box = $('<div>').addClass('stat-box').append(
         $('<strong>').text(title)
     );
@@ -23,15 +23,15 @@ function createStatBox(title: string, ...contentLines: { label: string, classNam
 
 class BootstrapView { // Corrected class definition
     net: Network;
-    addButton: JQuery<HTMLElement>;
-    $input: JQuery<HTMLElement>;
-    $nodeList: JQuery<HTMLElement>;
+    addButton: JQuery;
+    $input: JQuery;
+    $nodeList: JQuery;
 
     constructor(net: Network) {
         this.net = net;
-        this.addButton = $('<button>').text("+") as JQuery<HTMLElement>;
-        this.$input = $('<input>').attr('placeholder', 'bootstrap') as JQuery<HTMLElement>;
-        this.$nodeList = $('<div>') as JQuery<HTMLElement>;
+        this.addButton = $('<button>').text("+") as JQuery;
+        this.$input = $('<input>').attr('placeholder', 'bootstrap') as JQuery;
+        this.$nodeList = $('<div>') as JQuery;
 
         this.addButton.click(() => {
             const url = this.$input.val()?.toString().trim(); // Ensure url is a string before trimming
@@ -61,31 +61,31 @@ class BootstrapView { // Corrected class definition
         this.$nodeList.empty().append(this.net.signalingServers.map(url => this.renderNode(url)));
     }
 
-    renderNode(url: string): JQuery<HTMLElement> {
-        return $(`<li>${url}<button class="remove-server" data-url="${url}">Remove</button></li>`) as JQuery<HTMLElement>;
+    renderNode(url: string): JQuery {
+        return $(`<li>${url}<button class="remove-server" data-url="${url}">Remove</button></li>`) as JQuery;
     }
 
-    panel(): JQuery<HTMLElement> {
-        return $('<div>').append('<h2>Bootstrap Nodes</h2>', this.$nodeList, this.$input, this.addButton) as JQuery<HTMLElement>;
+    panel(): JQuery {
+        return $('<div>').append('<h2>Bootstrap Nodes</h2>', this.$nodeList, this.$input, this.addButton) as JQuery;
     }
 }
 
 
 class NetViewer { // Corrected class definition
     net: Network;
-    ele: JQuery<HTMLElement>;
+    ele: JQuery;
     events: any[] = []; // Type 'any[]' for 'events' as its type is not defined
     maxEvents: number = 100;
     bootstrap: BootstrapView;
-    $peerList: JQuery<HTMLElement>; // Declare $peerList
+    $peerList: JQuery; // Declare $peerList
 
     constructor(net: Network) {
         this.net = net;
-        this.ele = $('<div>').addClass('net-viewer') as JQuery<HTMLElement>;
+        this.ele = $('<div>').addClass('net-viewer') as JQuery;
         this.bootstrap = new BootstrapView(net);
         this.$peerList = $('<ul>').addClass('peer-list'); // Initialize $peerList
         this.render();
-        events.on(NETWORK_ACTIVITY, (e: any) => this.update((e as CustomEvent<any>).detail)); // Use Symbol
+        events.on(NETWORK_ACTIVITY, (e: any) => this.update((e as CustomEvent).detail)); // Use Symbol
     }
 
     render(): void {
@@ -157,29 +157,29 @@ class NetViewer { // Corrected class definition
         }
     }
 
-    renderPeerBadge(peer: any): JQuery<HTMLElement> { // Type 'any' for peer as its type is not defined
-        return $(`<div class="peer-badge">${peer.metadata.clientID} (${new Date(peer.lastActive).toLocaleTimeString()})</div>`) as JQuery<HTMLElement>;
+    renderPeerBadge(peer: any): JQuery { // Type 'any' for peer as its type is not defined
+        return $(`<div class="peer-badge">${peer.metadata.clientID} (${new Date(peer.lastActive).toLocaleTimeString()})</div>`) as JQuery;
     }
 
-    renderPeerListItem(peer: any): JQuery<HTMLElement> { // Type 'any' for peer, adjust if you have Peer interface available
-        return $(`<li>${peer.address}:${peer.port} - Last Seen: ${new Date(peer.lastSeen).toLocaleTimeString()}</li>`) as JQuery<HTMLElement>;
+    renderPeerListItem(peer: any): JQuery { // Type 'any' for peer, adjust if you have Peer interface available
+        return $(`<li>${peer.address}:${peer.port} - Last Seen: ${new Date(peer.lastSeen).toLocaleTimeString()}</li>`) as JQuery;
     }
 
-    renderEventEntry(event: any): JQuery<HTMLElement> { // Type 'any' for event as its type is not defined
-        return $(`<div class="event-entry ${event.type}>[${new Date(event.timestamp).toLocaleTimeString()}] ${event.type} ${event.data.peerId ? `(Peer: ${event.data.peerId})` : ''} ${event.data.bytes ? `(${event.data.bytes} bytes)` : ''}</div>`) as JQuery<HTMLElement>;
+    renderEventEntry(event: any): JQuery { // Type 'any' for event as its type is not defined
+        return $(`<div class="event-entry ${event.type}>[${new Date(event.timestamp).toLocaleTimeString()}] ${event.type} ${event.data.peerId ? `(Peer: ${event.data.peerId})` : ''} ${event.data.bytes ? `(${event.data.bytes} bytes)` : ''}</div>`) as JQuery;
     }
 }
 
 export default class NetView {
-    ele: JQuery<HTMLElement>;
+    ele: JQuery;
     net: Network;
 
-    constructor(ele: JQuery<HTMLElement>, net: Network) { // Corrected constructor type
+    constructor(ele: JQuery, net: Network) { // Corrected constructor type
         this.ele = ele;
         this.net = net;
     }
 
-    render(): JQuery<HTMLElement> { // Changed return type to JQuery<HTMLElement>
+    render(): JQuery { // Changed return type to JQuery<HTMLElement>
         const updateStatus = () => this.ele.empty().append(
             new NetViewer(this.net).ele //'
         );

@@ -4,13 +4,11 @@ import {Server as HTTPServer} from 'http';
 import {io as Client, Socket as ClientSocket} from 'socket.io-client';
 import { createLibp2p } from 'libp2p';
 import { createEd25519PeerId } from '@libp2p/peer-id-factory';
-import { peerIdFromString } from '@libp2p/peer-id';
 import { webSockets } from '@libp2p/websockets';
 import { Noise } from '@chainsafe/libp2p-noise';
 import { mplex } from '@libp2p/mplex';
 import { Bootstrap } from '@libp2p/bootstrap';
 import { GossipSub } from '@chainsafe/libp2p-gossipsub';
-import type { PeerId } from '@libp2p/interface-peer-id';
 import type { Libp2p } from 'libp2p';
 import {AddressInfo} from 'net';
 import { createServer } from "../../server/server"; // Corrected import

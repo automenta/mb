@@ -1,9 +1,9 @@
-import { $, Y, Awareness, NObject, App, SchemaRegistry } from '../imports';
-import { EditorConfig } from '../types';
-import type { Doc as YDoc } from 'yjs'; // Import Doc type
-import { ToolbarManager } from './toolbar-manager';
-import { MetadataManager } from './metadata-manager';
-import { AwarenessManager } from './awareness-manager';
+import {$, App, Awareness, NObject, SchemaRegistry, Y} from '../imports';
+import {EditorConfig} from '../types';
+import type {Doc as YDoc} from 'yjs'; // Import Doc type
+import {ToolbarManager} from './toolbar-manager';
+import {MetadataManager} from './metadata-manager';
+import {AwarenessManager} from './awareness-manager';
 import EditorCore from './editor-core';
 import UIBuilder from './ui-builder';
 
@@ -148,7 +148,7 @@ export default class Editor {
             if (this.currentObject instanceof NObject) {
                 this.currentObject.name = newTitle;
                 this.config.app.store.setCurrentObject(this.currentObject);
-            } else if (this.currentObject instanceof Y.Map) {
+            } else {
                 this.currentObject.set('name', newTitle);
             }
         }
@@ -188,8 +188,7 @@ export default class Editor {
                 (this.currentObject as Y.Map<any>).set('tags', tags);
             });
         } else if (this.currentObject instanceof NObject) {
-            const content = (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML;
-            this.currentObject.text = content;
+            this.currentObject.text = (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML;
             this.currentObject.tags = this.tagSelector.getTags();
             this.config.db.persistDocument(this.currentObject);
         }

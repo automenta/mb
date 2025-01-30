@@ -1,9 +1,10 @@
 import NObject from '../core/obj';
-import type { UserInfo } from './types';
-export type { UserInfo } from './types';
+import type {UserInfo} from './types';
 import type DB from '../core/db';
-import type { Awareness } from 'y-protocols/awareness';
-import type { Doc as YDoc } from 'yjs';
+import type {Awareness} from 'y-protocols/awareness';
+import type {Doc as YDoc} from 'yjs';
+
+export type { UserInfo } from './types';
 
 type Listener = (store: Store) => void;
 
@@ -48,10 +49,8 @@ export class Store {
   syncWithDB(db: DB) {
     const updateObjects = () => {
       console.log('syncWithDB: updateObjects started');
-      const objects = Array.from(db.index.values()).map(objId => {
-        const obj = db.get(objId);
-        return obj;
-      }).filter((obj): obj is NObject => obj !== null);
+      const objects = Array.from(db.index.values()).map(objId =>
+          db.get(objId)).filter((obj): obj is NObject => obj !== null);
 
       console.log('syncWithDB: updateObjects loaded', objects.length, 'objects');
 

@@ -1,4 +1,4 @@
-import { describe, expect, test, beforeEach, afterEach, vi } from 'vitest';
+import { describe, expect, test, beforeEach, afterEach } from 'vitest';
 import $ from 'jquery';
 import { setupAppTest } from './test-utils';
 import Editor from '../../ui/editor/editor';

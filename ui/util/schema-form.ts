@@ -1,9 +1,6 @@
 // ui/util/schema-form.ts
 
 import $ from 'jquery'; // Import $ from jquery, use global JQuery
-import { validateSocialLink } from './validation';
-import { UserInfo } from '../types';
-import { UserSchema } from '../schema';
 
 // Define types and interfaces related to schema form utility here
 

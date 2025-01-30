@@ -1,6 +1,5 @@
 import { Awareness } from 'y-protocols/awareness';
 import UserInfo from '../me.view';
-import $ from 'jquery';
 
 export class AwarenessManager {
   constructor(
