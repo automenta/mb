@@ -44,7 +44,7 @@ describe('NObject', () => {
 
   it('manages text content', () => {
     const testText = 'Test text';
-    obj.setText(testText);
+    obj.text = testText;
     expect(obj.text.toString()).toBe(testText);
   });
 

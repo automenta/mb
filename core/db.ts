@@ -64,7 +64,6 @@ export default class DB {
         if (!objectId) return null;
 
         const obj = new NObject(this.doc, objectId);
-        obj.loadContent(); // Ensure content is loaded
         return obj;
     }
 

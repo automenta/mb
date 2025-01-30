@@ -57,7 +57,7 @@ describe('Network', () => {
         expect(emitSpy).toHaveBeenCalledWith(OBJECT_SHARED, {
             pageId: 'test-page',
             peerId: 'test-peer',
-            stats: expect.any(Object)
+            stats: expect.any(Object),
         });
     });
 });
