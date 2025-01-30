@@ -1,4 +1,4 @@
-import { events } from './events';
+import { events, EventType, Listener } from './events';
 import DB from './db';
 import Network from './net';
 import MatchingEngine, { PageProperties, MatchResult } from './matching-engine';
