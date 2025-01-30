@@ -1,6 +1,4 @@
-import {
-  SchemaRegistry
-} from '../core/schema-registry';
+import schemaRegistry from '../schema/schema-registry';
 import $ from 'jquery';
 import {
   io,
