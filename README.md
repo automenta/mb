@@ -33,8 +33,8 @@ Organize, prioritize, and grow thoughts into actionable results. Real-time synch
 *   **Main View:** Unified interface for viewing, creating, and editing `NObject`s.
 *   **Sidebar Navigation:**
     *   **Me:** User profile and preferences.
-    *   **Friends:** Status updates from connections (under development).
-    *   **Network:** Peer activity and traffic visualization (under development).
+    *   **Friends:** Status updates from connections.
+    *   **Network:** Peer activity and traffic visualization.
     *   **Database:** Sortable, filterable data views.
 *   **Dark Mode:** Supported theme for visual comfort.
 
