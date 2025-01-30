@@ -5,7 +5,7 @@ export default class NObject {
   public readonly id: string;
   public readonly doc: Y.Doc;
   public readonly root: Y.Map<any>;
-  protected readonly metadata: Y.Map<any>;
+  protected readonly meta Y.Map<any>;
   protected readonly links: Y.Map<Y.Array<string>>;
 
   constructor(doc: Y.Doc, id?: string) {
@@ -45,99 +45,82 @@ export default class NObject {
     });
   }
 
-  // Method to ensure content is loaded
-  loadContent(): void {
-      if (!this.root.has('content')) {
+  // Getters
+  get created(): number { return this.metadata.get('created'); }
+  get updated(): number { return this.metadata.get('updated'); }
+  get name(): string { return this.metadata.get('name'); }
+  get public(): boolean { return this.metadata.get('public'); }
+  get isQuery(): boolean { return this.metadata.get('isQuery'); }
+  get author(): string { return this.metadata.get('author'); }
+  get text(): Y.Text {
+      if (!this.root.has('content') || !(this.root.get('content') instanceof Y.Text)) {
           this.root.set('content', new Y.Text());
       }
-      this.text; // Accessing the text property to ensure Y.Text is initialized
+      return this.root.get('content');
+  }
+  get tags(): Y.Array<string> { return this.metadata.get('tags'); }
+  get sharedWith(): Y.Array<string> { return this.metadata.get('sharedWith'); }
+  get replies(): Y.Array<string> { return this.links.get('reply') || new Y.Array<string>(); }
+  get repliesTo(): Y.Array<string> { return this.links.get('replyTo') || new Y.Array<string>(); }
+
+  // Setters
+  set name(v: string) { this.updateMetadata({ name: v }); }
+  set public(v: boolean) { this.updateMetadata({ public: v }); }
+  set isQuery(v: boolean) { this.updateMetadata({ isQuery: v }); }
+  set author(v: string) { this.updateMetadata({ author: v }); }
+  set text(newText: string) {
+      this.doc.transact(() => {
+          const t = this.text;
+          t.delete(0, t.length);
+          t.insert(0, newText);
+          this.updateMetadata({});
+      });
   }
 
-  // Getters
-    get created(): number { return this.metadata.get('created'); }
-    get updated(): number { return this.metadata.get('updated'); }
-    get name(): string { return this.metadata.get('name'); }
-    get public(): boolean { return this.metadata.get('public'); }
-    get isQuery(): boolean { return this.metadata.get('isQuery'); }
-    get author(): string { return this.metadata.get('author'); }
-    get text(): Y.Text {
-        if (!this.root.has('content') || !(this.root.get('content') instanceof Y.Text)) { // Check if content exists and is Y.Text
-            this.root.set('content', new Y.Text());
-        }
-        return this.root.get('content');
-    }
-    get tags(): Y.Array<string> { return this.metadata.get('tags'); }
-    get sharedWith(): Y.Array<string> { return this.metadata.get('sharedWith'); }
-    get replies(): Y.Array<string> { return this.links.get('reply') || new Y.Array<string>(); }
-    get repliesTo(): Y.Array<string> { return this.links.get('replyTo') || new Y.Array<string>(); }
+  // Helper method for adding to Y.Array
+  protected updateArray(arr: Y.Array<string>, item: string, add: boolean) {
+    this.doc.transact(() => {
+      const index = arr.toArray().indexOf(item);
+      if (add && index === -1) {
+        arr.push([item]);
+      } else if (!add && index > -1) {
+        arr.delete(index, 1);
+      }
+      this.updateMetadata({}); // Just to update 'updated'
+    });
+  }
 
-    // Setters
-    set name(v: string) { this.updateMetadata({ name: v }); }
-    set public(v: boolean) { this.updateMetadata({ public: v }); }
-    set isQuery(v: boolean) { this.updateMetadata({ isQuery: v }); }
-    set author(v: string) { this.updateMetadata({ author: v }); }
-    set text(newText: string) {
-        this.doc.transact(() => {
-            const t = this.text;
-            t.delete(0, t.length);
-            t.insert(0, newText);
-            this.updateMetadata({});
-        });
-    }
+  // Methods using the helpers
+  addTag(tag: string) { this.updateArray(this.tags, tag, true); }
+  removeTag(tag: string) { this.updateArray(this.tags, tag, false); }
+  addReply(id: string) { this.updateArray(this.replies, id, true); }
+  removeReply(id: string) { this.updateArray(this.replies, id, false); }
+  addReplyTo(id: string) { this.updateArray(this.repliesTo, id, true); }
+  removeReplyTo(id: string) { this.updateArray(this.repliesTo, id, false); }
+  shareWith(userId: string) { this.updateArray(this.sharedWith, userId, true); }
+  unshareWith(userId: string) { this.updateArray(this.sharedWith, userId, false); }
 
-    setText(newText: string | Y.Text) {
-      this.doc.transact(() => {
-        const t = this.text;
-        t.delete(0, t.length);
-        t.insert(0, newText instanceof Y.Text ? newText.toString() : newText);
-        this.updateMetadata({}); // Just to update 'updated'
-      });
-    }
+  observe(fn: (events: Y.YEvent<any>[]) => void) {
+    this.root.observeDeep(fn);
+  }
 
-    // Helper method for adding to Y.Array
-    protected updateArray(arr: Y.Array<string>, item: string, add: boolean) {
-      this.doc.transact(() => {
-        const index = arr.toArray().indexOf(item);
-        if (add && index === -1) {
-          arr.push([item]);
-        } else if (!add && index > -1) {
-          arr.delete(index, 1);
-        }
-        this.updateMetadata({}); // Just to update 'updated'
-      });
-    }
+  unobserve(fn: (events: Y.YEvent<any>[]) => void) {
+    this.root.unobserveDeep(fn);
+  }
 
-    // Methods using the helpers
-    addTag(tag: string) { this.updateArray(this.tags, tag, true); }
-    removeTag(tag: string) { this.updateArray(this.tags, tag, false); }
-    addReply(id: string) { this.updateArray(this.replies, id, true); }
-    removeReply(id: string) { this.updateArray(this.replies, id, false); }
-    addReplyTo(id: string) { this.updateArray(this.repliesTo, id, true); }
-    removeReplyTo(id: string) { this.updateArray(this.repliesTo, id, false); }
-    shareWith(userId: string) { this.updateArray(this.sharedWith, userId, true); }
-    unshareWith(userId: string) { this.updateArray(this.sharedWith, userId, false); }
+  toJSON(): any {
+    return this.root.toJSON();
+  }
+  
+  getMetadata(key: string): any {
+      return this.metadata.get(key);
+  }
 
-    observe(fn: (events: Y.YEvent<any>[]) => void) {
-      this.root.observeDeep(fn);
-    }
+  getMetadataKeys(): string[] {
+    return Array.from(this.metadata.keys());
+  }
 
-    unobserve(fn: (events: Y.YEvent<any>[]) => void) {
-      this.root.unobserveDeep(fn);
-    }
-
-    toJSON(): any {
-      return this.root.toJSON();
-    }
-    
-    getMetadata(key: string): any {
-        return this.metadata.get(key);
-    }
-
-    getMetadataKeys(): string[] {
-        return Array.from(this.metadata.keys());
-    }
-
-    setMetadata(key: string, value: any): void {
-        this.updateMetadata({ [key]: value });
-    }
+  setMetadata(key: string, value: any): void {
+    this.updateMetadata({ [key]: value });
+  }
 }

@@ -251,9 +251,9 @@ class Network {
         events.on(event, listener); // No prefix needed, using Symbols directly
     }
 
-    emit(event: NetworkEventType,  value:NetworkEventData): void {
+    emit(event: NetworkEventType, value: NetworkEventData): void {
         events.emit(event, { ...value, stats: this.getNetworkStats() });
-        events.emit(NETWORK_ACTIVITY, { type: event,  ...value, stats: this.getNetworkStats(), timestamp: Date.now() });
+        events.emit(NETWORK_ACTIVITY, { type: event, ...value, stats: this.getNetworkStats(), timestamp: Date.now() });
     }
 }
 

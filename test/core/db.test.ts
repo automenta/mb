@@ -114,15 +114,15 @@ describe('DB', () => {
 
     it('set text with string', () => {
         const obj = db.create();
-        obj.setText('String text');
+        obj.text = 'String text';
         expect(obj.text.toString()).toEqual('String text');
-        obj.setText('Y.Text content');
+        obj.text = 'Y.Text content';
         expect(obj.text.toString()).toEqual('Y.Text content');
     });
 
     it('set and get object text', () => {
         const obj = db.create();
-        obj.setText('Test text');
+        obj.text = 'Test text';
         const retrievedObj = db.get(obj.id);
         if (retrievedObj === null) throw new Error('Object is null');
         expect(retrievedObj.text.toString()).toEqual('Test text');
@@ -176,7 +176,7 @@ describe('DB', () => {
         const longText = 'b'.repeat(10000);
         const obj = db.create();
         obj.name = longName;
-        obj.setText(longText);
+        obj.text = longText;
         expect(obj.name).toEqual(longName);
         expect(obj.text.toString()).toEqual(longText);
     });
