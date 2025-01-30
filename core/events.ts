@@ -7,6 +7,7 @@ Event Emitter with WeakMap for auto-cleanup and pattern matching.  Derived from 
 * - Error boundary protection
 */
 export type EventType = string | symbol;
+export type Listener = (...args: any[]) => void;
 export type Handler<T = unknown> = (event: T) => void;
 export type WildcardHandler<T = Record<EventType, unknown>> = (type: keyof T, event: T[keyof T]) => void;
 
@@ -24,6 +25,7 @@ type WeakHandlerMap<T extends Record<EventType, unknown>> = WeakMap<object, Hand
 
 export interface Emitter<T extends Record<EventType, unknown>> {
     on<K extends keyof T>(type: K | '*' | string, handler: K extends '*' ? WildcardHandler<T> : Handler<T[K]>): () => void;
+    on(event: EventType | string, listener: Listener): void;
     off<K extends keyof T>(type: K | '*' | string, handler?: K extends '*' ? WildcardHandler<T> : Handler<T[K]>): void;
     emit<K extends keyof T>(type: K, event?: T[K]): void;
     clear(): void;
