@@ -1,6 +1,11 @@
-import { SchemaRegistry } from '../src/schema-registry';
+import {
+  SchemaRegistry
+} from '../src/schema-registry';
 import $ from 'jquery';
-import { io, Socket } from 'socket.io-client';
+import {
+  io,
+  Socket
+} from 'socket.io-client';
 import DB from '../src/db';
 import Editor from './editor/editor';
 import Sidebar from './sidebar';
@@ -9,8 +14,12 @@ import NetView from './net.view';
 import MatchView from './match.view';
 import Matching from '../src/matching';
 import Network from '../src/net';
-import { initializeStore } from './store';
-import { Awareness } from 'y-protocols/awareness';
+import {
+  getStore
+} from './store';
+import {
+  Awareness
+} from 'y-protocols/awareness';
 import ViewManager from './view-manager';
 
 class ThemeManager {
@@ -58,7 +67,7 @@ export default class App {
     constructor(channel: string, rootElement: HTMLElement) {
         this.channel = channel;
         this.ele = rootElement;
-        this.store = initializeStore();
+        this.store = getStore(this.db);
         this.themeManager = new ThemeManager(this.ele);
         this.schemaRegistry = new SchemaRegistry();
 
@@ -90,10 +99,6 @@ export default class App {
 
 
 
-        // Bind network to editor - after editor and network are initialized - ensure this.net is not null
-        if (this.net) {
-            this.editor?.editorCore.bindNetwork(this.net);
-        }
 
 
         // Handle theme toggle - example button click handler
