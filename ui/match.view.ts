@@ -186,7 +186,7 @@ class MatchingView {
 
    render(): JQuery {
         this.ele.empty().html(this.template());
-        this.root.find('.main-view').empty().append(this.ele); // Append to .main-view
+        this.root.append(this.ele);
         this.bindControls();
         this.startUpdates();
         return this.ele;
