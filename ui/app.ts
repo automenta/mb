@@ -1,21 +1,16 @@
 import {
   SchemaRegistry
-} from '../src/schema-registry';
+} from '../core/schema-registry';
 import $ from 'jquery';
 import {
   io,
   Socket
 } from 'socket.io-client';
-import DB from '../src/db';
-import Editor from './editor/editor';
-import Sidebar from './sidebar';
-import DBView from './db.view';
-import NetView from './net.view';
-import MatchView from './match.view';
-import Matching from '../src/matching';
-import Network from '../src/net';
+import DB from '../core/db';
+import Matching from '../core/match';
+import Network from '../core/net';
 import {
-  getStore
+    getStore, Store
 } from './store';
 import {
   Awareness
@@ -33,15 +28,7 @@ class ThemeManager {
     }
 
     applyTheme() {
-        if (!this.appElement) {
-            console.warn("appElement is not defined in ThemeManager, cannot apply theme.");
-            return;
-        }
-        if (this.isDarkMode) {
-            this.appElement.classList.add('dark-mode');
-        } else {
-            this.appElement.classList.remove('dark-mode');
-        }
+        if (this.isDarkMode) this.appElement.classList.add('dark-mode'); else this.appElement.classList.remove('dark-mode');
     }
 
     toggleTheme() {
@@ -58,7 +45,7 @@ export default class App {
     db: DB;
     net: Network;
     match: Matching;
-    public store: ReturnType<typeof initializeStore>;
+    public store: Store;
     public ele: HTMLElement;
     themeManager: ThemeManager;
     private viewManager: ViewManager;
@@ -66,6 +53,10 @@ export default class App {
 
     constructor(channel: string, rootElement: HTMLElement) {
         this.channel = channel;
+        this.db = new DB(channel);
+        this.net = new Network(channel, this.db);
+        this.match = new Matching(this.db, this.net);
+
         this.ele = rootElement;
         this.store = getStore(this.db);
         this.themeManager = new ThemeManager(this.ele);
@@ -91,32 +82,15 @@ export default class App {
             this.store.setNetworkStatus('disconnected');
         });
 
-
-        this.db = new DB(channel);
-        this.net = new Network(channel, this.db);
-        this.match = new Matching(this.db, this.net);
-
-
-
-
-
-
-        // Handle theme toggle - example button click handler
         $('#theme-toggle-button').on('click', () => {
             this.themeManager.toggleTheme();
         });
-
 
         console.log('App initialized', this);
     }
 
     getAwareness(): Awareness {
         return this.net!.net.awareness;
-    }
-
-    async load(): Promise<void> {
-        await this.db?.load();
-        console.log('App data loaded', this.db);
     }
 
     getObject(id: string) {
