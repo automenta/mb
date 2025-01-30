@@ -1,4 +1,4 @@
-import { $, Y, Awareness, NObject, App } from '../imports';
+import { $, Y, Awareness, NObject, App, SchemaRegistry } from '../imports';
 import { EditorConfig } from '../types';
 import type { Doc as YDoc } from 'yjs'; // Import Doc type
 import { ToolbarManager } from './toolbar-manager';
@@ -57,10 +57,11 @@ export default class Editor {
         // Initialize core components
         this.toolbar = new ToolbarManager(this);
         this.metadata = new MetadataManager(this.config.isReadOnly ?? false);
+        this.schemaRegistry = config.app.schemaRegistry;
         this.editorCore = new EditorCore(this.config, this, this.config.isReadOnly ?? false);
 
         // Initialize UI and then document state
-        this.initUI();
+        this.initUI(this.schemaRegistry);
         this.initDocument();
         this.initNetwork();
         this.awareness = new AwarenessManager(this.config.getAwareness(), this.rootElement.querySelector('.content-editor') as HTMLElement);
@@ -104,8 +105,8 @@ export default class Editor {
     }
 
 
-    private initUI(): void {
-        const uiBuilder = new UIBuilder(this.config.isReadOnly ?? false);
+    private initUI(schemaRegistry: SchemaRegistry): void {
+        const uiBuilder = new UIBuilder(this.config.isReadOnly ?? false, schemaRegistry);
         const editorContainer = uiBuilder.createEditorContainer();
 
         this.rootElement.append(editorContainer);

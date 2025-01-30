@@ -1,3 +1,4 @@
+import { SchemaRegistry } from '../schema/schema-registry';
 import $ from 'jquery';
 import * as Y from 'yjs';
 import { Awareness } from 'y-protocols/awareness';
@@ -6,7 +7,7 @@ import NObject from '../src/obj';
 import App from './app';
 import { debounce } from '../src/util';
 
-export { $, Y, Awareness, DB, NObject, App, debounce };
+export { $, Y, Awareness, DB, NObject, App, debounce, SchemaRegistry };
 
 export * from './types';
 export type { AppState } from './store';

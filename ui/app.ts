@@ -1,3 +1,4 @@
+import { SchemaRegistry } from '../schema/schema-registry';
 import $ from 'jquery';
 import { io, Socket } from 'socket.io-client';
 import DB from '../src/db';
@@ -52,12 +53,14 @@ export default class App {
     public ele: HTMLElement;
     themeManager: ThemeManager;
     private viewManager: ViewManager;
+    public schemaRegistry: SchemaRegistry;
 
     constructor(channel: string, rootElement: HTMLElement) {
         this.channel = channel;
         this.ele = rootElement;
         this.store = initializeStore();
         this.themeManager = new ThemeManager(this.ele);
+        this.schemaRegistry = new SchemaRegistry();
 
         this.viewManager = new ViewManager(this);
         this.viewManager.registerViews();
