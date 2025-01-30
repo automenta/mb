@@ -1,0 +1,30 @@
+{
+    "title": "UI Details",
+    "description": "Schema for UI components and details",
+    "type": "object",
+    "properties": {
+        "componentType": {
+            "type": "string",
+            "description": "The type of UI component (e.g., button, form, slider)"
+        },
+        "label": {
+            "type": "string",
+            "description": "The label or text associated with the UI component"
+        },
+        "properties": {
+            "type": "object",
+            "description": "Properties specific to the UI component",
+            "additionalProperties": true
+        },
+        "events": {
+            "type": "object",
+            "description": "Events and associated actions for the UI component",
+            "additionalProperties": {
+                "type": "string"
+            }
+        }
+    },
+    "required": [
+        "componentType"
+    ]
+}
