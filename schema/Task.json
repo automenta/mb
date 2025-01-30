@@ -1,0 +1,10 @@
+{
+    "created": { "type": "number" },
+    "updated": { "type": "number" },
+    "name": { "type": "string" },
+    "description": { "type": "string" },
+    "author": { "type": "string" },
+    "status": { "type": "string", "enum": ["todo", "in-progress", "done"] },
+    "dueDate": { "type": "number" },
+    "assignee": { "type": "string" }
+  }

@@ -1,0 +1,4 @@
+{
+    "content": { "type": "Uint8Array" },
+    "mimeType": { "type": "string" }
+  }

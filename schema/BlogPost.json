@@ -1,0 +1,10 @@
+{
+    "created": { "type": "number" },
+    "updated": { "type": "number" },
+    "name": { "type": "string" },
+    "description": { "type": "string" },
+    "author": { "type": "string" },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "content": { "type": "object" },
+    "format": { "type": "string" }
+  }

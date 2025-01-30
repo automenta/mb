@@ -1,0 +1,4 @@
+{
+    "content": { "type": "string" },
+    "format": { "type": "string", "enum": ["plain", "markdown"] }
+  }
