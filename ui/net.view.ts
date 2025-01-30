@@ -138,18 +138,21 @@ class NetViewer { // Corrected class definition
         if (bytesSpan) bytesSpan.textContent = stats.bytesTransferred;
 
         // Update peer list
+       // Update peer list
         if (peerList) {
             peerList.innerHTML = ''; // Clear existing content
-            $(peerList).append(stats.awareness.map(this.renderPeerBadge.bind(this)));
+            if (stats.awareness) {
+                $(peerList).append(stats.awareness.map(this.renderPeerBadge.bind(this)));
+            }
         }
 
         // Update peer list in $peerList
         this.$peerList.empty(); // Clear existing list
-        if (this.net.peers) { // Check if peers map exists
-            this.$peerList.append(Array.from(this.net.peers.values()).map(this.renderPeerListItem.bind(this))); // Render peer list items
+        if (this.net.peers) {
+            this.$peerList.append(Array.from(this.net.peers.values()).map(this.renderPeerListItem.bind(this)));
         }
 
-        this.events.unshift({type, timestamp, data});
+        this.events.unshift({ type, timestamp, data });
         this.events = this.events.slice(0, this.maxEvents);
 
         if (eventLog) {

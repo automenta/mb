@@ -235,14 +235,16 @@ class Network {
             messagesReceived: metricsData.messagesReceived,
             bytesTransferred: metricsData.bytesTransferred,
             peersConnected: this.metrics.getPeersConnected(),
-            awareness: Array.from(this.net!.awareness.getStates().values())
-                .map(state => ({
-                    clientID: state.user?.id,
-                    userName: state.user?.name,
-                    userColor: state.user?.color,
-                    lastActive: state.lastActive,
-                    // ... any other relevant awareness info
-                }))
+            awareness: this.net?.awareness
+                ? Array.from(this.net.awareness.getStates().values())
+                    .map(state => ({
+                        clientID: state.user?.id,
+                        userName: state.user?.name,
+                        userColor: state.user?.color,
+                        lastActive: state.lastActive,
+                        // ... any other relevant awareness info
+                    }))
+                : [] // Default to empty array if awareness is undefined
         };
     }
 
