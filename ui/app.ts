@@ -78,17 +78,17 @@ export default class App {
 
         this.socket.on('connect_error', (err) => {
             console.error("Connection error:", err);
-            this.store.getState().app.setNetworkStatus('error');
+            this.store.setNetworkStatus('error');
         });
 
         this.socket.on('connect', () => {
             console.log("Connected to WebSocket server");
-            this.store.getState().app.setNetworkStatus('connected');
+            this.store.setNetworkStatus('connected');
         });
 
         this.socket.on('disconnect', () => {
             console.log("Disconnected from WebSocket server");
-            this.store.getState().app.setNetworkStatus('disconnected');
+            this.store.setNetworkStatus('disconnected');
         });
 
 
