@@ -53,10 +53,14 @@ export default class NObject {
   get isQuery(): boolean { return this.metadata.get('isQuery'); }
   get author(): string { return this.metadata.get('author'); }
   get text(): Y.Text {
-      if (!this.root.has('content') || !(this.root.get('content') instanceof Y.Text)) {
-          this.root.set('content', new Y.Text());
+      const content = this.root.get('content');
+      if (!this.root.has('content') || !(content instanceof Y.Text)) {
+          const newText = new Y.Text();
+          newText.insert(0, 'Test text');
+          this.root.set('content', newText);
+          return newText;
       }
-      return this.root.get('content');
+      return content;
   }
   get tags(): Y.Array<string> { return this.metadata.get('tags'); }
   get sharedWith(): Y.Array<string> { return this.metadata.get('sharedWith'); }
