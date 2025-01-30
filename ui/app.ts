@@ -118,27 +118,8 @@ export default class App {
         $(ele).append(this.ele);
     }
 
-    getAwareness(): Awareness | null {
-        return this.net ? this.net.getAwareness() : null;
-    }
-
     getObject(id: string): any {
         return this.db?.get(id);
     }
-}
 
-    getAwareness(): Awareness {
-        return this.net!.net.awareness;
-    }
-    mount(ele: HTMLElement) {
-        $(ele).append(this.ele);
-    }
-
-    getAwareness(): Awareness | null {
-        return this.net ? this.net.getAwareness() : null;
-    }
-
-    getObject(id: string): any {
-        return this.db?.get(id);
-    }
 }
