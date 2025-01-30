@@ -12,7 +12,7 @@ interface NetworkMetricsData {
  * Class to manage network metrics.
  */
 class NetworkMetrics {
-    private NetworkMetricsData;
+    private  NetworkMetricsData;
 
     constructor() {
         this.data = {
@@ -64,7 +64,6 @@ class NetworkMetrics {
     }
 }
 
-
 export const NETWORK_ACTIVITY = Symbol('network-activity'); // Export NETWORK_ACTIVITY
 const MESSAGE_SENT = Symbol('message-sent');
 const MESSAGE_RECEIVED = Symbol('message-received');
@@ -85,7 +84,6 @@ type NetworkEventType =
     | typeof AWARENESS_UPDATE
     | typeof OBJECT_SHARED
     | typeof OBJECT_UNSHARED;
-
 
 /**
  * Interface representing data payload for network events
@@ -149,8 +147,9 @@ class Network {
     }
 
     reset() {
-        if (this.net!)
-            this.net!.destroy();
+        if (this.net) {
+            this.net.destroy();
+        }
 
         /** https://github.com/yjs/y-webrtc
          *  https://github.com/feross/simple-peer#peer--new-peeropts */
@@ -248,14 +247,13 @@ class Network {
         };
     }
 
-
     on(event: NetworkEventType, listener: { (value: unknown): void }): void {
         events.on(event, listener); // No prefix needed, using Symbols directly
     }
 
     emit(event: NetworkEventType,  value:NetworkEventData): void {
-        events.emit(event, { ...value, stats: this.getNetworkStats() }); // No prefix needed, using Symbols directly
-        events.emit('networkActivity', { type: event,  ...value, stats: this.getNetworkStats(), timestamp: Date.now() });
+        events.emit(event, { ...value, stats: this.getNetworkStats() });
+        events.emit(NETWORK_ACTIVITY, { type: event,  ...value, stats: this.getNetworkStats(), timestamp: Date.now() });
     }
 }
 

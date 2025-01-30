@@ -35,7 +35,6 @@ export default class DB {
       events.emit('db-synced'); // Emit a 'db-synced' event
     });
 
-
     // Initialize Yjs types
     const yarray = this.doc.getArray('yarray-initializer');
     const ytext = this.doc.getText('ytext-initializer');
@@ -146,16 +145,15 @@ export default class DB {
    * @param name Optional name for the reply.
    * @returns The created reply NObject if successful, else null.
    */
-  createReply = (parentId: string, name: string | null | undefined): NObject | null => { // Updated type definition
-    if (name?.trim() === '') { // Validate name
+  createReply = (parentId: string, name: string | null | undefined): NObject | null => {
+    if (name === null || name === undefined || name.trim() === '') {
       console.error('Invalid name:', name);
       return null;
     }
     return this.replyManager.createReply(parentId, name);
   }
 
-
-  getReplies = (parentId: string): string[] => { // Updated to return string[]
+  getReplies = (parentId: string): string[] => {
         const parent = this.get(parentId);
         if (!parent) {
             console.warn(`Parent object with id ${parentId} not found.`);
@@ -164,11 +162,10 @@ export default class DB {
         return parent.replies.toArray();
     }
 
-    getRepliesTo = (replyId: string): string[] => { // Updated to return string[]
+    getRepliesTo = (replyId: string): string[] => {
         const reply = this.get(replyId);
         return reply?.repliesTo.toArray() || [];
     }
-
 
   /**
    * Retrieves the text of an object by its page ID.
@@ -188,7 +185,6 @@ export default class DB {
    * @param isPublic The public status.
    */
   // Removed objPublic, use object.public setter instead
-
 
  /** Retrieves the history of document snapshots
   * @returns Promise resolving to array of document snapshots

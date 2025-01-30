@@ -15,7 +15,9 @@ describe('DB', () => {
         db = new DB('testuser', provider);
     });
 
-    afterEach(() => {
+    afterEach(async () => {
+        // Destroy the provider to clean up
+        provider.destroy();
         vi.clearAllMocks();
     });
 
@@ -123,7 +125,7 @@ describe('DB', () => {
         obj.setText('Test text');
         const retrievedObj = db.get(obj.id);
         if (retrievedObj === null) throw new Error('Object is null');
-        expect(retrievedObj.text.toString()).toEqual('Test text'); // Corrected assertion
+        expect(retrievedObj.text.toString()).toEqual('Test text');
     });
 
     it('set and get object name', () => {
@@ -210,15 +212,15 @@ describe('DB', () => {
     it('log error for invalid name in createReply', () => {
         const obj = db.create();
         const consoleSpy = vi.spyOn(console, 'error');
-        const reply = db.createReply(obj.id, null); // Pass null explicitly
+        const reply = db.createReply(obj.id, null);
         expect(consoleSpy).toHaveBeenCalledWith('Invalid name:', null);
         expect(reply).toBeNull();
     });
-    // New test for error handling in createReply
+
     it('log error for invalid name in createReply', () => {
         const obj = db.create();
         const consoleSpy = vi.spyOn(console, 'error');
-        const reply = db.createReply(obj.id, undefined); // Pass undefined explicitly
+        const reply = db.createReply(obj.id, undefined);
         expect(consoleSpy).toHaveBeenCalledWith('Invalid name:', undefined);
         expect(reply).toBeNull();
     });
