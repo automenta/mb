@@ -51,16 +51,7 @@ export default class Matching {
         this.onPagesChanged();
 
         // Network coordination (consider if this should be enabled by default or configurable)
-        this.net.awareness.on('change', () => this.coordinated());
-    }
-
-    /**
-     * Registers an event listener for matching events
-     * @param event - Event type to listen for
-     * @param listener - Callback function to handle the event
-     */
-    on(event: MatchingEventType | string, listener: (...args: any[]) => void): void { // Use MatchingEventType
-        events.on(event, listener);
+        this.net.awareness.on('update', () => this.coordinated());
     }
 
     // Main processing loop
