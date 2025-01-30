@@ -114,8 +114,6 @@ export default class App {
     }
 
     getAwareness(): Awareness {
-
-    getAwareness(): Awareness {
         return this.net!.net.awareness;
     }
 
