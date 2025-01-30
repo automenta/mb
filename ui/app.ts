@@ -1,4 +1,4 @@
-import { SchemaRegistry } from '../schema/schema-registry';
+import { SchemaRegistry } from '../src/schema-registry';
 import $ from 'jquery';
 import { io, Socket } from 'socket.io-client';
 import DB from '../src/db';
@@ -46,10 +46,10 @@ class ThemeManager {
 export default class App {
     readonly channel: string;
     private socket: Socket;
-    db: DB | null = null;
-    net: Network | null = null; // Ensure net is typed as Network
-    match: Matching | null = null;
-    public store: ReturnType<typeof initializeStore>>;
+    db: DB;
+    net: Network;
+    match: Matching;
+    public store: ReturnType<typeof initializeStore>;
     public ele: HTMLElement;
     themeManager: ThemeManager;
     private viewManager: ViewManager;
