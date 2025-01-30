@@ -84,7 +84,7 @@ class MatchingView {
 
    constructor(root: JQuery, matching: MatchingInterface) {
         this.matching = matching;
-        this.root = root; // Ensure root is a jQuery object
+        this.root = root;
         this.ele = $('<div>').addClass('matching-dashboard');
         this.settings.workerCapacity = matching.workerCapacity;
         this.settings.processInterval = matching.processInterval / 1000;
