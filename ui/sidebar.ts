@@ -21,13 +21,14 @@ class PageContextMenu {
         this.ele = $('<div>').addClass('context-menu').html(`
             <ul>
                 <li data-action="rename-page">Rename</li>
-                <li data-action="delete-page">Delete</li>
+                <li data-action="delete-page">delete-page</li>
             </ul>
-        `);
+        `).hide(); // Initially hide context menu
 
-        $(document).click(e => {
-            if (!$(e.target).closest('#context-menu').length)
+        $(document).on('click', e => { // Use document-level event listener
+            if (!$(e.target).closest('.context-menu').length) {
                 this.hide();
+            }
         });
 
         this.ele.on('click', 'li', e => {
@@ -44,19 +45,18 @@ class PageContextMenu {
     }
 
     renamePage(obj: NObject) {
-        const newName = prompt('Enter new page name:');
-        if (newName) {
+        const newName = prompt('Rename page to:', obj.name); // Pre-fill with current name
+        if (newName && newName !== obj.name) { // Check if name actually changed
             obj.name = newName;
             store.setCurrentObject(obj);
         }
     }
 
     deletePage(obj: NObject) {
-        if (confirm('Are you sure you want to delete this page?')) {
+        if (confirm(`Are you sure you want to delete page "${obj.name}"?`)) { // Confirm with page name
             const wasPublic = obj.public;
             store.removeObject(obj.id);
 
-            // Update database and clear editor if viewing deleted object
             this.store.app?.db?.delete(obj.id);
             this.store.app?.editor?.clearIfCurrent(obj.id);
 
@@ -67,7 +67,8 @@ class PageContextMenu {
         }
     }
 
-    showContextMenu(event: JQuery.ContextMenuEvent, pageId: string) {
+
+    show(event: JQuery.ContextMenuEvent, pageId: string) { // Renamed to 'show' and simplified
         event.preventDefault();
         this.selectedPageId = pageId;
         this.ele.css({
@@ -91,9 +92,10 @@ export default class Sidebar {
     private readonly friendsView: FriendsView;
     private readonly netView: NetView;
     private readonly dbView: DBView | null;
-    private readonly notificationsView: NotificationsView; // Add NotificationsView
+    private readonly notificationsView: NotificationsView;
     private readonly matchingView: MatchingView | null;
     private readonly agentsView: AgentsView;
+    private currentView: BaseView | null = null; // Track current view
 
     constructor(app: App, ele: HTMLElement) {
         this.ele = $(ele).addClass('sidebar');
@@ -102,53 +104,34 @@ export default class Sidebar {
         this.contextMenu = new PageContextMenu(this.store);
         this.pageList = $('<ul>', { class: 'page-list' });
         const $mainView = $('.main-view');
-        this.friendsView = new FriendsView($mainView, app.getAwareness.bind(app)); // Use getAwareness() to get awareness instance
+        this.friendsView = new FriendsView($mainView, app.getAwareness.bind(app));
         this.agentsView = new AgentsView($mainView);
         this.netView = new NetView($mainView, app.net);
         if (app.match)
             this.matchingView = new MatchingView($mainView, app.match);
 
         if (app.db) {
-            this.meView = new MeView($mainView, app.store.getUser.bind(app.store), app.getAwareness.bind(app), app.db); // Use getAwareness()
-            this.dbView = new DBView($mainView[0], app.db); // Pass app.db, not just db
-            this.notificationsView = new NotificationsView($mainView[0], app.db, app.editor!.loadDocument.bind(app.editor!)); // Initialize NotificationsView and pass loadDocument
+            this.meView = new MeView($mainView, app.store.getUser.bind(app.store), app.getAwareness.bind(app), app.db);
+            this.dbView = new DBView($mainView[0], app.db);
+            this.notificationsView = new NotificationsView($mainView[0], app.db, app.editor!.loadDocument.bind(app.editor!));
         }
 
-
-        this.ele.append(this.menu());
+        this.ele.append(this.createMenubar()); // Use createMenubar instead of menu
         this.ele.append(this.pageList);
         $(document.body).append(this.contextMenu.ele);
 
-        // Subscribe to store changes
         this.store.subscribe(state => this.updatePageList(state.objects));
+
+        // Initially show 'My Objects' list
+        this.switchView('my-objects'); // Initial view is page list
     }
 
-    private currentListViewMode: string = 'my-objects'; // Default mode
 
-    private listViewModeViews: Record<string, BaseView | null> = {
-        'my-objects': null, // Page list is directly appended
-        'friends': this.friendsView,
-        'network': this.netView,
-        'matching': this.matchingView,
-        'notifications': this.notificationsView,
-    };
-
-    switchListViewMode(mode: string) {
-        this.currentListViewMode = mode;
-        $('#list-view-container').empty();
-
-        if (mode === 'my-objects') {
-            $('#list-view-container').append(this.pageList);
-        } else if (this.listViewModeViews[mode]) {
-            $('#list-view-container').append(this.listViewModeViews[mode]!.render());
-        }
-    }
     private createAddPageButton(): JQuery {
         return $('<button>', {
             class: 'menubar-button add-page-button',
-            text: '+',
             title: 'Add New Page'
-        }).click(() => {
+        }).append($('<i>', { class: 'fas fa-plus' })).on('click', () => { // Using font-awesome icon
             const db = this.store.getState().db;
             if (db) {
                 const newObj = db.create();
@@ -160,98 +143,84 @@ export default class Sidebar {
                     id: newObj.id,
                     timestamp: Date.now()
                 });
-                this.store.app?.editor?.loadDocument(newObj); // Load new object into editor
+                this.store.app?.editor?.loadDocument(newObj);
             }
         });
     }
 
-    private createTestAddObjectButton(): JQuery {
-        return $('<button>', {
-            text: 'Test Add Object',
-            title: 'Test Add Object'
-        }).click(() => {
-            const db = this.store.getState().db;
-            if (db) {
-                const newObj = db.create();
-                newObj.name = 'Test Object';
-                this.store.addObject(newObj);
-                console.log('Test object added:', newObj.id);
-            }
-        });
+
+    private createMenubar(): JQuery {
+        const menuBar = $('<div>', { class: 'menubar' });
+        menuBar.append(
+            this.createAddPageButton(),
+            //this.createTestAddObjectButton(), // Removed test button
+            //this.createListViewModeDropdown(), // Removed dropdown for now
+            this.createMenuButton({ id: 'profile', title: 'Me', view: this.meView }),
+            this.createMenuButton({ id: 'friends', title: 'Friends', view: this.friendsView }),
+            this.createMenuButton({ id: 'network', title: 'Network', view: this.netView }),
+            this.createMenuButton({ id: 'database', title: 'DB', view: this.dbView }),
+            this.createMenuButton({ id: 'agents', title: 'Agents', view: this.agentsView }),
+            this.createMenuButton({ id: 'notifications', title: 'Notifications', view: this.notificationsView }),
+            this.createToggleDarkModeButton()
+        );
+        return menuBar;
     }
 
-    private createListViewModeDropdown(): JQuery {
-        // Dropdown for list view modes
-        const listModeDropdown = $('<select>', {
-            id: 'list-mode-dropdown',
-            title: 'Select List View Mode'
-        }).append(
-            $('<option>', { value: 'my-objects', text: 'My Objects' }),
-            $('<option>', { value: 'friends', text: 'Friends' }),
-            $('<option>', { value: 'network', text: 'Network' }),
-            $('<option>', { value: 'matching', text: 'Matching' }),
-            $('<option>', { value: 'notifications', text: 'Notifications' }),
-            // Add more options as needed
-        ).change(() => {
-            const selectedMode = listModeDropdown.val() as string;
-            this.switchListViewMode(selectedMode);
-        });
-        return listModeDropdown;
-    }
-
-    private createMenuItems(mainView: JQuery): JQuery[] {
-        const menuItems = [{ id: 'profile', title: 'Me', view: this.meView, isView: true }, { id: 'friends', title: 'Friends', view: this.friendsView, isView: true }, { id: 'network', title: 'Net', view: this.netView, isView: true },
-            { id: 'database', title: 'DB', view: this.dbView, isView: true },
-            { id: 'agents', title: 'Agents', view: this.agentsView, isView: true },
-        ];
-        return menuItems.map(item => {
-            if (item.view) {
-                return this.createMenuButton({ ...item, mainView });
-            }
-        }).filter(Boolean) as JQuery[]; // More concise filter and cast
-    }
 
     private createToggleDarkModeButton(): JQuery {
         return $('<button>', {
             class: 'menubar-button',
-            text: 'Toggle Dark Mode',
             title: 'Toggle Dark Mode'
-        }).click(() => {
+        }).append(
+            $('<i>', { class: 'fas fa-adjust' }), // Example icon for dark mode toggle
+            $('<span>').text('Theme') // Text label for clarity
+        ).on('click', () => {
             this.store.app?.toggleDarkMode();
         });
     }
 
-    /**
-     * Creates a menu button with given properties.
-     */
-    private createMenuButton({ id, title, view, isView = false, mainView }: {
-        id: string; title: string; view: any; isView?: boolean; mainView: JQuery;
-    }): JQuery {
-        return $('<button>', {
+    private createMenuButton({ id, title, view }: { id: string; title: string; view: BaseView | null }): JQuery {
+        const button = $('<button>', {
             id: `menu-${id}`,
             class: 'menubar-button',
-            text: title,
+            'data-view-id': id, // Store view ID in data attribute
             title: title
-        }).click(() => {
-            mainView.empty();
-            view.render();
-        });
-    }
-
-    menu() {
-        const menuBar = $('<div>', { class: 'menubar' });
-        menuBar.append(
-            this.createAddPageButton(),
-            this.createTestAddObjectButton(),
-            this.createListViewModeDropdown(),
-            ...this.createMenuItems($('.main-view')),
-            this.createToggleDarkModeButton()
+        }).append(
+            $('<span>').text(title) // Keep text label
         );
 
-        // Placeholder for the list view
-        const listViewContainer = $('<div>', { id: 'list-view-container' });
-        this.ele.append(listViewContainer);
-        return menuBar;
+        button.on('click', () => {
+            this.switchView(id); // Call switchView with the view ID
+        });
+        return button;
+    }
+
+
+    switchView(viewId: string) {
+        $('.main-view').empty(); // Clear main view area
+        $('.menubar-button.active').removeClass('active'); // Deactivate previous button
+        $(`.menubar-button[data-view-id="${viewId}"]`).addClass('active'); // Activate current button
+
+        if (viewId === 'my-objects') {
+            $('#list-view-container').show(); // Show page list container
+            this.currentView = null;
+        } else {
+            $('#list-view-container').hide(); // Hide page list container
+            let view: BaseView | null = null;
+            switch (viewId) {
+                case 'profile': view = this.meView; break;
+                case 'friends': view = this.friendsView; break;
+                case 'network': view = this.netView; break;
+                case 'database': view = this.dbView; break;
+                case 'agents': view = this.agentsView; break;
+                case 'notifications': view = this.notificationsView; break;
+                case 'matching': view = this.matchingView; break;
+            }
+            if (view) {
+                $('.main-view').append(view.render()); // Render and append the selected view
+                this.currentView = view;
+            }
+        }
     }
 
 
@@ -261,12 +230,12 @@ export default class Sidebar {
             const v = new ObjViewMini(obj);
             v.ele.attr('data-page-id', obj.id)
                 .on('contextmenu', (e: JQuery.ContextMenuEvent) => {
-                    e.preventDefault();
-                    this.contextMenu.showContextMenu(e, obj.id);
+                    this.contextMenu.show(e, obj.id); // Use simplified 'show' method
                 })
                 .on('click', async () => {
                     this.store.setCurrentObject(obj);
                     await this.store.app?.editor?.loadDocument(obj);
+                    this.switchView('my-objects'); // Keep 'my-objects' view active
                 });
             return v.ele;
         }));
