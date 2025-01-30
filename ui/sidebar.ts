@@ -104,6 +104,8 @@ export default class Sidebar {
         this.contextMenu = new PageContextMenu(this.store);
         this.pageList = $('<ul>', { class: 'page-list' });
         const $mainView = $('.main-view');
+        console.log('Sidebar: mainView jQuery object:', $mainView); // Log mainView
+
         this.friendsView = new FriendsView($mainView, app.getAwareness.bind(app));
         this.agentsView = new AgentsView($mainView);
         this.netView = new NetView($mainView, app.net);
@@ -124,6 +126,7 @@ export default class Sidebar {
 
         // Initially show 'My Objects' list
         this.switchView('my-objects'); // Initial view is page list
+        console.log('Sidebar: initial view switched to my-objects'); // Log initial view switch
     }
 
 
@@ -220,14 +223,15 @@ export default class Sidebar {
                 case 'matching': view = this.matchingView; break;
             }
             if (view) {
-                console.log('switchView: rendering view for', viewId);
+                console.log('switchView: rendering view for', viewId, view); // Log view object
                 const renderedView = view.render();
-                if (renderedView) {
+                console.log('switchView: renderedView:', renderedView); // Log renderedView
+                if (renderedView && renderedView.length > 0) { // Check if renderedView is valid and not empty
                     $('.main-view').append(renderedView); // Render and append the selected view
                     this.currentView = view;
                     console.log('switchView: view rendered and appended for', viewId);
                 } else {
-                    console.warn('switchView: view.render() returned null for', viewId);
+                    console.warn('switchView: view.render() returned null or empty for', viewId);
                 }
             } else {
                 console.warn('switchView: no view found for', viewId);

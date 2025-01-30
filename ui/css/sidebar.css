@@ -33,6 +33,10 @@
     font-size: 0.9rem; /* Slightly smaller font size */
 }
 
+.menubar-button span { /* Target span inside button for label color */
+    color: var(--text-primary) !important; /* Explicitly set label color */
+}
+
 .menubar-button:hover {
     background-color: var(--accent-hover); /* Hover background */
     color: var(--text-primary) !important; /* Hover text color */
@@ -70,9 +74,10 @@
     margin: 0.2rem 0; /* Reduced margin */
     border-radius: 6px; /* Slightly less rounded corners */
     cursor: pointer;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: background-color 0.3s ease, color: 0.3s ease; /* Include color in transition */
     font-weight: var(--font-weight-normal);
     font-size: 0.9rem; /* Slightly smaller font size for page list items */
+    color: var(--text-primary) !important; /* Ensure page list item text is visible */
 }
 
 .page-list li:hover {
