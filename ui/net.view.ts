@@ -118,9 +118,10 @@ class NetViewer { // Corrected class definition
     }
 
 
-    update(eventData: any): void { // Type 'any' for eventData as its structure is not defined
-        const {type, data, timestamp} = eventData;
-        const stats = data.stats;
+    update(eventData: any = {}): void {
+        // Handle undefined eventData or missing properties
+        const { type, data = {}, timestamp } = eventData;
+        const stats = data.stats || {};
 
         // Update metrics
         let r = this.ele[0] as HTMLElement; // Cast to HTMLElement
