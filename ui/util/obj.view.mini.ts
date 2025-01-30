@@ -15,13 +15,12 @@ export default class ObjViewMini {
         });
 
         const observer: (e: YEvent<any>[]) => void = (e) => {
-            // Check if 'changed' is a Set or an Array
-            const changedKeys = e[0].changed instanceof Set ? e[0].changed : Object.keys(e[0].changed);
-            if (changedKeys && (changedKeys.has('name') || changedKeys.has('public')))
+            const changedKeys = e[0]?.changed;
+            if (changedKeys && (changedKeys instanceof Set ? changedKeys.has('name') || changedKeys.has('public') : Object.keys(changedKeys).includes('name') || Object.keys(changedKeys).includes('public')))
                 setTimeout(() => this.render());
         };
 
-        if (typeof this.obj.observe === 'function') {
+        if (this.obj.observe) {
             this.ele.on("remove", () => this.obj.unobserve(observer));
             this.obj.observe(observer);
         }

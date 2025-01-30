@@ -34,16 +34,11 @@ export default class ViewManager {
             'settings-view': new SettingsView($('#settings-view'), this.store)
         };
 
-        // Render each view
-        Object.keys(this.views).forEach(viewId => {
-            const view = this.views[viewId];
+        for (const viewId in this.views) {
             const viewElement = $(`#${viewId}`);
-            if (viewElement.length) {
-                view.render();
-            } else {
-                console.error(`Element for view ${viewId} not found.`);
-            }
-        });
+            if (!viewElement.length) console.error(`Element for view ${viewId} not found.`);
+            this.views[viewId].render();
+        }
     }
 
     public showView(viewId: string): void {

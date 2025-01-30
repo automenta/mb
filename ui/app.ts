@@ -113,11 +113,6 @@ export default class App {
         $('#settings-view-link').on('click', () => this.viewManager.showView('settings-view'));
     }
 
-    private showView(viewId: string): void {
-        // Delegate view management to ViewManager
-        this.viewManager.showView(viewId);
-    }
-
     getAwareness(): Awareness {
         return this.net!.net.awareness;
     }

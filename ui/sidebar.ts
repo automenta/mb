@@ -133,17 +133,14 @@ export default class Sidebar {
 
     switchListViewMode(mode: string) {
         this.currentListViewMode = mode;
-        const listViewContainer = $('#list-view-container');
-        listViewContainer.empty();
+        $('#list-view-container').empty();
 
-        const view = this.listViewModeViews[mode];
         if (mode === 'my-objects') {
-            listViewContainer.append(this.pageList);
-        } else if (view) {
-            listViewContainer.append(view.render());
+            $('#list-view-container').append(this.pageList);
+        } else if (this.listViewModeViews[mode]) {
+            $('#list-view-container').append(this.listViewModeViews[mode]!.render());
         }
     }
-
     private createAddPageButton(): JQuery {
         return $('<button>', {
             class: 'menubar-button add-page-button',
@@ -201,12 +198,9 @@ export default class Sidebar {
     }
 
     private createMenuItems(mainView: JQuery): JQuery[] {
-        const $main = $('.main-view');
-        const menuItems = [{ id: 'profile', title: 'Me', view: this.meView, isView: false },
-            { id: 'friends', title: 'Friends', view: this.friendsView, isView: false },
-            { id: 'network', title: 'Net', view: this.netView, isView: false },
+        const menuItems = [{ id: 'profile', title: 'Me', view: this.meView, isView: true }, { id: 'friends', title: 'Friends', view: this.friendsView, isView: true }, { id: 'network', title: 'Net', view: this.netView, isView: true },
             { id: 'database', title: 'DB', view: this.dbView, isView: true },
-            { id: 'agents', title: 'Agents', view: new AgentsView($main), isView: true },
+            { id: 'agents', title: 'Agents', view: new AgentsView($('.main-view')), isView: true },
         ];
         return menuItems.map(item => {
             if (item.view) {
@@ -238,7 +232,7 @@ export default class Sidebar {
             title: title
         }).click(() => {
             mainView.empty();
-            isView ? view.render() : mainView.append(view.render());
+            view.render();
         });
     }
 
