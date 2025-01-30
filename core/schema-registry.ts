@@ -6,7 +6,7 @@ export class SchemaRegistry {
 
     constructor() {
         this.schemas = {};
-        this.loadSchemasFromDirectory();
+        this.load();
     }
 
     registerSchema(name: string, schema: any) {
@@ -17,7 +17,7 @@ export class SchemaRegistry {
         return this.schemas[name];
     }
 
-    private loadSchemasFromDirectory() {
+    private load() {
         const schemaDir = path.join(__dirname, '..', 'schema');
         const files = fs.readdirSync(schemaDir);
 
