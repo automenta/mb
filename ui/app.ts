@@ -52,7 +52,7 @@ export default class App {
         this.net = new Network(channel, this.db);
         this.match = new Matching(this.db, this.net);
 
-        this.ele = rootElement;
+        this.ele = $(rootElement);
         this.store = getStore(this.db);
         this.themeManager = new ThemeManager(this.ele);
         this.schemaRegistry = new SchemaRegistry();
