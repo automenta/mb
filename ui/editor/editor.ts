@@ -141,18 +141,6 @@ export default class Editor {
         titleEditor?.addEventListener('input', this.handleTitleChange.bind(this));
     }
 
-    private bindEditorEvents(): void {
-        const contentEditor = this.rootElement.querySelector('.content-editor');
-        contentEditor?.addEventListener('input', () => {
-            this.awareness.updateLocalCursor();
-            this.saveDocument(); // Call saveDocument on input event
-        });
-        contentEditor?.addEventListener('keydown', this.handleShortcuts.bind(this));
-
-        const titleEditor = this.rootElement.querySelector('.document-title');
-        titleEditor?.addEventListener('input', this.handleTitleChange.bind(this));
-    }
-
     private handleTitleChange(event: Event): void {
         const titleEditor = event.target as HTMLInputElement;
         const newTitle = titleEditor.value;

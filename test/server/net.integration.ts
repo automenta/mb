@@ -125,29 +125,6 @@ describe('End-to-End Tests', () => {
         });
     });
 
-    it('should establish a WebSocket connection between client and server', () => {
-        return new Promise<void>((resolve) => {
-            clientSocket.on('connect', () => {
-                expect(clientSocket.connected).toBe(true);
-                resolve();
-            });
-        });
-    });
-
-    it('should relay a message from client to server via WebSocket', () => {
-        return new Promise<void>((resolve) => {
-            const testMessage = { target: 'server', data: 'Hello from client' };
-
-            io.on('connection', (socket) => {
-                socket.on('signal', (message) => {
-                    expect(message).toEqual(testMessage);
-                    resolve();
-                });
-            });
-
-            clientSocket.emit('signal', testMessage);
-        });
-    });
 
     it('should establish a P2P connection between 2 server nodes', async () => {
         const connection = await new Promise<any>((resolve) => {

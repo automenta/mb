@@ -42,6 +42,8 @@ describe('WebSocket Communication', () => {
         });
     });
 
+
+
     it('should establish a WebSocket connection between client and server', () => {
         return new Promise<void>((resolve) => {
             clientSocket.on('connect', () => {
