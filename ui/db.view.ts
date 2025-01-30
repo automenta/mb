@@ -76,7 +76,11 @@ export default class DBView extends BaseView {
             }
             return isMatch;
         });
-        filteredPages.sort((a, b) => this.sortOrder === 'asc' ? a[this.sortKey].localeCompare(b[this.sortKey]) : b[this.sortKey].localeCompare(a[this.sortKey]));
+        filteredPages.sort((a, b) => {
+            const aValue = a[this.sortKey] || '';
+            const bValue = b[this.sortKey] || '';
+            return this.sortOrder === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+        });
         $tbody.append(filteredPages.map(this.createRow.bind(this)));
     }
 
