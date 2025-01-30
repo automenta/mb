@@ -57,7 +57,7 @@ export default class App {
         this.themeManager = new ThemeManager(this.ele);
         this.schemaRegistry = new SchemaRegistry();
 
-        this.viewManager = new ViewManager(this, this.store);
+        this.viewManager = new ViewManager(this);
 
         this.socket = io(); // Initialize socket connection
 
@@ -76,7 +76,7 @@ export default class App {
             this.store.setNetworkStatus('disconnected');
         });
 
-        this.render(); // Moved rendering logic to ViewManager
+        this.render();
         console.log('App initialized', this);
     }
 
@@ -93,7 +93,13 @@ export default class App {
                         <li id="settings-view-link">Settings</li>
                     </ul>
                 </div>
-                <div class="main-view"></div>
+                <div class="main-view">
+                    <div id="db-view"></div>
+                    <div id="net-view" style="display: none;"></div>
+                    <div id="match-view" style="display: none;"></div>
+                    <div id="profile-view" style="display: none;"></div>
+                    <div id="settings-view" style="display: none;"></div>
+                </div>
             </div>
         `);
         this.viewManager.registerViews();
