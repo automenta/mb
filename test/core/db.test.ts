@@ -203,15 +203,6 @@ describe('DB', () => {
         expect(consoleSpy).toHaveBeenCalledWith('Invalid name:', null);
         expect(reply).toBeNull();
     });
-});
-
-            db.provider.emit('synced', []);
-
-            expect(consoleSpy).toHaveBeenCalledWith('Synced');
-            expect(consoleSpy).toHaveBeenCalledTimes(1);
-        });
-    });
-
     // New test for error handling in createReply
     it('log error for invalid name in createReply', () => {
         const obj = db.create();
