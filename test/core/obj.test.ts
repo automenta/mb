@@ -1,54 +1,61 @@
-import {beforeEach, describe, expect, it} from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 import NObject from '../../core/obj';
 
 describe('NObject', () => {
-    let doc: Y.Doc;
-    let obj: NObject;
+  let doc: Y.Doc;
+  let obj: NObject;
 
-    beforeEach(() => {
-        doc = new Y.Doc();
-        obj = new NObject(doc, 'test-id');
-        obj.author = 'testuser';
+  beforeEach(() => {
+    doc = new Y.Doc();
+    obj = new NObject(doc, 'test-id');
+    obj.author = 'testuser';
+  });
+
+  it('initializes with default values', () => {
+    const defaults = {
+      name: '?',
+      public: false,
+      author: 'testuser',
+      tags: [],
+      replies: [],
+      repliesTo: []
+    };
+    
+    expect(Object.entries(defaults).every(([k, v]) => 
+      Array.isArray(v) 
+        ? obj[k].length === v.length
+        : obj[k] === v
+    )).toBeTruthy();
+  });
+
+  it('handles metadata properties', () => {
+    const testData = {
+      name: 'Test Name',
+      public: true,
+      author: 'anotherUser'
+    };
+
+    Object.entries(testData).forEach(([key, value]) => {
+      obj[key] = value;
+      expect(obj[key]).toEqual(value);
     });
+  });
 
-    it('initialize with default values', () => {
-        expect(obj.name).toEqual('?');
-        expect(obj.public).toBe(false);
-        expect(obj.author).toEqual('testuser');
-        expect(obj.tags.length).toEqual(0);
-        expect(obj.replies.length).toEqual(0);
-        expect(obj.repliesTo.length).toEqual(0);
-    });
+  it('manages text content', () => {
+    const testText = 'Test text';
+    obj.setText(testText);
+    expect(obj.text.toString()).toBe(testText);
+  });
 
-    it('set and get name', () => {
-        obj.name = 'Test Name';
-        expect(obj.name).toEqual('Test Name');
-    });
-
-    it('set and get public status', () => {
-        obj.public = true;
-        expect(obj.public).toEqual(true);
-    });
-
-    it('set and get author', () => {
-        obj.author = 'anotherUser';
-        expect(obj.author).toEqual('anotherUser');
-    });
-
-    it('set and get text', () => {
-        obj.setText('Test text');
-        expect(obj.text.toString()).toEqual('Test text');
-    });
-
-    it('add and remove tags', () => {
-        obj.addTag('tag1');
-        obj.addTag('tag2');
-        expect(obj.tags.toArray()).toEqual(['tag1', 'tag2']);
-
-        obj.removeTag('tag1');
-        expect(obj.tags.toArray()).toEqual(['tag2']);
-    });
+  it('manages tags', () => {
+    const tags = ['tag1', 'tag2'];
+    tags.forEach(t => obj.addTag(t));
+    expect(obj.tags.toArray()).toEqual(tags);
+    
+    obj.removeTag(tags[0]);
+    expect(obj.tags.toArray()).toEqual([tags[1]]);
+  });
 
     it('add and remove replies', () => {
         obj.addReply('reply1');
