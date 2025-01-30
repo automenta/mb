@@ -85,6 +85,7 @@ export default class App {
         });
 
         this.render();
+        this.viewManager.registerViews();
         console.log('App initialized', this);
     }
 
@@ -104,7 +105,6 @@ export default class App {
                 <div class="main-view">
                     <div id="db-view"></div>
                     <div id="net-view" style="display: none;"></div>
-                    <div id="match-view" style="display: none;"></div>
                 </div>
             </div>
         `;
