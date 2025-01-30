@@ -105,6 +105,7 @@ export default class App {
                 <div class="main-view">
                     <div id="db-view"></div>
                     <div id="net-view" style="display: none;"></div>
+                    <div id="match-view" style="display: none;"></div>
                 </div>
             </div>
         `;
@@ -116,8 +117,8 @@ export default class App {
             this.showView('db-view');
         });
 
-        $('#net-view-link').on('click', () => {
-            this.showView('net-view');
+        $('#match-view-link').on('click', () => {
+            this.showView('match-view');
         });
 
         $('#match-view-link').on('click', () => {
