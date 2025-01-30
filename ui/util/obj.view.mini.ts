@@ -15,16 +15,18 @@ export default class ObjViewMini {
         });
 
         const observer: (e: YEvent<any>[]) => void = (e) => {
-            // Try 'changed' instead of 'keysChanged'
-            const changedKeys: Set<string> = e[0].changed; // Assuming 'changed' is a Set<string>
+            // Check if 'changed' is a Set or an Array
+            const changedKeys = e[0].changed instanceof Set ? e[0].changed : Object.keys(e[0].changed);
             if (changedKeys && (changedKeys.has('name') || changedKeys.has('public')))
-                setTimeout(()=> this.render());
+                setTimeout(() => this.render());
         };
-        
-        this.ele.on("remove", () => this.obj.unobserve(observer));
+
+        if (typeof this.obj.observe === 'function') {
+            this.ele.on("remove", () => this.obj.unobserve(observer));
+            this.obj.observe(observer);
+        }
 
         this.render();
-        this.obj.observe(observer);
     }
 
     private render() {
