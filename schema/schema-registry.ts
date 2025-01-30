@@ -1,14 +1,7 @@
 export class SchemaRegistry {
   private schemas: { [name: string]: object } = {};
-  private validationConfig: { [name: string]: { enabled: boolean; strict: boolean; allowUnknown: boolean } } = {};
-
   registerSchema(name: string, schema: any): void {
     this.schemas[name] = schema;
-    this.validationConfig[name] = {
-      enabled: true,
-      strict: schema.validation?.rules?.strict ?? false,
-      allowUnknown: schema.validation?.rules?.allowUnknown ?? true
-    };
   }
 
   getSchema(name: string): object | undefined {
