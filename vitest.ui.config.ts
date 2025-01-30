@@ -5,11 +5,11 @@ import path from 'path';
 export default defineConfig({
   ...baseConfig,
   root: path.resolve('./'), // Explicitly set root directory
-  /*resolve: {
+  resolve: {
     alias: {
       'http': 'stream-http',
     },
-  },*/
+  },
   test: {
     ...baseConfig.test,
     include: ['test/ui/**/*.test.ts'],
@@ -21,15 +21,16 @@ export default defineConfig({
     },
     environment: 'jsdom',
     setupFiles: ['./test/ui/test-setup.ts'],
-    globals: true,
-    restoreMocks: true,
-    environmentOptions: {
+    globals: true
+    //restoreMocks: true,
+    /*environmentOptions: {
       jsdom: {
         url: 'http://localhost:3000',
       },
-    },
-    deps: {
+    },*/
+    //"deps.inline" is deprecated. If you rely on vite-node directly, use "server.deps.inline" instead. Otherwise, consider using "deps.optimizer.web.include"
+    /*deps: {
       inline: ['@testing-library/jest-dom'],
-    },
+    },*/
   },
 });

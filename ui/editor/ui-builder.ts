@@ -132,29 +132,3 @@ export default class UIBuilder {
         return tagSelectorContainer;
     }
 }
-
-    private createTitleEditor(): HTMLElement {
-        const titleEditor = this.createElement('input', 'document-title') as HTMLInputElement;
-        titleEditor.type = 'text';
-        return titleEditor;
-    }
-
-    private createContentEditor(): HTMLElement {
-        const contentEditor = this.createElement('div', 'content-editor');
-        contentEditor.contentEditable = this.isReadOnly ? 'false' : 'true';
-        return contentEditor;
-    }
-
-    private createMetadataPanel(): HTMLElement {
-        return this.createElement('div', 'metadata-panel', 'Metadata Panel');
-    }
-
-    private createTagSelectorContainer(): HTMLElement {
-        const tagSelectorContainer = this.createElement('div', 'tag-selector-container');
-        const tagSelector = new TagSelector(tagSelectorContainer, 'page');
-        tagSelector.addTag('Category 1', 'Tag A');
-        tagSelector.addTag('Category 1', 'Tag B');
-        tagSelector.addTag('Category 2', 'Tag C');
-        return tagSelectorContainer;
-    }
-}

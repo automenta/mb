@@ -1,8 +1,7 @@
 import $ from 'jquery';
-import { events } from '../core/events';
-import Network from '../core/net'; // Import Network class
+import {events} from '../core/events';
+import Network, {NETWORK_ACTIVITY} from '../core/net'; // Import Network class // Import Symbol
 import '/ui/css/net.css';
-import { NETWORK_ACTIVITY } from '../core/net'; // Import Symbol
 
 /**
  * Creates a stat box element.
@@ -11,7 +10,7 @@ function createStatBox(title: string, ...contentLines: { label: string, classNam
     const box = $('<div>').addClass('stat-box').append(
         $('<strong>').text(title)
     );
-    contentLines.forEach(({ label, className }) => {
+    contentLines.forEach(({label, className}) => {
         box.append(
             $('<div>').append(
                 `${label}: `,
@@ -108,19 +107,19 @@ class NetViewer { // Corrected class definition
 +                <div class="peer-list"></div>  <!-- Add peer list container here -->
 +            </div>
          `, this.bootstrap.panel());
-+        this.ele.find('.peer-list').append(this.$peerList); // Append $peerList to the container
+        +this.ele.find('.peer-list').append(this.$peerList); // Append $peerList to the container
 
         // Append stat boxes to the stats-grid div
         const statsGrid = this.ele.find('.stats-grid');
         statsGrid.append(
-            createStatBox('Messages', { label: 'Sent', className: 'sent' }, { label: 'Received', className: 'received' }),
-            createStatBox('Bandwidth', { label: 'Total', className: 'bytes' })
+            createStatBox('Messages', {label: 'Sent', className: 'sent'}, {label: 'Received', className: 'received'}),
+            createStatBox('Bandwidth', {label: 'Total', className: 'bytes'})
         );
     }
 
 
     update(eventData: any): void { // Type 'any' for eventData as its structure is not defined
-        const { type, data, timestamp } = eventData;
+        const {type, data, timestamp} = eventData;
         const stats = data.stats;
 
         // Update metrics
@@ -143,15 +142,13 @@ class NetViewer { // Corrected class definition
             $(peerList).append(stats.awareness.map(this.renderPeerBadge.bind(this)));
         }
 
+        // Update peer list in $peerList
+        this.$peerList.empty(); // Clear existing list
+        if (this.net.peers) { // Check if peers map exists
+            this.$peerList.append(Array.from(this.net.peers.values()).map(this.renderPeerListItem.bind(this))); // Render peer list items
+        }
 
-+        // Update peer list in $peerList
-+        this.$peerList.empty(); // Clear existing list
-+        if (this.net.peers) { // Check if peers map exists
-+            this.$peerList.append(Array.from(this.net.peers.values()).map(this.renderPeerListItem.bind(this))); // Render peer list items
-+        }
-+
-
-        this.events.unshift({ type, timestamp, data });
+        this.events.unshift({type, timestamp, data});
         this.events = this.events.slice(0, this.maxEvents);
 
         if (eventLog) {
@@ -164,13 +161,13 @@ class NetViewer { // Corrected class definition
         return $(`<div class="peer-badge">${peer.metadata.clientID} (${new Date(peer.lastActive).toLocaleTimeString()})</div>`) as JQuery<HTMLElement>;
     }
 
-+    renderPeerListItem(peer: any): JQuery<HTMLElement> { // Type 'any' for peer, adjust if you have Peer interface available
-+        return $(`<li>${peer.address}:${peer.port} - Last Seen: ${new Date(peer.lastSeen).toLocaleTimeString()}</li>`) as JQuery<HTMLElement>;
-+    }
-+
-     renderEventEntry(event: any): JQuery<HTMLElement> { // Type 'any' for event as its type is not defined
-         return $(`<div class="event-entry ${event.type}>[${new Date(event.timestamp).toLocaleTimeString()}] ${event.type} ${event.data.peerId ? `(Peer: ${event.data.peerId})` : ''} ${event.data.bytes ? `(${event.data.bytes} bytes)` : ''}</div>`) as JQuery<HTMLElement>;
-     }
+    renderPeerListItem(peer: any): JQuery<HTMLElement> { // Type 'any' for peer, adjust if you have Peer interface available
+        return $(`<li>${peer.address}:${peer.port} - Last Seen: ${new Date(peer.lastSeen).toLocaleTimeString()}</li>`) as JQuery<HTMLElement>;
+    }
+
+    renderEventEntry(event: any): JQuery<HTMLElement> { // Type 'any' for event as its type is not defined
+        return $(`<div class="event-entry ${event.type}>[${new Date(event.timestamp).toLocaleTimeString()}] ${event.type} ${event.data.peerId ? `(Peer: ${event.data.peerId})` : ''} ${event.data.bytes ? `(${event.data.bytes} bytes)` : ''}</div>`) as JQuery<HTMLElement>;
+    }
 }
 
 export default class NetView {

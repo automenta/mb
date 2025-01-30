@@ -1,6 +1,6 @@
 import $ from "jquery";
 import BaseView from './util/base-view';
-import ObjViewMini from '../obj-view-mini';
+import ObjViewMini from './util/obj.view.mini';
 
 import '/ui/css/db.css';
 

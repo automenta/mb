@@ -12,7 +12,7 @@ export default class Editor {
     private readonly doc: Y.Doc;
     private readonly config: EditorConfig;
     private readonly toolbar: ToolbarManager;
-    private readonly meta MetadataManager;
+    private readonly meta: MetadataManager;
     private readonly awareness: AwarenessManager;
     public readonly rootElement: HTMLElement;
     private tagSelector: TagSelector;
@@ -56,7 +56,7 @@ export default class Editor {
 
         // Initialize core components
         this.toolbar = new ToolbarManager(this);
-        this.metadata = new MetadataManager(this.config.isReadOnly ?? false);
+        this.meta = new MetadataManager(this.config.isReadOnly ?? false);
         this.schemaRegistry = config.app.schemaRegistry;
         this.editorCore = new EditorCore(this.config, this, this.config.isReadOnly ?? false);
 
@@ -125,7 +125,7 @@ export default class Editor {
         }
         metadataPanel.innerHTML = '';
         if (this.currentObject && !(this.currentObject instanceof Y.Map)) {
-            metadataPanel.append(this.metadata.renderMetadataPanel(this.currentObject)[0]);
+            metadataPanel.append(this.meta.renderMetadataPanel(this.currentObject)[0]);
         }
     }
 
@@ -187,7 +187,7 @@ export default class Editor {
     public saveDocument(): void {
         if (this.currentObject && this.config.db) {
             this.saveCurrentObject();
-            this.metadata.showToast('Document saved');
+            this.meta.showToast('Document saved');
         }
     }
 
@@ -245,10 +245,10 @@ export default class Editor {
         } else if (object instanceof NObject) {
             (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML = object.text.toString();
             (this.rootElement.querySelector('.document-title') as HTMLInputElement).value = object.name;
-            this.metadata.renderMetadataPanel(object);
+            this.meta.renderMetadataPanel(object);
         } else {
             (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML = '';
-            this.metadata.clearMetadataPanel();
+            this.meta.clearMetadataPanel();
         }
         this.updatePrivacy();
     }
@@ -256,7 +256,7 @@ export default class Editor {
     public togglePrivacy(): void {
         this.isPublic = !this.isPublic;
         this.updatePrivacy();
-        this.metadata.updatePrivacyIndicator(this.isPublic);
+        this.meta.updatePrivacyIndicator(this.isPublic);
     }
 
     private updatePrivacy() {
@@ -281,191 +281,12 @@ export default class Editor {
     public clear(): void {
         this.currentObject = undefined;
         (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML = '';
-        this.metadata.clearMetadataPanel();
+        this.meta.clearMetadataPanel();
     }
 
     public loadSnapshot(snapshot: Uint8Array): void {
         Y.applyUpdate(this.doc, snapshot);
-        this.metadata.showToast('State restored');
-    }
-
-    public onUpdate(callback: () => void): void {
-        this.doc.on('update', callback);
-    }
-
-    public getTestConfig(): Partial<EditorConfig> {
-        return {
-            db: this.config.db,
-            networkStatusCallback: this.config.networkStatusCallback,
-            getAwareness: () => this.config.getAwareness(),
-            app: this.config.app,
-            currentObject: this.currentObject
-        };
-    }
-}
-
-// Augment EditorConfig interface with network capabilities and other missing properties
-declare module '../types' {
-    interface EditorConfig {
-        net?: {
-            bindDocument: (doc: Y.Doc) => void;
-            syncAwareness: (state: Awareness) => void;
-        };
-        currentObject?: NObject | Y.Map<any>;
-        getAwareness: () => Awareness;
-        app: App;
-        ydoc: YDoc;
-    }
-}
-
-
-    }
-
-
-
-
-
-        return editorContainer;
-    }
-
-        const titleEditor = this.rootElement.querySelector('.document-title');
-        titleEditor?.addEventListener('input', this.handleTitleChange.bind(this));
-    }
-
-    private handleTitleChange(event: Event): void {
-        const titleEditor = event.target as HTMLInputElement;
-        const newTitle = titleEditor.value;
-        if (this.currentObject) {
-            if (this.currentObject instanceof NObject) {
-                this.currentObject.name = newTitle;
-                this.config.app.store.setCurrentObject(this.currentObject);
-            } else if (this.currentObject instanceof Y.Map) {
-                this.currentObject.set('name', newTitle);
-            }
-        }
-    }
-
-    private initNetwork(): void {
-        if (this.config.net) {
-            this.config.net.bindDocument(this.doc);
-            this.awareness.awareness.setLocalStateField('user', this.config.app.user());
-        }
-    }
-
-    private handleShortcuts(event: KeyboardEvent): void {
-        if (event.ctrlKey || event.metaKey) {
-            switch (event.key.toLowerCase()) {
-                case 's':
-                    event.preventDefault();
-                    this.saveDocument();
-                    break;
-            }
-        }
-    }
-
-    public saveDocument(): void {
-        if (this.currentObject && this.config.db) {
-            this.saveCurrentObject();
-            this.metadata.showToast('Document saved');
-        }
-    }
-
-    private saveCurrentObject() {
-        if (this.currentObject instanceof Y.Map) {
-            this.config.db.doc.transact(() => {
-                const content = (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML;
-                (this.currentObject as Y.Map<any>).set('content', new Y.Text(content));
-                const tags = this.tagSelector.getTags();
-                (this.currentObject as Y.Map<any>).set('tags', tags);
-            });
-        } else if (this.currentObject instanceof NObject) {
-            const content = (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML;
-            this.currentObject.text = content;
-            this.currentObject.tags = this.tagSelector.getTags();
-            this.config.db.persistDocument(this.currentObject);
-        }
-    }
-
-    public loadDocument(object: NObject | Y.Map<any>): void {
-        this.currentObject = object;
-        if (object instanceof Y.Map) {
-            const title = object.get('name') || 'Untitled';
-            const content = object.get('content');
-            const contentEditor = this.rootElement.querySelector('.content-editor') as HTMLElement;
-            const titleEditor = this.rootElement.querySelector('.document-title') as HTMLInputElement;
-
-            if (titleEditor) titleEditor.value = title;
-
-            if (content instanceof Y.Text) {
-                contentEditor.innerHTML = content.toString();
-            } else if (content !== null && content !== undefined) {
-                contentEditor.innerHTML = content.toString();
-            } else {
-                if (!object.has('content')) {
-                    object.set('content', new Y.Text());
-                }
-                contentEditor.innerHTML = '';
-            }
-
-            if (titleEditor) titleEditor.value = title;
-
-            if (content instanceof Y.Text) {
-                contentEditor.innerHTML = content.toString();
-            } else {
-                if (!object.has('content')) {
-                    object.set('content', new Y.Text());
-                }
-                contentEditor.innerHTML = '';
-            }
-            const tags = object.get('tags');
-            if (tags) {
-                this.tagSelector.setTags(tags);
-            }
-        } else if (object instanceof NObject) {
-            (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML = object.text.toString();
-            (this.rootElement.querySelector('.document-title') as HTMLInputElement).value = object.name;
-            this.metadata.renderMetadataPanel(object);
-        } else {
-            (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML = '';
-            this.metadata.clearMetadataPanel();
-        }
-        this.updatePrivacy();
-    }
-
-    public togglePrivacy(): void {
-        this.isPublic = !this.isPublic;
-        this.updatePrivacy();
-        this.metadata.updatePrivacyIndicator(this.isPublic);
-    }
-
-    private updatePrivacy() {
-        if (this.currentObject instanceof Y.Map) {
-            this.currentObject.set('public', this.isPublic);
-        } else if (this.currentObject) {
-            this.currentObject.public = this.isPublic;
-        }
-
-    }
-
-    public clearIfCurrent(objectId: string): void {
-        const currentId = this.currentObject instanceof Y.Map ?
-            this.currentObject.get('id') :
-            this.currentObject?.id;
-
-        if (currentId === objectId) {
-            this.clear();
-        }
-    }
-
-    public clear(): void {
-        this.currentObject = undefined;
-        (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML = '';
-        this.metadata.clearMetadataPanel();
-    }
-
-    public loadSnapshot(snapshot: Uint8Array): void {
-        Y.applyUpdate(this.doc, snapshot);
-        this.metadata.showToast('State restored');
+        this.meta.showToast('State restored');
     }
 
     public onUpdate(callback: () => void): void {
