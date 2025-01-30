@@ -1,7 +1,4 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": "object",
-    "properties": {
         "created": { "type": "number" },
         "updated": { "type": "number" },
         "name": { "type": "string" },
@@ -10,5 +7,4 @@
         "tags": { "type": "array", "items": { "type": "string" } },
         "content": { "type": "object" },
         "format": { "type": "string" }
-    }
 }
