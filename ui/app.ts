@@ -1,4 +1,4 @@
-import $ from './imports';
+import $ from 'jquery';
 import { io, Socket } from 'socket.io-client';
 import DB from '../core/db';
 import Matching from '../core/match';
@@ -57,32 +57,39 @@ export default class App {
         this.themeManager = new ThemeManager(this.ele);
         this.schemaRegistry = new SchemaRegistry();
 
-        this.socket = io(); // Initialize socket connection
         this.viewManager = new ViewManager(this, this.store);
         // this.viewManager.registerViews();
         this.setupViewSwitching();
 
+
+        this.render();
+        console.log('App initialized', this);
+
+        const websocket = false; //TODO configure
+        if (websocket)
+            this.initWebSocket();
+    }
+
+    private initWebSocket() {
+        this.socket = io(); // Initialize socket connection
         this.socket.on('connect_error', (err) => {
-            console.error("Connection error:", err);
+            //console.error("Connection error:", err);
             this.store.setNetworkStatus('error');
         });
 
         this.socket.on('connect', () => {
-            console.log("Connected to WebSocket server");
+            //console.log("Connected to WebSocket server");
             this.store.setNetworkStatus('connected');
         });
 
         this.socket.on('disconnect', () => {
-            console.log("Disconnected from WebSocket server");
+            //console.log("Disconnected from WebSocket server");
             this.store.setNetworkStatus('disconnected');
         });
-
-        this.render();
-        console.log('App initialized', this);
     }
 
     public render(): void {
-        this.ele.html(`
+        $(this.ele).html(`
             <div class="container">
                 <div class="sidebar">
                     <div class="logo">Logo</div>
