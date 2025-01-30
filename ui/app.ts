@@ -77,31 +77,6 @@ export default class App {
             this.store.setNetworkStatus('disconnected');
         });
 
-        console.log('App initialized', this);
-    }
-
-    public render(): void {
-        this.ele.html(`
-            <div class="container">
-                <div class="sidebar">
-                    <div class="logo">Logo</div>
-                    <ul class="menubar">
-                        <li id="db-view-link">Database</li>
-                        <li id="net-view-link">Network</li>
-                        <li id="match-view-link">Matching</li>
-                        <li id="profile-view-link">Profile</li>
-                        <li id="settings-view-link">Settings</li>
-                    </ul>
-                </div>
-                <div class="main-view">
-                    <div id="db-view"></div>
-                    <div id="net-view" style="display: none;"></div>
-                    <div id="match-view" style="display: none;"></div>
-                    <div id="profile-view" style="display: none;"></div>
-                    <div id="settings-view" style="display: none;"></div>
-                </div>
-            </div>
-        `);
         this.render();
         console.log('App initialized', this);
     }
