@@ -146,8 +146,8 @@ export default class DB {
    * @param name Optional name for the reply.
    * @returns The created reply NObject if successful, else null.
    */
-  createReply = (parentId: string, name: string): NObject | null => {
-    if (name.trim() === '') { // Validate name
+  createReply = (parentId: string, name: string | null | undefined): NObject | null => { // Updated type definition
+    if (name?.trim() === '') { // Validate name
       console.error('Invalid name:', name);
       return null;
     }
@@ -155,9 +155,19 @@ export default class DB {
   }
 
 
-  getReplies = (id: string): NObject[] => this.replyManager.getReplies(id);
+  getReplies = (parentId: string): string[] => { // Updated to return string[]
+        const parent = this.get(parentId);
+        if (!parent) {
+            console.warn(`Parent object with id ${parentId} not found.`);
+            return [];
+        }
+        return parent.replies.toArray();
+    }
 
-  getRepliesTo = (id: string): NObject[] => this.replyManager.getRepliesTo(id);
+    getRepliesTo = (replyId: string): string[] => { // Updated to return string[]
+        const reply = this.get(replyId);
+        return reply?.repliesTo.toArray() || [];
+    }
 
 
   /**

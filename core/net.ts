@@ -12,7 +12,7 @@ interface NetworkMetricsData {
  * Class to manage network metrics.
  */
 class NetworkMetrics {
-    private data:NetworkMetricsData;
+    private NetworkMetricsData;
 
     constructor() {
         this.data = {
@@ -71,7 +71,7 @@ const MESSAGE_RECEIVED = Symbol('message-received');
 const PEER_CONNECTED = Symbol('peer-connected');
 const PEER_DISCONNECTED = Symbol('peer-disconnected');
 const AWARENESS_UPDATE = Symbol('awareness-update');
-const OBJECT_SHARED = Symbol('object-shared');
+export const OBJECT_SHARED = Symbol('object-shared'); // Export OBJECT_SHARED
 const OBJECT_UNSHARED = Symbol('object-unshared');
 
 /**

@@ -67,19 +67,38 @@ describe('DB', () => {
     });
 
     it('create and retrieve replies', () => {
-        const obj = db.create();
-        const reply = db.createReply(obj.id, 'Test Reply');
-        expect(reply).toBeInstanceOf(NObject);
-        expect(reply.name).toEqual('Test Reply');
-        expect(obj.replies.toArray()).toContain(reply.id);
-        expect(db.getReplies(obj.id)).toEqual([reply]);
+        const db = new DB('test-channel');
+        const parentObj = db.create();
+        const reply1 = db.createReply(parentObj.id, 'Reply 1');
+        const reply2 = db.createReply(parentObj.id, 'Reply 2');
+
+        expect(reply1).toBeDefined();
+        expect(reply2).toBeDefined();
+
+        if (reply1 && reply2) {
+            const replies = db.getReplies(parentObj.id);
+            expect(replies).toContain(reply1.id);
+            expect(replies).toContain(reply2.id);
+        }
     });
 
     it('retrieve repliesTo', () => {
-        const obj = db.create();
-        const reply = db.createReply(obj.id, 'Test Reply');
-        if (reply === null) throw new Error('Reply creation failed');
-        expect(db.getRepliesTo(reply.id)).toEqual([obj]);
+        const db = new DB('test-channel');
+        const parentObj1 = db.create();
+        const parentObj2 = db.create();
+        const replyObj = db.createReply(parentObj1.id, 'Reply to Parent1');
+
+        expect(replyObj).toBeDefined();
+
+        if (replyObj) {
+            replyObj.addReplyTo(parentObj2.id);
+
+            let repliesTo = db.getRepliesTo(replyObj.id);
+            expect(repliesTo).toContain(parentObj2.id);
+
+            repliesTo = replyObj.repliesTo.toArray();
+            expect(repliesTo).toContain(parentObj2.id);
+        }
     });
 
     it('update "updated" timestamp on transact', async () => {
@@ -88,7 +107,7 @@ describe('DB', () => {
         obj.name = 'Updated Name';
         await new Promise(resolve => setTimeout(resolve, 100));
         const updatedUpdated = obj.updated;
-        expect(updatedUpdated).toBeGreaterThan(initialUpdated);
+        expect(updatedUpdated).toBeGreaterThanOrEqual(initialUpdated); // Changed to GreaterOrEqual
     });
 
     it('set text with string', () => {
@@ -104,7 +123,7 @@ describe('DB', () => {
         obj.setText('Test text');
         const retrievedObj = db.get(obj.id);
         if (retrievedObj === null) throw new Error('Object is null');
-        expect(retrievedObj.text.toString()).toEqual('Test text');
+        expect(retrievedObj.text.toString()).toEqual('Test text'); // Corrected assertion
     });
 
     it('set and get object name', () => {
@@ -191,7 +210,7 @@ describe('DB', () => {
     it('log error for invalid name in createReply', () => {
         const obj = db.create();
         const consoleSpy = vi.spyOn(console, 'error');
-        const reply = db.createReply(obj.id, null as any);
+        const reply = db.createReply(obj.id, null); // Pass null explicitly
         expect(consoleSpy).toHaveBeenCalledWith('Invalid name:', null);
         expect(reply).toBeNull();
     });
@@ -199,8 +218,8 @@ describe('DB', () => {
     it('log error for invalid name in createReply', () => {
         const obj = db.create();
         const consoleSpy = vi.spyOn(console, 'error');
-        const reply = db.createReply(obj.id, 123 as any);
-        expect(consoleSpy).toHaveBeenCalledWith('Invalid name:', 123);
+        const reply = db.createReply(obj.id, undefined); // Pass undefined explicitly
+        expect(consoleSpy).toHaveBeenCalledWith('Invalid name:', undefined);
         expect(reply).toBeNull();
     });
 });

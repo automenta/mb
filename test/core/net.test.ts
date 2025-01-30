@@ -4,6 +4,7 @@ import DB from '../../core/db';
 import Network from '../../core/net';
 import {IndexeddbPersistence} from 'y-indexeddb';
 import * as Y from 'yjs';
+import { OBJECT_SHARED } from '../../core/net'; // Import OBJECT_SHARED
 
 describe('Network', () => {
     let db: DB;
