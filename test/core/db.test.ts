@@ -71,33 +71,32 @@ describe('DB', () => {
         obj1.name = 'searchable';
         obj2.addTag('searchable');
         const list = db.search('searchable');
-        expect(JSON.stringify(list)).equals(JSON.stringify([obj1,obj2]));
+        expect(JSON.stringify(list)).toEqual(JSON.stringify([obj1,obj2]));
     });
 
     it('create and retrieve replies', () => {
         const obj = db.create();
         const reply = db.createReply(obj.id, 'Test Reply');
-        if (reply === null) throw new Error('Reply creation failed');
         expect(reply).toBeInstanceOf(NObject);
-        expect(obj.replies.toArray().includes(reply.id)).toBe(true);
-        expect(JSON.stringify(db.getReplies(obj.id))).toEqual(JSON.stringify([reply]));
+        expect(reply.name).toEqual('Test Reply');
+        expect(obj.replies.toArray()).toContain(reply.id);
+        expect(db.getReplies(obj.id)).toEqual([reply]);
     });
 
     it('retrieve repliesTo', () => {
         const obj = db.create();
-        const reply = db.createReply(obj.id, '...');
+        const reply = db.createReply(obj.id, 'Test Reply');
         if (reply === null) throw new Error('Reply creation failed');
-        expect(JSON.stringify(db.getRepliesTo(reply.id))).toEqual(JSON.stringify([obj]));
+        expect(db.getRepliesTo(reply.id)).toEqual([obj]);
     });
 
-    it('update "updated" timestamp on transact', () => {
+    it('update "updated" timestamp on transact', async () => {
         const obj = db.create();
         const initialUpdated = obj.updated;
         obj.name = 'Updated Name';
-        setTimeout(()=>{
-            const updatedUpdated = obj.updated;
-            expect(updatedUpdated).toBeGreaterThan(initialUpdated);
-        }, 500); // Increased timeout to 500ms
+        await new Promise(resolve => setTimeout(resolve, 100));
+        const updatedUpdated = obj.updated;
+        expect(updatedUpdated).toBeGreaterThan(initialUpdated);
     });
 
     it('set text with string', () => {
@@ -108,15 +107,9 @@ describe('DB', () => {
         expect(obj.text.toString()).toEqual('Y.Text content');
     });
 
-    it('set and get object text', async () => {
+    it('set and get object text', () => {
         const obj = db.create();
-        await new Promise<void>((resolve) => {
-            obj.doc.transact(() => {
-                obj.setText('Test text');
-                resolve();
-            });
-        });
-        await new Promise((resolve) => setTimeout(resolve, 500)); // Increased timeout to 500ms
+        obj.setText('Test text');
         const retrievedObj = db.get(obj.id);
         if (retrievedObj === null) throw new Error('Object is null');
         expect(retrievedObj.text.toString()).toEqual('Test text');
@@ -146,18 +139,18 @@ describe('DB', () => {
         const obj1 = db.create();
         const obj2 = db.create();
         obj1.addReply(obj2.id);
-        expect(obj1.replies.toArray().includes(obj2.id)).toBe(true);
+        expect(obj1.replies.toArray()).toContain(obj2.id);
         obj1.removeReply(obj2.id);
-        expect(obj1.replies.toArray().includes(obj2.id)).toBe(false);
+        expect(obj1.replies.toArray()).not.toContain(obj2.id);
     });
 
     it('add and remove replyTo', () => {
         const obj1 = db.create();
         const obj2 = db.create();
         obj2.addReplyTo(obj1.id);
-        expect(obj2.repliesTo.toArray().includes(obj1.id)).toBe(true);
+        expect(obj2.repliesTo.toArray()).toContain(obj1.id);
         obj2.removeReplyTo(obj1.id);
-        expect(obj2.repliesTo.toArray().includes(obj1.id)).toBe(false);
+        expect(obj2.repliesTo.toArray()).not.toContain(obj1.id);
     });
 
     // New tests for error handling and edge cases
@@ -167,13 +160,12 @@ describe('DB', () => {
 
     it('handle edge cases with long names and text', () => {
         const longName = 'a'.repeat(1000);
-        const longText = new Y.Text('b'.repeat(10000));
+        const longText = 'b'.repeat(10000);
         const obj = db.create();
-        obj.text; // Access text to ensure initialization
         obj.name = longName;
-        obj.setText(longText.toString());
+        obj.setText(longText);
         expect(obj.name).toEqual(longName);
-        expect(obj.text.toString()).toEqual(longText.toString());
+        expect(obj.text.toString()).toEqual(longText);
     });
 
     describe('Provider Integration', () => {
@@ -195,6 +187,23 @@ describe('DB', () => {
             const provider = new IndexeddbPersistence('testdb', ydoc);
             const db = new DB('testuser', provider);
             const consoleSpy = vi.spyOn(console, 'log');
+
+            db.provider.emit('synced', []);
+
+            expect(consoleSpy).toHaveBeenCalledWith('Synced');
+            expect(consoleSpy).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    // New test for error handling in createReply
+    it('log error for invalid name in createReply', () => {
+        const obj = db.create();
+        const consoleSpy = vi.spyOn(console, 'error');
+        const reply = db.createReply(obj.id, null as any);
+        expect(consoleSpy).toHaveBeenCalledWith('Invalid name:', null);
+        expect(reply).toBeNull();
+    });
+});
 
             db.provider.emit('synced', []);
 
