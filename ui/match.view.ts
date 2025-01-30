@@ -82,17 +82,17 @@ class MatchingView {
     updateTimer: any;
     chart: any;
 
-    constructor(root: JQuery, matching: MatchingInterface) {
+   constructor(root: JQuery, matching: MatchingInterface) {
         this.matching = matching;
-        this.root = root;
-        this.ele = $('<div>').addClass('matching-dashboard') as JQuery;
+        this.root = root; // Ensure root is a jQuery object
+        this.ele = $('<div>').addClass('matching-dashboard');
         this.settings.workerCapacity = matching.workerCapacity;
         this.settings.processInterval = matching.processInterval / 1000;
 
         const handleMatchingMetrics = (e: any) => this.updateMetrics(e.detail as MatchingMetrics);
         const handleActivity = (e: any) => this.logActivity(e.detail as ActivityEvent);
 
-        events.on(MATCHING_METRICS_UPDATED, handleMatchingMetrics); // Use Symbol
+        events.on(MATCHING_METRICS_UPDATED, handleMatchingMetrics);
         events.on('activity', handleActivity);
     }
 
@@ -184,10 +184,9 @@ class MatchingView {
             </div>`;
     }
 
-    render(): JQuery {
-        this.ele.empty();
-        this.root.find('.main-view').empty().append(this.ele);
-        this.ele.html(this.template());
+   render(): JQuery {
+        this.ele.empty().html(this.template());
+        this.root.find('.main-view').empty().append(this.ele); // Append to .main-view
         this.bindControls();
         this.startUpdates();
         return this.ele;
