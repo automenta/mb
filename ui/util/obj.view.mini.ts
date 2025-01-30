@@ -14,7 +14,7 @@ export default class ObjViewMini {
             alignItems: 'center'
         });
 
-        const observer: (e: YEvent<any>[]) => void = (e) => {
+        const observer = (e: YEvent<any>[]) => {
             const changedKeys = e[0]?.changed;
             if (changedKeys && (changedKeys instanceof Set ? changedKeys.has('name') || changedKeys.has('public') : Object.keys(changedKeys).includes('name') || Object.keys(changedKeys).includes('public')))
                 setTimeout(() => this.render());

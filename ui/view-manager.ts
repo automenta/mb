@@ -1,7 +1,5 @@
 import $ from 'jquery';
 import type { Store } from './store';
-import $ from 'jquery';
-import type { Store } from './store';
 import type App from './app';
 import DBView from './db.view';
 import NetView from './net.view';

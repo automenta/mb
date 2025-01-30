@@ -87,12 +87,13 @@ export default class Sidebar {
     private contextMenu: PageContextMenu;
     private readonly pageList: JQuery;
     private readonly store: ReturnType<typeof initializeStore> & { app?: App; };
-    private readonly meView: MeView | null = null;
+    private readonly meView: MeView | null;
     private readonly friendsView: FriendsView;
     private readonly netView: NetView;
-    private readonly dbView: DBView | null = null;
+    private readonly dbView: DBView | null;
     private readonly notificationsView: NotificationsView; // Add NotificationsView
-    private readonly matchingView: MatchingView | null = null;
+    private readonly matchingView: MatchingView | null;
+    private readonly agentsView: AgentsView;
 
     constructor(app: App, ele: HTMLElement) {
         this.ele = $(ele).addClass('sidebar');
@@ -102,12 +103,13 @@ export default class Sidebar {
         this.pageList = $('<ul>', { class: 'page-list' });
         const $mainView = $('.main-view');
         this.friendsView = new FriendsView($mainView, app.getAwareness.bind(app)); // Use getAwareness() to get awareness instance
+        this.agentsView = new AgentsView($mainView);
         this.netView = new NetView($mainView, app.net);
         if (app.match)
             this.matchingView = new MatchingView($mainView, app.match);
 
         if (app.db) {
-            this.meView = new MeView($mainView, app.user.bind(app), app.getAwareness.bind(app), app.db); // Use getAwareness()
+            this.meView = new MeView($mainView, app.store.getUser.bind(app.store), app.getAwareness.bind(app), app.db); // Use getAwareness()
             this.dbView = new DBView($mainView[0], app.db); // Pass app.db, not just db
             this.notificationsView = new NotificationsView($mainView[0], app.db, app.editor!.loadDocument.bind(app.editor!)); // Initialize NotificationsView and pass loadDocument
         }
@@ -200,7 +202,7 @@ export default class Sidebar {
     private createMenuItems(mainView: JQuery): JQuery[] {
         const menuItems = [{ id: 'profile', title: 'Me', view: this.meView, isView: true }, { id: 'friends', title: 'Friends', view: this.friendsView, isView: true }, { id: 'network', title: 'Net', view: this.netView, isView: true },
             { id: 'database', title: 'DB', view: this.dbView, isView: true },
-            { id: 'agents', title: 'Agents', view: new AgentsView($('.main-view')), isView: true },
+            { id: 'agents', title: 'Agents', view: this.agentsView, isView: true },
         ];
         return menuItems.map(item => {
             if (item.view) {

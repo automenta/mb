@@ -1,4 +1,4 @@
-import $ from 'jquery';
+import $ from './imports';
 import { io, Socket } from 'socket.io-client';
 import DB from '../core/db';
 import Matching from '../core/match';
@@ -24,7 +24,7 @@ class ThemeManager {
     }
 
     applyTheme() {
-        if (this.isDarkMode) $(this.appElement).addClass('dark-mode'); else $(this.appElement).removeClass('dark-mode');
+        $(this.appElement).toggleClass('dark-mode', this.isDarkMode);
     }
 
     toggleTheme() {

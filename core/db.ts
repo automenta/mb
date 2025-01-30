@@ -35,10 +35,6 @@ export default class DB {
             events.emit('db-synced'); // Emit a 'db-synced' event
         });
 
-        // Initialize Yjs types
-        const yarray = this.doc.getArray('yarray-initializer');
-        const ytext = this.doc.getText('ytext-initializer');
-
         // Y.js will automatically persist through the provider
     }
 
@@ -60,8 +56,8 @@ export default class DB {
      * @returns The NObject if found, otherwise null.
      */
     get(id: string): NObject | null {
-        const objectId = this.index.get(id);
-        return !objectId ? null : new NObject(this.doc, objectId);
+        const objectId = this.index.get(id) as string;
+        return objectId ? new NObject(this.doc, objectId) : null;
     }
 
     /**
@@ -84,8 +80,7 @@ export default class DB {
             this.index.delete(id);
             this.doc.share.delete(id);
             // Cleanup metadata and references
-            const metadataKeys = obj.getMetadataKeys();
-            metadataKeys.forEach(key => obj.setMetadata(key, null));
+            obj.getMetadataKeys().forEach(key => obj.setMetadata(key, null));
 
             // Cleanup awareness state if exists
             if (this.provider.awareness) {
@@ -108,11 +103,11 @@ export default class DB {
         return new QueryBuilder(this);
     }
 
-    list = (): NObject[] => this.query().execute();
+    list = () => this.query().execute();
 
-    listByTag = (tag: string): NObject[] =>
+    listByTag = (tag: string) =>
         this.query()
-            .where(obj => obj.tags.toArray().includes(tag))
+            .where(obj => (obj.tags as Y.Array<string>).toArray().includes(tag))
             .execute();
 
     listByAuthor = (author: string): NObject[] =>
@@ -125,7 +120,7 @@ export default class DB {
      * @param query The search query string.
      * @returns An array of matching NObjects.
      */
-    search(query: string): NObject[] {
+    search(query: string) {
         const q = query.toLowerCase();
         return this.query()
             .where(obj =>
@@ -141,7 +136,7 @@ export default class DB {
      * @param name Optional name for the reply.
      * @returns The created reply NObject if successful, else null.
      */
-    createReply = (parentId: string, name: string | null | undefined): NObject | null => {
+    createReply = (parentId: string, name: string | null | undefined) => {
         if (name === null || name === undefined || name.trim() === '') {
             console.error('Invalid name:', name);
             return null;
@@ -149,7 +144,7 @@ export default class DB {
         return this.replyManager.createReply(parentId, name);
     }
 
-    getReplies = (parentId: string): string[] => {
+    getReplies = (parentId: string) => {
         const parent = this.get(parentId);
         if (!parent) {
             console.warn(`Parent object with id ${parentId} not found.`);
@@ -158,7 +153,7 @@ export default class DB {
         return parent.replies.toArray();
     }
 
-    getRepliesTo = (replyId: string): string[] => {
+    getRepliesTo = (replyId: string) => {
         const reply = this.get(replyId);
         return reply?.repliesTo.toArray() || [];
     }
@@ -168,7 +163,7 @@ export default class DB {
      * @param pageId The ID of the page.
      * @returns The text of the object if found, else null.
      */
-    getObjectText(pageId: string): Y.Text | null {
+    getObjectText(pageId: string) {
         const page = this.get(pageId);
         return page ? page.text : null;
     }
