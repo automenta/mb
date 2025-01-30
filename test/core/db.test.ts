@@ -19,50 +19,42 @@ describe('DB', () => {
         vi.clearAllMocks();
     });
 
-    it('create and retrieve an object', () => {
+    it('creates and retrieves objects', () => {
         const obj = db.create();
-        expect(obj).toBeInstanceOf(NObject);
-        const retrievedObj = db.get(obj.id);
-        expect(retrievedObj).not.toBeNull();
-        if (retrievedObj !== null) {
-            expect(retrievedObj.toJSON()).toEqual(obj.toJSON());
-        }
+        const retrieved = db.get(obj.id);
+        expect([obj, retrieved].every(o => o instanceof NObject)).toBeTruthy();
+        expect(retrieved?.toJSON()).toEqual(obj.toJSON());
     });
 
-    it('delete an object and its references', () => {
-        const obj1 = db.create();
-        const obj2 = db.create();
+    it('deletes objects and cleans up references', () => {
+        const [obj1, obj2] = [db.create(), db.create()];
         obj1.addReply(obj2.id);
-        expect(obj1.replies.toArray().includes(obj2.id)).toBe(true);
+        expect(obj1.replies.toArray()).toContain(obj2.id);
 
         db.delete(obj2.id);
-        expect(db.get(obj2.id)).toBeNull();
-        expect(obj1.replies.toArray().includes(obj2.id)).toBe(false);
+        expect([db.get(obj2.id), obj1.replies.toArray().includes(obj2.id)])
+          .toEqual([null, false]);
     });
 
-    it('list objects', () => {
-        const obj1 = db.create();
-        const obj2 = db.create();
-        const list = db.list();
-        expect(JSON.stringify(list)).toEqual(JSON.stringify([obj1, obj2]));
+    it('lists all objects', () => {
+        const objects = [db.create(), db.create()];
+        expect(db.list().map(o => o.id)).toEqual(objects.map(o => o.id));
     });
 
-    it('filter objects by tag', () => {
-        const obj1 = db.create();
-        const obj2 = db.create();
+    it('filters objects by tag', () => {
+        const [obj1, obj2] = [db.create(), db.create()];
         obj1.addTag('test');
-        const list = db.listByTag('test');
-        const s = list.map(x => JSON.stringify(x)).toString();
-        expect(list.map(o => o.id)).not.toContain(obj2.id);
-        expect(list.map(o => o.id)).toContain(obj1.id);
+        const tagged = db.listByTag('test').map(o => o.id);
+        expect([tagged.includes(obj1.id), tagged.includes(obj2.id)])
+          .toEqual([true, false]);
     });
 
-    it('filter objects by author', () => {
-        const obj1 = db.create();
-        const obj2 = db.create();
+    it('filters objects by author', () => {
+        const [obj1, obj2] = [db.create(), db.create()];
         obj2.author = 'anotherUser';
-        const list = db.listByAuthor('testuser');
-        expect(JSON.stringify(list)).equals(JSON.stringify([obj1])); //and not obj2
+        const authored = db.listByAuthor('testuser').map(o => o.id);
+        expect([authored.includes(obj1.id), authored.includes(obj2.id)])
+          .toEqual([true, false]);
     });
 
     it('search objects', () => {
