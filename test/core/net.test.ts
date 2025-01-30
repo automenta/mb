@@ -54,10 +54,12 @@ describe('Network', () => {
     it('emit network activity events', () => {
         const emitSpy = vi.spyOn(net, 'emit');
         net.emit(OBJECT_SHARED, { pageId: 'test-page', peerId: 'test-peer' });
-        expect(emitSpy).toHaveBeenCalledWith(OBJECT_SHARED, {
-            pageId: 'test-page',
-            peerId: 'test-peer',
-            stats: expect.any(Object),
-        });
+        expect(emitSpy).toHaveBeenCalledWith(
+            OBJECT_SHARED,
+            expect.objectContaining({
+                pageId: 'test-page',
+                peerId: 'test-peer',
+            }),
+        );
     });
 });
