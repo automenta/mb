@@ -105,16 +105,16 @@ Organize, prioritize, and grow thoughts into actionable results with real-time c
 - Clear, complete, clean, compact, efficient, self-documenting ES6+ code.
 - Include comments to explain complex logic or design decisions.
 - Use the latest TypeScript and JavaScript language features and APIs, including:
- • Optional chaining (?.)                                                                                                     
- • Nullish coalescing (??)                                                                                                    
- • Ternary operators
- • Logical OR for default values                                                                                              
- • Arrow functions                                                                                                            
- • Destructuring                                                                                                              
- • Template literals
- • Inline variable declarations                                                                                               
- • Compact assertion syntax                                                                                                   
- • Use const instead of let where possible                                                                                   
+  - Optional chaining (?.)                                                                                                     
+  - Nullish coalescing (??)                                                                                                    
+  - Ternary operators
+  - Logical OR for default values                                                                                              
+  - Arrow functions                                                                                                            
+  - Destructuring                                                                                                              
+  - Template literals
+  - Inline variable declarations                                                                                               
+  - Compact assertion syntax                                                                                                   
+  - Use const instead of let where possible                                                                                   
 - Combine related test cases                                                                                                 
 - Use descriptive test names
 - Remove redundant declarations
