@@ -5,7 +5,7 @@ export default class NObject {
   public readonly id: string;
   public readonly doc: Y.Doc;
   public readonly root: Y.Map<any>;
-  protected readonly metadata: Y.Map<any>;
+  protected readonly meta Y.Map<any>;
   protected readonly links: Y.Map<Y.Array<string>>;
 
   constructor(doc: Y.Doc, id?: string) {
@@ -32,7 +32,7 @@ export default class NObject {
   }
 
   protected getOrInitSubMap(key: string, initialData: [string, any][] = []): Y.Map<any> {
-    return this.root.has(key) && this.root.get(key) instanceof Y.Map ? this.root.get(key) : this.root.set(key, new Y.Map<any>(initialData)) as Y.Map<any>;
+    return (this.root.get(key) instanceof Y.Map ? this.root.get(key) : this.root.set(key, new Y.Map()).get(key)) as Y.Map<any>;
   }
 
   // Helper to update metadata within a transaction
@@ -46,24 +46,23 @@ export default class NObject {
   }
 
   // Getters
-  get created(): number { return this.metadata.get('created'); }
-  get updated(): number { return this.metadata.get('updated'); }
-  get name(): string { return this.metadata.get('name'); }
-  get public(): boolean { return this.metadata.get('public'); }
-  get isQuery(): boolean { return this.metadata.get('isQuery'); }
-  get author(): string { return this.metadata.get('author'); }
+  get created() { return this.metadata.get('created'); }
+  get updated() { return this.metadata.get('updated'); }
+  get name() { return this.metadata.get('name'); }
+  get public() { return this.metadata.get('public'); }
+  get isQuery() { return this.metadata.get('isQuery'); }
+  get author() { return this.metadata.get('author'); }
   get text(): Y.Text {
-      const content = this.root.get('content');
-      if (!this.root.has('content') || !(content instanceof Y.Text)) {
-          const newText = new Y.Text();
-          newText.insert(0, 'Test text');
-          this.root.set('content', newText);
-          return newText;
+      let content = this.root.get('content');
+      if (!(content instanceof Y.Text)) {
+          content = new Y.Text();
+          content.insert(0, 'Test text');
+          this.root.set('content', content);
       }
       return content;
   }
-  get tags(): Y.Array<string> { return this.metadata.get('tags'); }
-  get sharedWith(): Y.Array<string> { return this.metadata.get('sharedWith'); }
+  get tags() { return this.metadata.get('tags'); }
+  get sharedWith() { return this.metadata.get('sharedWith'); }
   get replies(): Y.Array<string> { return this.links.get('reply') || new Y.Array<string>(); }
   get repliesTo(): Y.Array<string> { return this.links.get('replyTo') || new Y.Array<string>(); }
 
@@ -88,7 +87,7 @@ export default class NObject {
       if (add && index === -1) {
         arr.push([item]);
       } else if (!add && index > -1) {
-        arr.delete(index, 1);
+        arr.delete(index, 1); // Use index directly to delete
       }
       this.updateMetadata({}); // Just to update 'updated'
     });
@@ -118,10 +117,6 @@ export default class NObject {
   
   getMetadata(key: string): any {
       return this.metadata.get(key);
-  }
-
-  getMetadataKeys(): string[] {
-    return Array.from(this.metadata.keys());
   }
 
   setMetadata(key: string, value: any): void {
