@@ -10,8 +10,8 @@ import { SchemaRegistry } from "../core/schema-registry";
 import MeView from "./me.view";
 import DBView from './db.view';
 import NetView from './net.view';
-import MatchView from "./match.view";
-//import {SettingsView} from "./settings.view";
+import MatchView from './match.view';
+import { SettingsView } from './settings.view';
 
 class ThemeManager {
     isDarkMode: boolean;
@@ -57,7 +57,7 @@ export default class App {
         this.themeManager = new ThemeManager(this.ele);
         this.schemaRegistry = new SchemaRegistry();
 
-        this.viewManager = new ViewManager(this);
+        this.viewManager = new ViewManager(this, this.store);
 
         this.socket = io(); // Initialize socket connection
 
@@ -76,67 +76,44 @@ export default class App {
             this.store.setNetworkStatus('disconnected');
         });
 
-        this.render();
-        this.viewManager.registerViews();
+        this.render(); // Moved rendering logic to ViewManager
         console.log('App initialized', this);
     }
 
     public render(): void {
-        this.ele.innerHTML = `
+        this.ele.html(`
             <div class="container">
                 <div class="sidebar">
                     <div class="logo">Logo</div>
                     <ul class="menubar">
-                        <li id="db-view-link" class="active">Database</li>
+                        <li id="db-view-link">Database</li>
                         <li id="net-view-link">Network</li>
                         <li id="match-view-link">Matching</li>
                         <li id="profile-view-link">Profile</li>
                         <li id="settings-view-link">Settings</li>
                     </ul>
                 </div>
-                <div class="main-view">
-                    <div id="db-view"></div>
-                    <div id="net-view" style="display: none;"></div>
-                    <div id="match-view" style="display: none;"></div>
-                    <div id="profile-view" style="display: none;"></div>
-                    <div id="settings-view" style="display: none;"></div>
-                </div>
+                <div class="main-view"></div>
             </div>
-        `;
+        `);
+        this.viewManager.registerViews();
         this.setupViewSwitching();
     }
 
     private setupViewSwitching(): void {
-        $('#db-view-link').on('click', () => this.showView('db-view'));
-        $('#net-view-link').on('click', () => this.showView('net-view'));
-        $('#match-view-link').on('click', () => this.showView('match-view'));
-        $('#profile-view-link').on('click', () => this.showView('profile-view'));
-        $('#settings-view-link').on('click', () => this.showView('settings-view'));
+        $('#db-view-link').on('click', () => this.viewManager.showView('db-view'));
+        $('#net-view-link').on('click', () => this.viewManager.showView('net-view'));
+        $('#match-view-link').on('click', () => this.viewManager.showView('match-view'));
+        $('#profile-view-link').on('click', () => this.viewManager.showView('profile-view'));
+        $('#settings-view-link').on('click', () => this.viewManager.showView('settings-view'));
     }
 
     private showView(viewId: string): void {
-        $('.main-view > div').hide(); // Hide all views
-        $(`#${viewId}`).show(); // Show the selected view
-
-        // Initialize views if they haven't been already
-        switch (viewId) {
-            case 'db-view':
-                new DBView($('#db-view')[0], this.db).render();
-                break;
-            case 'net-view':
-                new NetView($('#net-view'), this.net).render();
-                break;
-            case 'match-view':
-                new MatchView($('#match-view'), this.match).render();
-                break;
-            case 'profile-view':
-                new MeView($('#profile-view'), /*TODO*/null, /*TODO*/null, this.db).render();
-                break;
-            // case 'settings-view':
-            //     new SettingsView($('#settings-view'), this.store).render();
-            //     break;
-        }
+        // Delegate view management to ViewManager
+        this.viewManager.showView(viewId);
     }
+
+    getAwareness(): Awareness {
 
     getAwareness(): Awareness {
         return this.net!.net.awareness;

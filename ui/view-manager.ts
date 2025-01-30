@@ -1,8 +1,10 @@
-import $ from 'jquery';
+import type { Store } from './store';
+import type App from './app';
 import DBView from './db.view';
 import NetView from './net.view';
 import MatchView from './match.view';
-import type App from './app';
+import MeView from './me.view';
+import { SettingsView } from './settings.view';
 
 export default class ViewManager {
     private app: App;
