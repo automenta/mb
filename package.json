@@ -12,9 +12,10 @@
     "dump": "git ls-files | xargs -I{} sh -c 'echo -e \"===== {} =====\\n\"; cat {}; echo -e \"\\n\"'",
     "dumpclip": "npm run dump | xclip -i",
     "test": "vitest --run",
+    "test:core":   "npx vitest --run --config vitest.core.config.ts   --dangerouslyIgnoreUnhandledErrors",
     "test:server": "npx vitest --run --config vitest.server.config.ts --dangerouslyIgnoreUnhandledErrors",
-    "test:ui": "npx vitest --run --config vitest.ui.config.ts --printConsoleTrace --dangerouslyIgnoreUnhandledErrors",
-    "test:all": "npm run test:server && npm run test:browser",
+    "test:ui":     "npx vitest --run --config vitest.ui.config.ts     --dangerouslyIgnoreUnhandledErrors",
+    "test:all": "npm run test:core ; npm run test:server ; npm run test:browser",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {

@@ -78,10 +78,10 @@ Organize, prioritize, and grow thoughts into actionable results with real-time c
 
 ### Testing
 
-- `npm test` - Run all test suites.
-- `npm run test:core` - Core tests.
-- `npm run test:server` - Server tests.
-- `npm run test:ui` - Browser-based UI tests.
+- `npm test` - Run all test suites
+- `npm run test:core` - Core tests
+- `npm run test:server` - Server tests
+- `npm run test:ui` - Browser-based UI tests
 
 ## Use
 
@@ -103,8 +103,21 @@ Organize, prioritize, and grow thoughts into actionable results with real-time c
 ### Code
 
 - Clear, complete, clean, compact, efficient, self-documenting ES6+ code.
-- Use the latest TypeScript and JavaScript language features and APIs.
 - Include comments to explain complex logic or design decisions.
+- Use the latest TypeScript and JavaScript language features and APIs, including:
+ • Optional chaining (?.)                                                                                                     
+ • Nullish coalescing (??)                                                                                                    
+ • Ternary operators
+ • Logical OR for default values                                                                                              
+ • Arrow functions                                                                                                            
+ • Destructuring                                                                                                              
+ • Template literals
+ • Inline variable declarations                                                                                               
+ • Compact assertion syntax                                                                                                   
+ • Use const instead of let where possible                                                                                   
+- Combine related test cases                                                                                                 
+- Use descriptive test names
+- Remove redundant declarations
 
 ---
 
