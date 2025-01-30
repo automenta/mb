@@ -1,10 +1,14 @@
 {
-    "created": { "type": "number" },
-    "updated": { "type": "number" },
-    "name": { "type": "string" },
-    "description": { "type": "string" },
-    "author": { "type": "string" },
-    "startTime": { "type": "number" },
-    "endTime": { "type": "number" },
-    "location": { "type": "string" }
-  }
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "created": { "type": "number" },
+        "updated": { "type": "number" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "author": { "type": "string" },
+        "startTime": { "type": "number" },
+        "endTime": { "type": "number" },
+        "location": { "type": "string" }
+    }
+}

@@ -1,4 +1,8 @@
 {
-    "content": { "type": "Uint8Array" },
-    "mimeType": { "type": "string" }
-  }
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "content": { "type": "string", "contentEncoding": "base64" },
+        "mimeType": { "type": "string" }
+    }
+}
