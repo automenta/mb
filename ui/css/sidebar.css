@@ -3,7 +3,7 @@
     width: 250px; /* Adjust sidebar width as needed */
     height: 100vh;
     background-color: var(--bg-secondary); /* Consistent background color */
-    color: var(--text-primary); /* Ensure text is visible in dark mode */
+    color: var(--text-primary) !important; /* Ensure text is visible in dark mode */
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
@@ -19,7 +19,7 @@
 .menubar-button {
     background: none;
     border: none;
-    color: var(--text-secondary); /* Default button text color */
+    color: var(--text-secondary) !important; /* Default button text color */
     padding: 0.7rem 1rem; /* Slightly reduced padding */
     margin-bottom: 0.5rem; /* Spacing between buttons */
     border-radius: 6px; /* Slightly less rounded corners */
@@ -35,12 +35,12 @@
 
 .menubar-button:hover {
     background-color: var(--accent-hover); /* Hover background */
-    color: var(--text-primary); /* Hover text color */
+    color: var(--text-primary) !important; /* Hover text color */
 }
 
 .menubar-button.active {
     background-color: var(--accent); /* Active button background */
-    color: var(--text-primary); /* Active button text color */
+    color: var(--text-primary) !important; /* Active button text color */
     font-weight: var(--font-weight-bold);
 }
 
@@ -77,12 +77,12 @@
 
 .page-list li:hover {
     background-color: var(--bg-hover); /* Hover background for page list items */
-    color: var(--text-primary);
+    color: var(--text-primary) !important;
 }
 
 .page-list li.active {
     background-color: var(--accent); /* Active background for page list items */
-    color: var(--text-primary);
+    color: var(--text-primary) !important;
     font-weight: var(--font-weight-bold);
 }
 
@@ -106,7 +106,7 @@
     cursor: pointer;
     transition: background-color 0.3s ease, color 0.3s ease;
     font-size: 0.9rem; /* Slightly smaller font size for context menu items */
-    color: var(--text-primary); /* Ensure text color is set */
+    color: var(--text-primary) !important; /* Ensure text color is set */
 }
 
 .context-menu li:hover {

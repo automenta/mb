@@ -197,13 +197,16 @@ export default class Sidebar {
 
 
     switchView(viewId: string) {
+        console.log('switchView: viewId =', viewId);
         $('.main-view').empty(); // Clear main view area
         $('.menubar-button.active').removeClass('active'); // Deactivate previous button
         $(`.menubar-button[data-view-id="${viewId}"]`).addClass('active'); // Activate current button
+        console.log('switchView: active button set for', viewId);
 
         if (viewId === 'my-objects') {
             $('#list-view-container').show(); // Show page list container
             this.currentView = null;
+            console.log('switchView: showing my-objects list');
         } else {
             $('#list-view-container').hide(); // Hide page list container
             let view: BaseView | null = null;
@@ -217,8 +220,17 @@ export default class Sidebar {
                 case 'matching': view = this.matchingView; break;
             }
             if (view) {
-                $('.main-view').append(view.render()); // Render and append the selected view
-                this.currentView = view;
+                console.log('switchView: rendering view for', viewId);
+                const renderedView = view.render();
+                if (renderedView) {
+                    $('.main-view').append(renderedView); // Render and append the selected view
+                    this.currentView = view;
+                    console.log('switchView: view rendered and appended for', viewId);
+                } else {
+                    console.warn('switchView: view.render() returned null for', viewId);
+                }
+            } else {
+                console.warn('switchView: no view found for', viewId);
             }
         }
     }
