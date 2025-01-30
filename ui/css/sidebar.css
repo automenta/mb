@@ -113,6 +113,9 @@
     font-size: 0.9rem; /* Slightly smaller font size for context menu items */
     color: var(--text-primary) !important; /* Ensure text color is set */
 }
+.context-menu li span { /* Target span inside context menu items */
+    color: var(--text-primary) !important; /* Explicitly set context menu label color */
+}
 
 .context-menu li:hover {
     background-color: var(--bg-hover); /* Hover background for context menu items */
