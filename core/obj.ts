@@ -68,14 +68,14 @@ export default class NObject {
   set public(v: boolean) { this.updateMetadata({ public: v }); }
   set isQuery(v: boolean) { this.updateMetadata({ isQuery: v }); }
   set author(v: string) { this.updateMetadata({ author: v }); }
-  set text(newText: string) {
-      this.doc.transact(() => {
-          const t = this.text;
-          t.delete(0, t.length);
-          t.insert(0, newText);
-          this.updateMetadata({});
-      });
-  }
+    set text(newText: string) {
+        this.doc.transact(() => {
+            const ytext = this.text;
+            ytext.delete(0, ytext.length);
+            ytext.insert(0, newText);
+            this.updateMetadata({});
+        });
+    }
 
   // Helper method for adding to Y.Array
   protected updateArray(arr: Y.Array<string>, item: string, add: boolean) {
