@@ -121,6 +121,10 @@ export default class App {
             this.showView('match-view');
         });
 
+        $('#net-view-link').on('click', () => {
+            this.showView('net-view');
+        });
+
         $('#match-view-link').on('click', () => {
             this.showView('match-view');
         });
@@ -129,7 +133,16 @@ export default class App {
     private showView(viewId: string): void {
         $('.main-view > div').hide(); // Hide all views
         $(`#${viewId}`).show(); // Show the selected view
-        this.viewManager.registerViews();
+
+        // Initialize MatchView only when showing the match view
+        if (viewId === 'match-view') {
+            const matchViewRoot = $('#match-view');
+            if (matchViewRoot.length) {
+                new MatchView(matchViewRoot, this.match).render();
+            } else {
+                console.error('Element #match-view not found.');
+            }
+        }
     }
 
     getAwareness(): Awareness {

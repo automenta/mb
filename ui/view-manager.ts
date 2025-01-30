@@ -17,12 +17,7 @@ export default class ViewManager {
             return;
         }
         new DBView($('#db-view')[0], this.app.db).render();
+        new DBView($('#db-view')[0], this.app.db).render();
         new NetView($('#net-view'), this.app.net).render();
-        const matchViewRoot = $('#match-view');
-        if (matchViewRoot.length) {
-            new MatchView(matchViewRoot, this.app.match).render();
-        } else {
-            console.error('Element #match-view not found.');
-        }
     }
 }
