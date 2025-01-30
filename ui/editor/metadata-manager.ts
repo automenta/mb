@@ -1,5 +1,5 @@
 import $ from 'jquery';
-import NObject from '../../src/obj';
+import NObject from '../../core/obj';
 import { Form } from '../util/form';
 
 export class MetadataManager {

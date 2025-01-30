@@ -1,7 +1,7 @@
 import $ from "jquery";
 import BaseView from './util/base-view';
-import DB from '../src/db';
-import NObject from '../src/obj';
+import DB from '../core/db';
+import NObject from '../core/obj';
 import ObjViewMini from './util/obj.view.mini';
 
 import '/ui/css/notifications.css';

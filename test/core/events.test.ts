@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest';
-import {mitt as Emitter} from '../../src/events';
+import {mitt as Emitter} from '../../core/events';
 
 interface TestEvents extends Record<string | symbol, unknown> {
     foo: string;

@@ -51,7 +51,7 @@ describe('Editor', () => {
     await testSetup.cleanup();
   });
 
-  test('renders core UI elements', () => {
+  test('renders UI elements', () => {
     const toolbar = testSetup.container.querySelector('.toolbar');
     expect(toolbar).toBeDefined();
     expect(toolbar?.children.length).toBeGreaterThan(0);

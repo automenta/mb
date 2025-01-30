@@ -1,6 +1,5 @@
 import NObject from './obj';
 import DB from './db';
-import { Array as YArray } from 'yjs';
 
 export class ReplyManager {
     constructor(private readonly db: DB) {}
@@ -30,5 +29,12 @@ export class ReplyManager {
         replyObject.setMetadata('read', false); // Initialize 'read' to false
 
         return replyObject;
+    }
+
+    getReplies(x:string): NObject[] {
+        throw "todo";
+    }
+    getRepliesTo(x:string): NObject[] {
+        throw "todo";
     }
 }

@@ -1,11 +1,11 @@
-import { SchemaRegistry } from '../schema/schema-registry';
+import { SchemaRegistry } from '../core/schema-registry';
 import $ from 'jquery';
 import * as Y from 'yjs';
 import { Awareness } from 'y-protocols/awareness';
-import DB from '../src/db';
-import NObject from '../src/obj';
+import DB from '../core/db';
+import NObject from '../core/obj';
 import App from './app';
-import { debounce } from '../src/util';
+import { debounce } from '../core/util';
 
 export { $, Y, Awareness, DB, NObject, App, debounce, SchemaRegistry };
 

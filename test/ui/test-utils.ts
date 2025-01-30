@@ -2,13 +2,12 @@ import { createServer } from '../../server/server';
 import { io } from 'socket.io-client';
 import App from '../../ui/app';
 //import type { Server } from 'http';
-import DB from '../../src/db';
+import DB from '../../core/db';
 import { Y, Awareness } from '../../ui/imports';
 import type { AppState } from '../../ui/store';
 
 export interface TestSetup {
   container: HTMLElement;
-  //server: Server;
   socket: ReturnType<typeof io>;
   cleanup: () => Promise<void>;
   db: DB;

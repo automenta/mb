@@ -12,7 +12,7 @@ interface NetworkMetricsData {
  * Class to manage network metrics.
  */
 class NetworkMetrics {
-    private  NetworkMetricsData;
+    private data:NetworkMetricsData;
 
     constructor() {
         this.data = {
@@ -208,7 +208,7 @@ class Network {
             this.signalingServers.splice(index, 1);
             localStorage.setItem('signalingServers', JSON.stringify(this.signalingServers));
             console.log("Bootstrap URL removed:", url);
-            this.reset(); // Reconnect without the removed signaling server
+            this.reset(); // Reconnect without the removed signaling core
         }
     }
 
@@ -236,7 +236,7 @@ class Network {
             messagesSent: metricsData.messagesSent,
             messagesReceived: metricsData.messagesReceived,
             bytesTransferred: metricsData.bytesTransferred,
-            peersConnected: Array.from(this.metrics.getPeersConnected()), // Use getter
+            peersConnected: this.metrics.getPeersConnected(),
             awareness: Array.from(this.net!.awareness.getStates().values())
                 .map(state => ({
                     clientID: state.user?.id,
@@ -249,13 +249,13 @@ class Network {
     }
 
 
-    on(event: NetworkEventType, listener: ( NetworkEventData) => void): void {
+    on(event: NetworkEventType, listener: { (value: unknown): void }): void {
         events.on(event, listener); // No prefix needed, using Symbols directly
     }
 
-    emit(event: NetworkEventType,  NetworkEventData): void {
-        events.emit(event, { ...NetworkEventData, stats: this.getNetworkStats() }); // No prefix needed, using Symbols directly
-        events.emit('networkActivity', { type: event,  ...NetworkEventData, stats: this.getNetworkStats(), timestamp: Date.now() });
+    emit(event: NetworkEventType,  value:NetworkEventData): void {
+        events.emit(event, { ...value, stats: this.getNetworkStats() }); // No prefix needed, using Symbols directly
+        events.emit('networkActivity', { type: event,  ...value, stats: this.getNetworkStats(), timestamp: Date.now() });
     }
 }
 

@@ -1,4 +1,3 @@
-import schemaRegistry from '../schema/schema-registry';
 import $ from 'jquery';
 import {
   io,
@@ -14,6 +13,7 @@ import {
   Awareness
 } from 'y-protocols/awareness';
 import ViewManager from './view-manager';
+import {SchemaRegistry} from "../core/schema-registry";
 
 class ThemeManager {
     isDarkMode: boolean;

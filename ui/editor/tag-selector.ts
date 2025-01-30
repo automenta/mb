@@ -1,5 +1,5 @@
 import {$, Y} from '../imports';
-import { SchemaRegistry } from '../../schema/schema-registry';
+import { SchemaRegistry } from '../../core/schema-registry';
 import { renderSchemaForm } from '../util/schema-form';
 
 export default class TagSelector {

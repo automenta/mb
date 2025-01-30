@@ -1,7 +1,7 @@
-import NObject from '../src/obj';
+import NObject from '../core/obj';
 import type { UserInfo } from './types';
 export type { UserInfo } from './types';
-import type DB from '../src/db';
+import type DB from '../core/db';
 import type { Awareness } from 'y-protocols/awareness';
 import type { Doc as YDoc } from 'yjs';
 

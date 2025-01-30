@@ -1,9 +1,9 @@
 import { $ } from './imports';
 import { store, initializeStore } from './store';
-import NObject from '../src/obj';
+import NObject from '../core/obj';
 import ObjViewMini from './util/obj.view.mini';
 import '../ui/css/sidebar.css';
-import type DB from '../src/db';
+import type DB from '../core/db';
 import MeView from "./me.view";
 import FriendsView from "./friends.view";
 import NetView from "./net.view.js";

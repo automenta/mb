@@ -2,11 +2,11 @@
 import { vi } from 'vitest';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import * as Y from 'yjs';
-import DB from '../../src/db';
-import Network from '../../src/net';
-import NObject from '../../src/obj';
+import DB from '../../core/db';
+import Network from '../../core/net';
+import NObject from '../../core/obj';
 import { createEd25519PeerId } from '@libp2p/peer-id-factory';
-import P2PNode from '../../server/net/p2p';
+import P2PNode from '../../server/p2p';
 import type { EventEmitter } from 'events';
 
 export const createTestDB = (userId = 'testuser') => {

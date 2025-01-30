@@ -40,7 +40,7 @@
     "emitDecoratorMetadata": true,
   },
   "include": [
-    "src/**/*.ts",
+    "core/**/*.ts",
     "server/**/*.ts",
     "ui/**/*.ts",
     "test/**/*.ts"

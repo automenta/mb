@@ -14,7 +14,7 @@ import type { PeerId } from '@libp2p/interface-peer-id';
 import type { Libp2p } from 'libp2p';
 import {AddressInfo} from 'net';
 import { createServer } from "../../server/server"; // Corrected import
-import P2PNode from '../../server/net/p2p';
+import P2PNode from '../../server/p2p';
 
 describe('End-to-End Tests', () => {
     let io: SocketIOServer;
@@ -113,7 +113,7 @@ describe('End-to-End Tests', () => {
         await io.close();
         clientSocket.close();
 
-        // Close the Express server
+        // Close server
         await new Promise<void>((resolve, reject) => {
             server.close((err) => {
                 if (err) {
@@ -149,7 +149,7 @@ describe('End-to-End Tests', () => {
         });
     });
 
-    it('should establish a P2P connection between two server nodes', async () => {
+    it('should establish a P2P connection between 2 server nodes', async () => {
         const connection = await new Promise<any>((resolve) => {
             libp2pNode1.addEventListener('peer:connect', (evt) => {
                 const connection = evt.detail;
@@ -174,7 +174,7 @@ describe('End-to-End Tests', () => {
         expect(node2Peers.some(p => p.id.toString() === peerId1.toString())).toBe(true);
     });
 
-    it('should send and receive a message between two server nodes via P2P', () => {
+    it('should send and receive a message between 2 server nodes via P2P', () => {
         return new Promise<void>((resolve) => {
             const testTopic = 'test-topic';
             const testMessage = 'Hello from P2PNode1';

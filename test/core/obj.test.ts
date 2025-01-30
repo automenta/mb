@@ -1,6 +1,6 @@
 import {beforeEach, describe, expect, it} from 'vitest';
 import * as Y from 'yjs';
-import NObject from '../../src/obj';
+import NObject from '../../core/obj';
 
 describe('NObject', () => {
     let doc: Y.Doc;
@@ -12,7 +12,7 @@ describe('NObject', () => {
         obj.author = 'testuser';
     });
 
-    it('should initialize with default values', () => {
+    it('initialize with default values', () => {
         expect(obj.name).toEqual('?');
         expect(obj.public).toBe(false);
         expect(obj.author).toEqual('testuser');
@@ -21,27 +21,27 @@ describe('NObject', () => {
         expect(obj.repliesTo.length).toEqual(0);
     });
 
-    it('should set and get name', () => {
+    it('set and get name', () => {
         obj.name = 'Test Name';
         expect(obj.name).toEqual('Test Name');
     });
 
-    it('should set and get public status', () => {
+    it('set and get public status', () => {
         obj.public = true;
         expect(obj.public).toEqual(true);
     });
 
-    it('should set and get author', () => {
+    it('set and get author', () => {
         obj.author = 'anotherUser';
         expect(obj.author).toEqual('anotherUser');
     });
 
-    it('should set and get text', () => {
+    it('set and get text', () => {
         obj.setText('Test text');
         expect(obj.text.toString()).toEqual('Test text');
     });
 
-    it('should add and remove tags', () => {
+    it('add and remove tags', () => {
         obj.addTag('tag1');
         obj.addTag('tag2');
         expect(obj.tags.toArray()).toEqual(['tag1', 'tag2']);
@@ -50,7 +50,7 @@ describe('NObject', () => {
         expect(obj.tags.toArray()).toEqual(['tag2']);
     });
 
-    it('should add and remove replies', () => {
+    it('add and remove replies', () => {
         obj.addReply('reply1');
         obj.addReply('reply2');
         expect(obj.replies.toArray().includes('reply1'));
@@ -60,7 +60,7 @@ describe('NObject', () => {
         expect(!obj.replies.toArray().includes('reply1'));
     });
 
-    it('should add and remove repliesTo', () => {
+    it('add and remove repliesTo', () => {
         obj.addReplyTo('replyTo1');
         obj.addReplyTo('replyTo2');
         expect(obj.repliesTo.toArray()).toContain('replyTo1');
@@ -70,7 +70,7 @@ describe('NObject', () => {
         expect(obj.repliesTo.toArray()).not.toContain('replyTo1');
     });
 
-    it('should convert to JSON', () => {
+    it('convert to JSON', () => {
         obj.name = 'Test Object';
         obj.addTag('test');
         const json = obj.toJSON();
@@ -78,7 +78,7 @@ describe('NObject', () => {
         expect(json.metadata.tags).toEqual(['test']);
     });
 
-    it('should always return a Y.Map from getOrInitSubMap', () => {
+    it('always return a Y.Map from getOrInitSubMap', () => {
         const subMap = (obj as any).getOrInitSubMap('test', [['key', 'value']]);
         expect(subMap instanceof Y.Map).toBe(true);
         expect(subMap.get('key')).toEqual('value');

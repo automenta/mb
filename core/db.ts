@@ -15,7 +15,7 @@ export default class DB {
   public readonly store: Y.Doc;
   private persistenceManager: PersistenceManager;
   private replyManager: ReplyManager;
-  private configManager: ConfigManager;
+  private readonly configManager: ConfigManager;
   private net?: Network; // Add network reference
   public get config(): ConfigManager { // Added public getter for configManager
     return this.configManager;
@@ -147,7 +147,7 @@ export default class DB {
    * @returns The created reply NObject if successful, else null.
    */
   createReply = (parentId: string, name: string): NObject | null => {
-    if (typeof name !== 'string' || name.trim() === '') { // Validate name
+    if (name.trim() === '') { // Validate name
       console.error('Invalid name:', name);
       return null;
     }

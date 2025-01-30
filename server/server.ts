@@ -99,6 +99,6 @@ export async function createServer(port = 3000) {
   return { server: httpServer, io };
 }
 
-// Start server if not running in a test environment
+// Start core if not running in a test environment
 // /* @ts-ignore */ if (import.meta.url === `file://${process.argv[1]}`)
   createServer();

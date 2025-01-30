@@ -50,7 +50,7 @@ if (!fssync.existsSync(imagesDir)) {
 }
 
 
-//const { DB } = require('../../src/db.js');
+//const { DB } = require('../../core/db.js');
 //const db = new DB('aissist_user', new LeveldbPersistence(dbPath)); // Use a dedicated user ID for aissist
 const db = new LeveldbPersistence(dbPath);
 

@@ -57,8 +57,7 @@ export function mitt<T extends Record<EventType, unknown>>(target: object = Obje
         // Pattern match handlers
         store.forEach((entry, pattern) => {
             if (entry.wild && pattern !== '*') {
-                const prefix = (pattern as string).slice(0, -1);
-                if (type.startsWith(prefix))
+                if (type.startsWith((pattern as string).slice(0, -1)))
                     entry.ons.forEach(h => result.push([h, true]));
             }
         });

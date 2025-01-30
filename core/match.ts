@@ -2,7 +2,7 @@ import { events } from './events';
 import DB from './db';
 import Network from './net';
 import MatchingEngine, { PageProperties, MatchResult } from './matching-engine';
-import ProcessingQueueManager, { ProcessingState } from './processing-queue-manager';
+import ProcessingQueueManager from './processing-queue-manager';
 
 interface Metrics {
     pagesProcessed: number;
@@ -116,7 +116,7 @@ export default class Matching {
         this.processingQueueManager.setWorkerCapacity(1 / (peers.length || 1));
     }
 
-    // Determine if this server should process now (consider more sophisticated scheduling algorithms)
+    // Determine if this core should process now (consider more sophisticated scheduling algorithms)
     shouldProcess(): boolean {
         return this.processingQueueManager.shouldProcess();
     }

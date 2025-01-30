@@ -2,7 +2,7 @@ import { $ } from './imports';
 import BaseView from './util/base-view';
 import { store } from './store';
 import ObjViewMini from './util/obj.view.mini';
-import type NObject from '../src/obj';
+import type NObject from '../core/obj';
 
 export default class AgentsView extends BaseView {
     constructor(mainView: JQuery) {

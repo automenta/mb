@@ -1,5 +1,5 @@
 import DB from './db';
-import MatchingEngine from './matching-engine';
+import MatchingEngine, { PageProperties, MatchResult } from './matching-engine';
 import { ReplyManager } from './reply-manager';
 
 interface ProcessingState {
@@ -7,7 +7,6 @@ interface ProcessingState {
     startTime: number;
 }
 
-import MatchingEngine, { PageProperties, MatchResult } from './matching-engine';
 
 /**
  * Manages the queue of pages to be processed for matching,

@@ -1,5 +1,5 @@
 import $ from 'jquery';
-import NObject from '../../src/obj';
+import NObject from '../../core/obj';
 
 interface FormField {
     type: 'text' | 'checkbox';

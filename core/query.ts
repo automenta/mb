@@ -1,4 +1,3 @@
-import * as Y from 'yjs';
 import NObject from './obj';
 import DB from './db';
 

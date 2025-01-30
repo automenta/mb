@@ -1,8 +1,8 @@
 import $ from 'jquery';
-import { events } from '../src/events';
-import Network from '../src/net'; // Import Network class
+import { events } from '../core/events';
+import Network from '../core/net'; // Import Network class
 import '/ui/css/net.css';
-import { NETWORK_ACTIVITY } from '../src/net'; // Import Symbol
+import { NETWORK_ACTIVITY } from '../core/net'; // Import Symbol
 
 /**
  * Creates a stat box element.
@@ -41,11 +41,11 @@ class BootstrapView { // Corrected class definition
                 this.$input.val('');
                 this.update();
             } else {
-                alert('Please enter a valid signaling server URL.');
+                alert('Please enter a valid signaling core URL.');
             }
         });
 
-        this.$nodeList.on('click', '.remove-server', (e) => {
+        this.$nodeList.on('click', '.remove-core', (e) => {
             const url = $(e.target).data('url');
             this.net.removeBootstrap(url);
             this.update();

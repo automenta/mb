@@ -1,12 +1,11 @@
 import { $ } from '../imports';
 import { Component } from '../app';
 
-export default abstract class BaseView extends Component {
+export default abstract class BaseView  {
     ele: JQuery<HTMLElement>;
     root: JQuery<HTMLElement>;
 
     constructor(root: JQuery<HTMLElement>) {
-        super();
         this.root = root;
         this.ele = $('<div>').addClass(this.getViewClass()) as JQuery<HTMLElement>; // Initialize ele
     }

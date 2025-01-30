@@ -1,8 +1,8 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {IndexeddbPersistence} from 'y-indexeddb';
 import * as Y from 'yjs';
-import DB from '../../src/db';
-import NObject from '../../src/obj';
+import DB from '../../core/db';
+import NObject from '../../core/obj';
 
 describe('DB', () => {
     let db: DB;
@@ -19,7 +19,7 @@ describe('DB', () => {
         vi.clearAllMocks();
     });
 
-    it('should create and retrieve an object', () => {
+    it('create and retrieve an object', () => {
         const obj = db.create();
         expect(obj).toBeInstanceOf(NObject);
         const retrievedObj = db.get(obj.id);
@@ -29,7 +29,7 @@ describe('DB', () => {
         }
     });
 
-    it('should delete an object and its references', () => {
+    it('delete an object and its references', () => {
         const obj1 = db.create();
         const obj2 = db.create();
         obj1.addReply(obj2.id);
@@ -40,14 +40,14 @@ describe('DB', () => {
         expect(obj1.replies.toArray().includes(obj2.id)).toBe(false);
     });
 
-    it('should list objects', () => {
+    it('list objects', () => {
         const obj1 = db.create();
         const obj2 = db.create();
         const list = db.list();
         expect(JSON.stringify(list)).toEqual(JSON.stringify([obj1, obj2]));
     });
 
-    it('should filter objects by tag', () => {
+    it('filter objects by tag', () => {
         const obj1 = db.create();
         const obj2 = db.create();
         obj1.addTag('test');
@@ -57,7 +57,7 @@ describe('DB', () => {
         expect(list.map(o => o.id)).toContain(obj1.id);
     });
 
-    it('should filter objects by author', () => {
+    it('filter objects by author', () => {
         const obj1 = db.create();
         const obj2 = db.create();
         obj2.author = 'anotherUser';
@@ -65,7 +65,7 @@ describe('DB', () => {
         expect(JSON.stringify(list)).equals(JSON.stringify([obj1])); //and not obj2
     });
 
-    it('should search objects', () => {
+    it('search objects', () => {
         const obj1 = db.create();
         const obj2 = db.create();
         obj1.name = 'searchable';
@@ -74,7 +74,7 @@ describe('DB', () => {
         expect(JSON.stringify(list)).equals(JSON.stringify([obj1,obj2]));
     });
 
-    it('should create and retrieve replies', () => {
+    it('create and retrieve replies', () => {
         const obj = db.create();
         const reply = db.createReply(obj.id, 'Test Reply');
         if (reply === null) throw new Error('Reply creation failed');
@@ -83,14 +83,14 @@ describe('DB', () => {
         expect(JSON.stringify(db.getReplies(obj.id))).toEqual(JSON.stringify([reply]));
     });
 
-    it('should retrieve repliesTo', () => {
+    it('retrieve repliesTo', () => {
         const obj = db.create();
         const reply = db.createReply(obj.id, '...');
         if (reply === null) throw new Error('Reply creation failed');
         expect(JSON.stringify(db.getRepliesTo(reply.id))).toEqual(JSON.stringify([obj]));
     });
 
-    it('should update "updated" timestamp on transact', () => {
+    it('update "updated" timestamp on transact', () => {
         const obj = db.create();
         const initialUpdated = obj.updated;
         obj.name = 'Updated Name';
@@ -100,7 +100,7 @@ describe('DB', () => {
         }, 500); // Increased timeout to 500ms
     });
 
-    it('should set text with string', () => {
+    it('set text with string', () => {
         const obj = db.create();
         obj.setText('String text');
         expect(obj.text.toString()).toEqual('String text');
@@ -108,7 +108,7 @@ describe('DB', () => {
         expect(obj.text.toString()).toEqual('Y.Text content');
     });
 
-    it('should set and get object text', async () => {
+    it('set and get object text', async () => {
         const obj = db.create();
         await new Promise<void>((resolve) => {
             obj.doc.transact(() => {
@@ -122,19 +122,19 @@ describe('DB', () => {
         expect(retrievedObj.text.toString()).toEqual('Test text');
     });
 
-    it('should set and get object name', () => {
+    it('set and get object name', () => {
         const obj = db.create();
         obj.name = 'Test Name';
         expect(obj.name).toEqual('Test Name');
     });
 
-    it('should set and get object public status', () => {
+    it('set and get object public status', () => {
         const obj = db.create();
         obj.public = true;
         expect(obj.public).toEqual(true);
     });
 
-    it('should add and remove tags', () => {
+    it('add and remove tags', () => {
         const obj = db.create();
         obj.addTag('tag1');
         expect(obj.tags).toContain('tag1');
@@ -142,7 +142,7 @@ describe('DB', () => {
         expect(obj.tags).not.toContain('tag1');
     });
 
-    it('should add and remove replies', () => {
+    it('add and remove replies', () => {
         const obj1 = db.create();
         const obj2 = db.create();
         obj1.addReply(obj2.id);
@@ -151,7 +151,7 @@ describe('DB', () => {
         expect(obj1.replies.toArray().includes(obj2.id)).toBe(false);
     });
 
-    it('should add and remove replyTo', () => {
+    it('add and remove replyTo', () => {
         const obj1 = db.create();
         const obj2 = db.create();
         obj2.addReplyTo(obj1.id);
@@ -161,11 +161,11 @@ describe('DB', () => {
     });
 
     // New tests for error handling and edge cases
-    it('should return null for non-existent object', () => {
+    it('return null for non-existent object', () => {
         expect(db.get('non-existent-id')).toBeNull();
     });
 
-    it('should handle edge cases with long names and text', () => {
+    it('handle edge cases with long names and text', () => {
         const longName = 'a'.repeat(1000);
         const longText = new Y.Text('b'.repeat(10000));
         const obj = db.create();
@@ -177,7 +177,7 @@ describe('DB', () => {
     });
 
     describe('Provider Integration', () => {
-        it('should initialize provider and sync documents', async () => {
+        it('initialize provider and sync documents', async () => {
             const provider = new IndexeddbPersistence('testdb', ydoc);
             const db = new DB('testuser', provider);
 
@@ -191,7 +191,7 @@ describe('DB', () => {
             expect(provider.doc).toBe(ydoc);
         });
 
-        it('should log synced event when provider completes synchronization', () => {
+        it('log synced event when provider completes synchronization', () => {
             const provider = new IndexeddbPersistence('testdb', ydoc);
             const db = new DB('testuser', provider);
             const consoleSpy = vi.spyOn(console, 'log');
@@ -204,7 +204,7 @@ describe('DB', () => {
     });
 
     // New test for error handling in createReply
-    it('should log error for invalid name in createReply', () => {
+    it('log error for invalid name in createReply', () => {
         const obj = db.create();
         const consoleSpy = vi.spyOn(console, 'error');
         const reply = db.createReply(obj.id, 123 as any);

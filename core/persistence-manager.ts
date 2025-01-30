@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 
 export class PersistenceManager {
-    private doc: Y.Doc;
+    private readonly doc: Y.Doc;
 
     constructor(doc: Y.Doc) {
         this.doc = doc;

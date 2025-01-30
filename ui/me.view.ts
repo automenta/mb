@@ -1,7 +1,7 @@
-import DB from '../src/db';
+import DB from '../core/db';
 
 import { $, Y, Awareness } from './imports';
-import { SchemaRegistry } from '../schema/schema-registry';
+import { SchemaRegistry } from '../core/schema-registry';
 import userSchemaJson from '../schema/user.schema.json';
 import { UserSchema } from './schema';
 import { validateSocialLink } from './util/validation';
