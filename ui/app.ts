@@ -57,9 +57,8 @@ export default class App {
         this.themes = new ThemeManager(this.ele);
         this.tags = new Tags();
 
-        this.views = new ViewManager(this, this.store);
-        // this.viewManager.registerViews();
-        this.setupViewSwitching();
+        this.views = new ViewManager(this, this.store); // Initialize ViewManager
+        this.views.showView('db-view'); // Show initial view
 
 
         this.render();
@@ -110,16 +109,6 @@ export default class App {
                 </div>
             </div>
         `);
-    }
-
-    private setupViewSwitching(): void {
-        $('#db-view-link').on('click', () => this.views.showView('db-view'));
-        $('#net-view-link').on('click', () => this.views.showView('net-view'));
-        $('#match-view-link').on('click', () => this.views.showView('match-view'));
-        $('#profile-view-link').on('click', () => this.views.showView('profile-view'));
-        $('#settings-view-link').on('click', () => this.views.showView('settings-view'));
-    }
-
     getAwareness(): Awareness {
         return this.net!.net.awareness;
     }
