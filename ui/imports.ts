@@ -1,4 +1,4 @@
-import { SchemaRegistry } from '../core/schema-registry';
+import { TagManager } from '../core/tag-manager';
 import $ from 'jquery';
 import * as Y from 'yjs';
 import { Awareness } from 'y-protocols/awareness';
@@ -7,7 +7,7 @@ import NObject from '../core/obj';
 import App from './app';
 import { debounce } from '../core/util';
 
-export { $, Y, Awareness, DB, NObject, App, debounce, SchemaRegistry };
+export { $, Y, Awareness, DB, NObject, App, debounce, TagManager };
 
 export * from './types';
 export type { AppState } from './store';

@@ -1,12 +1,12 @@
 import $ from "jquery";
-import BaseView from './util/base-view';
+import View from './util/view';
 import DB from '../core/db';
 import NObject from '../core/obj';
 import ObjViewMini from './util/obj.view.mini';
 
 import '/ui/css/notifications.css';
 
-export default class NotificationsView extends BaseView {
+export default class NotificationsView extends View {
     ele: JQuery;
     db: DB;
     notificationsList: JQuery;

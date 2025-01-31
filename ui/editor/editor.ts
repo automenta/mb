@@ -1,4 +1,4 @@
-import {$, App, Awareness, NObject, SchemaRegistry, Y} from '../imports';
+import {$, App, Awareness, NObject, TagManager, Y} from '../imports';
 import {EditorConfig} from '../types';
 import type {Doc as YDoc} from 'yjs'; // Import Doc type
 import {ToolbarManager} from './toolbar-manager';
@@ -6,6 +6,7 @@ import {MetadataManager} from './metadata-manager';
 import {AwarenessManager} from './awareness-manager';
 import EditorCore from './editor-core';
 import UIBuilder from './ui-builder';
+import TagSelector from './tag-selector';
 
 export default class Editor {
     public editorCore: EditorCore;
@@ -23,7 +24,7 @@ export default class Editor {
 
     public toggleDarkMode(): void {
         this._darkMode = !this._darkMode;
-        this.config.app.toggleDarkMode();
+        //this.config.app.toggleDarkMode();
         this.rootElement.classList.toggle('dark-mode', this._darkMode);
     }
 
@@ -57,11 +58,11 @@ export default class Editor {
         // Initialize core components
         this.toolbar = new ToolbarManager(this);
         this.meta = new MetadataManager(this.config.isReadOnly ?? false);
-        this.schemaRegistry = config.app.schemaRegistry;
         this.editorCore = new EditorCore(this.config, this, this.config.isReadOnly ?? false);
 
         // Initialize UI and then document state
-        this.initUI(this.schemaRegistry);
+        const tagManager = config.app.tags;
+        this.initUI(tagManager);
         this.initDocument();
         this.initNetwork();
         this.awareness = new AwarenessManager(this.config.getAwareness(), this.rootElement.querySelector('.content-editor') as HTMLElement);
@@ -95,21 +96,18 @@ export default class Editor {
     }
 
     private initializeContent(): void {
-        if (!this.currentObject) {
+        if (!this.currentObject)
             this.currentObject = this.createNewDocument();
-        }
+
         this.loadDocument(this.currentObject);
-        if (this.currentObject instanceof Y.Map && !this.currentObject.get('content')) {
+
+        if (this.currentObject instanceof Y.Map && !this.currentObject.get('content'))
             this.currentObject.set('content', new Y.Text());
-        }
     }
 
 
-    private initUI(schemaRegistry: SchemaRegistry): void {
-        const uiBuilder = new UIBuilder(this.config.isReadOnly ?? false, schemaRegistry);
-        const editorContainer = uiBuilder.createEditorContainer();
-
-        this.rootElement.append(editorContainer);
+    private initUI(tags: TagManager): void {
+        this.rootElement.append(new UIBuilder(this.config.isReadOnly ?? false, tags).createEditorContainer());
 
         this.bindEvents();
         this.toolbar.init($(this.rootElement).find('.editor-container'));
@@ -121,11 +119,10 @@ export default class Editor {
         const metadataPanel = this.rootElement.querySelector('.metadata-panel');
         if (!metadataPanel) {
             console.error('Metadata panel not found!');
-            return;
-        }
-        metadataPanel.innerHTML = '';
-        if (this.currentObject && !(this.currentObject instanceof Y.Map)) {
-            metadataPanel.append(this.meta.renderMetadataPanel(this.currentObject)[0]);
+        } else {
+            metadataPanel.innerHTML = '';
+            if (this.currentObject && !(this.currentObject instanceof Y.Map))
+                metadataPanel.append(this.meta.renderMetadataPanel(this.currentObject)[0]);
         }
     }
 

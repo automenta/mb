@@ -1,6 +1,6 @@
 {
   "title": "User",
-  "description": "Base schema for user objects with polymorphic support",
+  "description": "Base tags for user objects with polymorphic support",
   "validation": {
     "enabled": true,
     "rules": {
@@ -13,7 +13,7 @@
     "propertyName": "userType",
     "mapping": {
       "user": "#",
-      "friend": "friend.schema.json"
+      "friend": "friend.json"
     }
   },
   "properties": {

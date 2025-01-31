@@ -1,6 +1,6 @@
 import { $ } from '../imports';
 
-export default abstract class BaseView  {
+export default abstract class View {
     ele: JQuery;
     root: JQuery;
 
@@ -36,5 +36,5 @@ export default abstract class BaseView  {
 }
 
 interface BaseViewConstructor {
-    new (root: JQuery): BaseView;
+    new (root: JQuery): View;
 }

@@ -1,10 +1,10 @@
 import { $ } from './imports';
-import BaseView from './util/base-view';
+import View from './util/view';
 import { UserInfo } from './types';
 import { Awareness } from './imports';
 import '/ui/css/friends.css';
 
-export default class FriendsView extends BaseView {
+export default class FriendsView extends View {
     private getAwareness: () => Awareness;
 
     constructor(root: JQuery, getAwareness: () => Awareness) {

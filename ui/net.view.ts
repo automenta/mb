@@ -101,11 +101,11 @@ class NetViewer { // Corrected class definition
                 <strong>Events</strong>
                 <div class="event-log"></div>
             </div>
-+            <div class="stat-box">
-+                <strong>Peers</strong>
-+                <div class="peers"></div>
-+                <div class="peer-list"></div>  <!-- Add peer list container here -->
-+            </div>
+            <div class="stat-box">
+                <strong>Peers</strong>
+                <div class="peers"></div>
+                <div class="peer-list"></div>  <!-- Add peer list container here -->
+            </div>
          `, this.bootstrap.panel());
         +this.ele.find('.peer-list').append(this.$peerList); // Append $peerList to the container
 
@@ -148,9 +148,8 @@ class NetViewer { // Corrected class definition
 
         // Update peer list in $peerList
         this.$peerList.empty(); // Clear existing list
-        if (this.net.peers) {
+        if (this.net.peers)
             this.$peerList.append(Array.from(this.net.peers.values()).map(this.renderPeerListItem.bind(this)));
-        }
 
         this.events.unshift({ type, timestamp, data });
         this.events = this.events.slice(0, this.maxEvents);
@@ -185,7 +184,7 @@ export default class NetView {
 
     render(): JQuery { // Changed return type to JQuery<HTMLElement>
         const updateStatus = () => this.ele.empty().append(
-            new NetViewer(this.net).ele //'
+            new NetViewer(this.net).ele
         );
         this.net.net.on('peers', updateStatus);
         updateStatus();

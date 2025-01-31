@@ -51,7 +51,7 @@ export class ToolbarManager {
     this.isTagSelectorVisible = !this.isTagSelectorVisible;
     if (this.isTagSelectorVisible) {
       if (!this.tagSelector) {
-        this.tagSelector = new TagSelector(this.editor.getEditorElement()[0] as HTMLElement, 'page'); // Assuming 'page' is the schemaName
+        this.tagSelector = new TagSelector(this.editor.getEditorElement()[0] as HTMLElement, 'page'); // Assuming 'page' is the tagName
       } else {
         this.tagSelector.render(); // Re-render the TagSelector
       }

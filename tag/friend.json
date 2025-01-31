@@ -1,8 +1,8 @@
 {
   "title": "Friend",
-  "description": "Extended user schema for friend relationships",
+  "description": "Extended user tags for friend relationships",
   "allOf": [
-    { "$ref": "user.schema.json" }
+    { "$ref": "user.json" }
   ],
   "properties": {
     "userType": {

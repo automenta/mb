@@ -1,13 +1,13 @@
-import { SchemaRegistry } from '../imports';
+import { TagManager } from '../imports';
 import TagSelector from './tag-selector';
 
 export default class UIBuilder {
     private readonly isReadOnly: boolean;
-    private schemaRegistry: SchemaRegistry;
+    private tags: TagManager;
 
-    constructor(isReadOnly: boolean, schemaRegistry: SchemaRegistry) {
+    constructor(isReadOnly: boolean, tags: TagManager) {
         this.isReadOnly = isReadOnly;
-        this.schemaRegistry = schemaRegistry;
+        this.tags = tags;
     }
 
     public createEditorContainer(): HTMLElement {
@@ -21,32 +21,29 @@ export default class UIBuilder {
         return editorContainer;
     }
 
-    public createSchemaFormElement(schemaName: string): HTMLElement | null {
-        const schema = this.schemaRegistry.getSchema(schemaName);
-        if (!schema) {
-            console.error(`Schema not found: ${schemaName}`);
+    public createTagFormElement(tagName: string): HTMLElement | null {
+        const tag = this.tags.get(tagName);
+        if (!tag) {
+            console.error(`Tag not found: ${tagName}`);
             return null;
         }
 
-        const formElement = this.createElement('div', 'schema-element');
-        formElement.dataset.schemaName = schemaName;
+        const formElement = this.createElement('div', 'tag-element');
+        formElement.dataset.schemaName = tagName;
 
-        if (this.isReadOnly) {
+        if (this.isReadOnly)
             formElement.classList.add('read-only');
-        }
 
-        // Add a button to remove the schema element
-        const removeButton = this.createElement('button', 'remove-schema-element');
+        // Add a button to remove the tag element
+        const removeButton = this.createElement('button', 'remove-tag-element');
         removeButton.textContent = 'x';
-        removeButton.addEventListener('click', () => {
-            formElement.remove();
-        });
+        removeButton.addEventListener('click', () => formElement.remove());
         formElement.append(removeButton);
 
-        // Add form fields based on schema properties
-        if (schema.properties) {
-            for (const propName in schema.properties) {
-                const property = schema.properties[propName];
+        // Add form fields based on tag properties
+        if (tag.properties) {
+            for (const propName in tag.properties) {
+                const property = tag.properties[propName];
                 const label = this.createElement('label');
                 label.textContent = property.title || propName;
                 label.setAttribute('for', `${propName}-field`);
@@ -55,10 +52,7 @@ export default class UIBuilder {
 
                 switch (property.type) {
                     case 'string':
-                        if (property.format === 'textarea')
-                            inputElement = this.createElement('textarea', null, `${propName}-field`);
-                        else
-                            inputElement = this.createElement('input', null, `${propName}-field`) as HTMLInputElement;
+                        inputElement = property.format === 'textarea' ? this.createElement('textarea', null, `${propName}-field`) : this.createElement('input', null, `${propName}-field`) as HTMLInputElement;
                         (inputElement as HTMLInputElement).type = 'text';
                         break;
                     case 'number':
@@ -83,13 +77,12 @@ export default class UIBuilder {
                     default:
                         inputElement = this.createElement('input', null, `${propName}-field`) as HTMLInputElement;
                         (inputElement as HTMLInputElement).type = 'text';
-                        console.warn(`Unsupported schema property type: ${property.type}`);
+                        console.warn(`Unsupported tag property type: ${property.type}`);
                 }
 
                 inputElement.dataset.schemaProperty = propName;
-                if (this.isReadOnly) {
+                if (this.isReadOnly)
                     (inputElement as HTMLInputElement).disabled = true;
-                }
 
                 formElement.append(label, inputElement);
             }
@@ -125,10 +118,10 @@ export default class UIBuilder {
 
     private createTagSelectorContainer(): HTMLElement {
         const tagSelectorContainer = this.createElement('div', 'tag-selector-container');
-        const tagSelector = new TagSelector(tagSelectorContainer, 'page');
-        tagSelector.addTag('Category 1', 'Tag A');
-        tagSelector.addTag('Category 1', 'Tag B');
-        tagSelector.addTag('Category 2', 'Tag C');
+        const s = new TagSelector(tagSelectorContainer, 'page');
+        s.addTag('Category 1', 'Tag A');
+        s.addTag('Category 1', 'Tag B');
+        s.addTag('Category 2', 'Tag C');
         return tagSelectorContainer;
     }
 }

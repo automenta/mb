@@ -1,6 +1,6 @@
 {
   "title": "Page",
-  "description": "Schema for page objects displayed in DBView",
+  "description": "DBView content",
   "type": "object",
   "properties": {
     "pageId": {

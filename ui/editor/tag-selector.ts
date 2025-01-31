@@ -1,38 +1,38 @@
-import { SchemaRegistry } from '../../core/schema-registry';
-import { renderSchemaForm } from '../util/schema-form';
+import { TagManager } from '../../core/tag-manager';
+import { renderTagForm } from '../util/form';
 
 export default class TagSelector {
     private readonly rootElement: HTMLElement;
-    private _schemaName: string;
-    private schema: any;
-    private schemaRegistry = new SchemaRegistry();
+    private _tagName: string;
+    private tag: any;
+    private tagManager = new TagManager();
     private tags: {[key: string]: any} = {};
 
-    constructor(parentElement: HTMLElement, schemaName: string) {
+    constructor(parentElement: HTMLElement, tagName: string) {
         this.rootElement = parentElement;
-        this._schemaName = schemaName;
-        this.loadSchema();
+        this._tagName = tagName;
+        this.load();
     }
 
-    private async loadSchema() {
-        this.schema = await this.schemaRegistry.getSchema(this._schemaName);
+    private async load() {
+        this.tag = await this.tagManager.get(this._tagName);
         this.renderUI();
     }
 
     private renderUI(): void {
-        if (!this.schema || typeof this.schema !== 'object' || !this.schema.properties) {
-            this.rootElement.innerHTML = 'Schema not found or invalid.';
+        if (!this.tag || typeof this.tag !== 'object' || !this.tag.properties) {
+            this.rootElement.innerHTML = 'Tag not found or invalid.';
             return;
         }
 
-        const form = renderSchemaForm(this.schema as any, {}, this.updateTag.bind(this));
+        const form = renderTagForm(this.tag as any, {}, this.updateTag.bind(this));
         this.rootElement.innerHTML = '';
         this.rootElement.appendChild(form[0]);
     }
 
-    public setSchemaName(schemaName: string): void {
-        this._schemaName = schemaName;
-        this.loadSchema();
+    public setTagName(tagName: string): void {
+        this._tagName = tagName;
+        this.load();
     }
 
     private updateTag(fieldPath: string, value: any): void {

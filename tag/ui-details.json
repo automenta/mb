@@ -1,6 +1,6 @@
 {
     "title": "UI Details",
-    "description": "Schema for UI components and details",
+    "description": "Tags for UI components and details",
     "type": "object",
     "properties": {
         "componentType": {

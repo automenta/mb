@@ -6,7 +6,7 @@ import Network from '../core/net';
 import { getStore, Store } from './store';
 import { Awareness } from 'y-protocols/awareness';
 import ViewManager from './view-manager';
-import { SchemaRegistry } from "../core/schema-registry";
+import { TagManager } from "../core/tag-manager";
 import MeView from "./me.view";
 import DBView from './db.view';
 import NetView from './net.view';
@@ -42,9 +42,9 @@ export default class App {
     match: Matching;
     public store: Store;
     public ele: HTMLElement;
-    themeManager: ThemeManager;
-    private viewManager: ViewManager;
-    public schemaRegistry: SchemaRegistry;
+    themes: ThemeManager;
+    private views: ViewManager;
+    public tags: TagManager;
 
     constructor(channel: string, rootElement: HTMLElement) {
         this.channel = channel;
@@ -54,10 +54,10 @@ export default class App {
 
         this.ele = $(rootElement);
         this.store = getStore(this.db);
-        this.themeManager = new ThemeManager(this.ele);
-        this.schemaRegistry = new SchemaRegistry();
+        this.themes = new ThemeManager(this.ele);
+        this.tags = new TagManager();
 
-        this.viewManager = new ViewManager(this, this.store);
+        this.views = new ViewManager(this, this.store);
         // this.viewManager.registerViews();
         this.setupViewSwitching();
 
@@ -113,11 +113,11 @@ export default class App {
     }
 
     private setupViewSwitching(): void {
-        $('#db-view-link').on('click', () => this.viewManager.showView('db-view'));
-        $('#net-view-link').on('click', () => this.viewManager.showView('net-view'));
-        $('#match-view-link').on('click', () => this.viewManager.showView('match-view'));
-        $('#profile-view-link').on('click', () => this.viewManager.showView('profile-view'));
-        $('#settings-view-link').on('click', () => this.viewManager.showView('settings-view'));
+        $('#db-view-link').on('click', () => this.views.showView('db-view'));
+        $('#net-view-link').on('click', () => this.views.showView('net-view'));
+        $('#match-view-link').on('click', () => this.views.showView('match-view'));
+        $('#profile-view-link').on('click', () => this.views.showView('profile-view'));
+        $('#settings-view-link').on('click', () => this.views.showView('settings-view'));
     }
 
     getAwareness(): Awareness {

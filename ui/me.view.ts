@@ -1,16 +1,16 @@
 import DB from '../core/db';
 
 import { $, Y, Awareness } from './imports';
-import { SchemaRegistry } from '../core/schema-registry';
-import userSchemaJson from '../schema/user.schema.json';
-import { UserSchema } from './schema';
+import { TagManager } from '../core/tag-manager';
+import userTagsJson from '../tag/user.json';
+import { UserTags } from './tag';
 import { validateSocialLink } from './util/validation';
 import { UserInfo } from './types';
-import { renderSchemaForm } from './util/schema-form'; // Import renderSchemaForm
+import { renderTagForm } from './util/form';
 
-const schemaRegistry = new SchemaRegistry();
-schemaRegistry.registerSchema('user', userSchemaJson);
-const userSchema: UserSchema = schemaRegistry.getSchema('user') as UserSchema;
+const tags = new TagManager();
+tags.register('user', userTagsJson);
+const userTags: UserTags = tags.get('user') as UserTags;
 
 class PresenceManager {
   private awareness: Awareness;
@@ -65,7 +65,7 @@ export default class MeView {
     return validateSocialLink(link);
   }
 
-  private updateUserField(fieldPath: string, value: any) { // Updated updateUserField to be used with schemaForm
+  private updateUserField(fieldPath: string, value: any) { // Updated updateUserField to be used with tagForm
     const user = this.getUser();
     const pathParts = fieldPath.split('.');
     let current: any = user; // Type cast to any for flexible property access
@@ -80,10 +80,10 @@ export default class MeView {
 
     const field = pathParts[pathParts.length - 1];
 
-    if (userSchema && typeof userSchema === 'object') {
-      const socialSchemaProperties = (userSchema as { properties: { social: { properties: any } } }).properties.social?.properties;
-      const schemaProps = (userSchema as { properties: any }).properties[field] || (field === 'social' && socialSchemaProperties ? socialSchemaProperties[pathParts[pathParts.length - 2]] : undefined);
-      if (schemaProps) {
+    if (userTags && typeof userTags === 'object') {
+      const socialTags = (userTags as { properties: { social: { properties: any } } }).properties.social?.properties;
+      const tags = (userTags as { properties: any }).properties[field] || (field === 'social' && socialTags ? socialTags[pathParts[pathParts.length - 2]] : undefined);
+      if (tags) {
         (current as any)[field] = value; // Type cast to any for flexible property access
         this.awareness().setLocalStateField('user', user);
       }
@@ -121,10 +121,10 @@ export default class MeView {
           $('<label/>', { text: 'ID: ' }),
           $('<span/>', { text: user.userId || '' })
         ),
-        // Render schema form for user profile fields
-        (userSchema && typeof userSchema === 'object' && userSchema.properties
-          ? renderSchemaForm(userSchema, user, this.updateUserField.bind(this))
-          : $('<div/>').text('Failed to load user schema form.')
+        // Render tag form for user profile fields
+        (userTags && typeof userTags === 'object' && userTags.properties
+          ? renderTagForm(userTags, user, this.updateUserField.bind(this))
+          : $('<div/>').text('Failed to load user tag form.')
         ),
 
         // Status Indicator

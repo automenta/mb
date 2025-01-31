@@ -14,7 +14,7 @@ Organize, prioritize, and grow thoughts into actionable results with real-time c
 
 - **Persistent Queries:** `NObject`s can act as ongoing search interests (persistent queries), actively seeking matches within the network.
 - **Semantic Matching:** `NObject`s capture meaning and intent, acting as implicit goals to realize.
-- **Schema:** Shared schemas ensure unambiguous and multilingual meaningful exchange.
+- **Tags:** `NObject` tags (schemas) ensure unambiguous and multilingual meaningful exchange.
 - **Notifications:** The app receives matches to shared `NObject`s as replies, storing them for display similar to email or forum replies.
 
 ### P2P Networking
@@ -33,7 +33,7 @@ Organize, prioritize, and grow thoughts into actionable results with real-time c
 
 - **Main View:** Unified interface for viewing, creating, and editing `NObject`s.
 - **Sidebar Navigation:**
-    - **Me:** User profile and preferences.
+    - **Me:** User profile, biography objects, and preferences.
     - **Friends:** Status updates from connections.
     - **Network:** Peer activity and traffic visualization.
     - **Database:** Sortable, filterable data views.
@@ -41,15 +41,12 @@ Organize, prioritize, and grow thoughts into actionable results with real-time c
 
 ## Design
 
-### Frontend
+### UI
 
 - Single-page application using TypeScript/JavaScript.
 - Dynamic components for flexibility and reusability.
 - `yjs` ensures real-time collaborative editing.
 
-### Schemas
-
-- Collection of schemas used to structure the specifics of data, messages, and UI components.
 
 ### Server ("Supernode")
 
@@ -119,17 +116,13 @@ By following these steps, you can effectively run tests, interpret the results, 
 
 1. Clone the repository:
    `git clone https://github.com/your-organization/collaborative-reality-editor.git` (update with actual repository URL)
-2. Install dependencies:
-   `npm install`
-3. Start the development server:
-   `npm run dev`
+2. Install dependencies: `npm install`
+3. Start the development server: `npm run dev`
 
 ### Deploy
 
-1. Build the application:
-   `npm run build`
-2. Start the production server:
-   `npm start`
+1. Build the application: `npm run build`
+2. Start the production server: `npm start`
 3. Access the app at `http://localhost:3000`.
 
 ### Code

@@ -1,5 +1,5 @@
-export interface UserSchema {
-  $schema: string;
+/** TODO use the JSON user tag files instead of this.  then remove this */
+export interface UserTags {
   title: string;
   description: string;
   validation: {

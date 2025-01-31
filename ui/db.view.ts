@@ -1,11 +1,11 @@
 import $ from 'jquery';
-import BaseView from './util/base-view';
+import View from './util/view';
 import ObjViewMini from './util/obj.view.mini';
-import pageSchema from '../schema/page.schema.json';
+import pageTags from '../tag/page.json';
 
 import '/ui/css/db.css';
 
-export default class DBView extends BaseView {
+export default class DBView extends View {
     sortKey: string;
     sortOrder: string;
     filterText: string;
@@ -25,7 +25,7 @@ export default class DBView extends BaseView {
         this.root.empty().append(this.ele);
 
         let tableHeadersHTML = '';
-        pageSchema?.properties && Object.entries(pageSchema.properties).forEach(([field, property]) => {
+        pageTags?.properties && Object.entries(pageTags.properties).forEach(([field, property]) => {
             tableHeadersHTML += `<th>${(property as {description:string}).description}</th>`;
         });
 
@@ -95,7 +95,7 @@ export default class DBView extends BaseView {
 
     private createRow(page: any): JQuery {
         const $row = $('<tr>');
-        pageSchema?.properties && Object.entries(pageSchema.properties).forEach(([field, property]) => {
+        pageTags?.properties && Object.entries(pageTags.properties).forEach(([field, property]) => {
             $row.append($('<td>').text(page[field] || ''));
         });
         const editButton = $('<button>').text('Edit').addClass('edit-button').on('click', () => {
@@ -113,7 +113,7 @@ export default class DBView extends BaseView {
 
     private renderFilterControls(): string {
         let filterControlsHTML = '';
-        pageSchema?.properties && Object.entries(pageSchema.properties).forEach(([field, property]) => {
+        pageTags?.properties && Object.entries(pageTags.properties).forEach(([field, property]) => {
             filterControlsHTML += `
                 <div class="filter-group">
                     <label for="filter-${field}">${(property as { description: string }).description}:</label>

@@ -1,31 +1,29 @@
 {
     "title": "NObject Content",
-    "description": "Schema for the content of an NObject",
     "type": "object",
     "properties": {
         "text": {
             "type": "string",
             "description": "The main textual content of the NObject"
         },
-        "schemaElements": {
+        "tags": {
             "type": "array",
-            "description": "An array of schema elements embedded within the NObject",
+            "description": "An array of tags embedded within the NObject",
             "items": {
                 "type": "object",
                 "properties": {
-                    "schemaName": {
-                        "type": "string",
-                        "description": "The name of the schema used for this element"
+                    "tag": {
+                        "type": "string"
                     },
                     "data": {
                         "type": "object",
-                        "description": "The data for this schema element",
+                        "description": "The data for this tag",
                         "properties": {},
                         "additionalProperties": true
                     }
                 },
                 "required": [
-                    "schemaName",
+                    "tag",
                     "data"
                 ]
             }

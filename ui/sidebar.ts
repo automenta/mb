@@ -11,7 +11,7 @@ import DBView from "./db.view";
 import MatchingView from "./match.view.js";
 import AgentsView from "./agents.view";
 import App from './app';
-import BaseView from './util/base-view';
+import View from './util/view';
 
 class PageContextMenu {
     readonly ele: JQuery;
@@ -95,7 +95,7 @@ export default class Sidebar {
     private readonly notificationsView: NotificationsView;
     private readonly matchingView: MatchingView | null;
     private readonly agentsView: AgentsView;
-    private currentView: BaseView | null = null; // Track current view
+    private currentView: View | null = null; // Track current view
 
     constructor(app: App, ele: HTMLElement) {
         this.ele = $(ele).addClass('sidebar');
@@ -182,7 +182,7 @@ export default class Sidebar {
         });
     }
 
-    private createMenuButton({ id, title, view }: { id: string; title: string; view: BaseView | null }): JQuery {
+    private createMenuButton({ id, title, view }: { id: string; title: string; view: View | null }): JQuery {
         const button = $('<button>', {
             id: `menu-${id}`,
             class: 'menubar-button',
@@ -212,7 +212,7 @@ export default class Sidebar {
             console.log('switchView: showing my-objects list');
         } else {
             $('#list-view-container').hide(); // Hide page list container
-            let view: BaseView | null = null;
+            let view: View | null = null;
             switch (viewId) {
                 case 'profile': view = this.meView; break;
                 case 'friends': view = this.friendsView; break;
