@@ -1,19 +1,21 @@
 import $ from 'jquery';
 import View from './util/view';
 import ObjViewMini from './util/obj.view.mini';
+import type {App} from './app';
 import pageTags from '../tag/page.json';
 
 import '/ui/css/db.css';
 
 export default class DBView extends View {
+    app: App;
     sortKey: string;
     sortOrder: string;
     filterText: string;
-    filterValues: Record<string, string> = {};
     db: any;
 
-    constructor(root: HTMLElement, db: any) {
+    constructor(app: App, root: HTMLElement, db: any) {
         super($(root).find('.main-view'));
+        this.app = app;
         this.db = db;
         this.ele = $('<div>').addClass('database-page');
         this.sortKey = 'title';
@@ -31,13 +33,16 @@ export default class DBView extends View {
 
         const filterControlsHTML = this.renderFilterControls();
 
-        this.ele.append(this.createHeader(), this.createControls(filterControlsHTML), this.createTable(tableHeadersHTML));
+        this.ele.append(
+            this.createHeader(),
+            this.createControls(filterControlsHTML),
+            this.createTable(tableHeadersHTML),
+            this.createNewObjectButton()
+        );
 
         this.bindEvents();
         this.updateTable();
-    }
-
-    bindEvents() {
+    bindEvents(): void {
         this.ele.find('.filter-controls').on('input', '.filter-input', (e) => {
             const field = $(e.target).data('field');
             this.filterValues[field] = ($(e.target).val() as string);
@@ -55,15 +60,11 @@ export default class DBView extends View {
         });
 
         this.db.index.observe(() => this.updateTable());
-    }
-
-    updateTable() {
+    updateTable(): void {
         const entries = Array.from(this.db.index.entries()) as [string, any][];
         const pages = entries.map(([key, value]) => ({ pageId: key, ...value }));
         this.renderTable(pages);
-    }
-
-    renderTable(pages: any[]) {
+    renderTable(pages: any[]): void {
         const $tbody = this.ele.find('tbody').empty();
         const filteredPages = pages.filter(page => {
             let isMatch = true;
@@ -82,13 +83,9 @@ export default class DBView extends View {
             return this.sortOrder === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
         });
         $tbody.append(filteredPages.map(this.createRow.bind(this)));
-    }
-
-    addObject(obj: any) {
+    addObject(obj: any): void {
         this.handleNewObject(obj);
-    }
-
-    handleNewObject(obj: any) {
+    handleNewObject(obj: any): void {
         this.db.index.set(obj.id, obj);
         this.updateTable();
     }
@@ -133,6 +130,16 @@ export default class DBView extends View {
         $controls.append($('<select>').addClass('sort-select').append($('<option>').text('Title').val('title'), $('<option>').text('Page ID').val('pageId')));
         $controls.append($('<button>').addClass('sort-button').text('Sort'));
         return $controls;
+    }
+
+    private createNewObjectButton(): JQuery {
+        const newObjectButton = $('<button>')
+            .text('New NObject')
+            .addClass('new-object-button')
+            .on('click', () => {
+                this.app.createNewObject();
+            });
+        return newObjectButton;
     }
 
     private createTable(tableHeadersHTML: string): JQuery {
