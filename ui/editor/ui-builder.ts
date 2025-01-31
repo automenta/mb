@@ -1,11 +1,11 @@
-import { TagManager } from '../imports';
+import { Tags } from '../imports';
 import TagSelector from './tag-selector';
 
 export default class UIBuilder {
     private readonly isReadOnly: boolean;
-    private tags: TagManager;
+    private tags: Tags;
 
-    constructor(isReadOnly: boolean, tags: TagManager) {
+    constructor(isReadOnly: boolean, tags: Tags) {
         this.isReadOnly = isReadOnly;
         this.tags = tags;
     }

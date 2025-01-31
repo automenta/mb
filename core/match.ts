@@ -1,8 +1,8 @@
 import { events, EventType, Listener } from './events';
 import DB from './db';
 import Network from './net';
-import MatchingEngine, { PageProperties, MatchResult } from './matching-engine';
-import ProcessingQueueManager from './processing-queue-manager';
+import Matches, { PageProperties, MatchResult } from './matches';
+import Analysis from './analysis';
 
 interface Metrics {
     pagesProcessed: number;
@@ -27,8 +27,8 @@ type MatchingEventType =
 export default class Matching {
     db: DB;
     net: Network;
-    matchingEngine: MatchingEngine;
-    processingQueueManager: ProcessingQueueManager;
+    matchingEngine: Matching;
+    processingQueueManager: Analysis;
     metrics: Metrics = {
         pagesProcessed: 0,
         matchesFound: 0,
@@ -41,8 +41,8 @@ export default class Matching {
     constructor(db: DB, net: Network) {
         this.db = db;
         this.net = net;
-        this.matchingEngine = new MatchingEngine(db);
-        this.processingQueueManager = new ProcessingQueueManager(db, this.matchingEngine);
+        this.matchingEngine = new Matching(db);
+        this.processingQueueManager = new Analysis(db, this.matchingEngine);
 
         // Start processing loop (consider starting this externally or via a method call)
         this.startProcessing();
@@ -90,7 +90,7 @@ export default class Matching {
         } catch (error) {
             console.error('Processing error:', error);
         } finally {
-            // Cleanup moved to ProcessingQueueManager
+            // Cleanup moved to Analysis
         }
     }
 

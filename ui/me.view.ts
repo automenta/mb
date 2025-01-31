@@ -1,14 +1,14 @@
 import DB from '../core/db';
 
 import { $, Y, Awareness } from './imports';
-import { TagManager } from '../core/tag-manager';
+import { Tags } from '../core/tags';
 import userTagsJson from '../tag/user.json';
 import { UserTags } from './tag';
-import { validateSocialLink } from './util/validation';
+import { validateSocialLink } from './util/validate';
 import { UserInfo } from './types';
 import { renderTagForm } from './util/form';
 
-const tags = new TagManager();
+const tags = new Tags();
 tags.register('user', userTagsJson);
 const userTags: UserTags = tags.get('user') as UserTags;
 

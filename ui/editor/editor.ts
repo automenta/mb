@@ -1,4 +1,4 @@
-import {$, App, Awareness, NObject, TagManager, Y} from '../imports';
+import {$, App, Awareness, NObject, Tags, Y} from '../imports';
 import {EditorConfig} from '../types';
 import type {Doc as YDoc} from 'yjs'; // Import Doc type
 import {ToolbarManager} from './toolbar-manager';
@@ -106,7 +106,7 @@ export default class Editor {
     }
 
 
-    private initUI(tags: TagManager): void {
+    private initUI(tags: Tags): void {
         this.rootElement.append(new UIBuilder(this.config.isReadOnly ?? false, tags).createEditorContainer());
 
         this.bindEvents();

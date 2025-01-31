@@ -1,7 +1,7 @@
 import NObject from './obj';
 import DB from './db';
 
-export class ReplyManager {
+export class Replies {
     constructor(private readonly db: DB) {}
 
     /**

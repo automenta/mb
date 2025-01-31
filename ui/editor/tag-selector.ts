@@ -1,11 +1,11 @@
-import { TagManager } from '../../core/tag-manager';
+import { Tags } from '../../core/tags';
 import { renderTagForm } from '../util/form';
 
 export default class TagSelector {
     private readonly rootElement: HTMLElement;
     private _tagName: string;
     private tag: any;
-    private tagManager = new TagManager();
+    private tagManager = new Tags();
     private tags: {[key: string]: any} = {};
 
     constructor(parentElement: HTMLElement, tagName: string) {

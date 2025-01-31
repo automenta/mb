@@ -17,7 +17,7 @@ interface MatchResult {
  * Core matching engine that handles semantic analysis and matching of pages
  * using topic-based similarity scoring.
  */
-export default class MatchingEngine {
+export default class Matches {
     db: DB;
     similarityThreshold: number = 0.5; // Default similarity threshold
 

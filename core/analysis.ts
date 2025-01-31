@@ -1,6 +1,6 @@
 import DB from './db';
-import MatchingEngine, { PageProperties, MatchResult } from './matching-engine';
-import { ReplyManager } from './reply-manager';
+import Matches, { PageProperties, MatchResult } from './matches';
+import { Replies } from './replies';
 
 interface ProcessingState {
     pageId: string;
@@ -12,23 +12,23 @@ interface ProcessingState {
  * Manages the queue of pages to be processed for matching,
  * including scheduling, prioritization, and worker capacity.
  */
-export default class ProcessingQueueManager {
+export default class Analysis {
     db: DB;
-    matchingEngine: MatchingEngine;
+    matchingEngine: Matches;
     processingQueue: Map<string, ProcessingState> = new Map();
-    replyManager: ReplyManager; // Add ReplyManager
+    replyManager: Replies; // Add Replies
     lastProcessed: Map<string, number> = new Map();
     processInterval: number = 5000;
     processTimer: NodeJS.Timeout | null = null;
     workerCapacity: number = 0.5;
 
 
-    constructor(db: DB, matchingEngine: MatchingEngine) {
+    constructor(db: DB, matchingEngine: Matches) {
         this.db = db;
         this.matchingEngine = matchingEngine;
         this.processingQueue = new Map();
         this.lastProcessed = new Map();
-        this.replyManager = new ReplyManager(db); // Initialize ReplyManager
+        this.replyManager = new Replies(db); // Initialize Replies
     }
 
 

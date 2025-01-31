@@ -2,9 +2,9 @@ import * as Y from 'yjs';
 import {IndexeddbPersistence} from 'y-indexeddb';
 import NObject from './obj';
 import {QueryBuilder} from './query';
-import {ReplyManager} from './reply-manager';
-import ConfigManager from './config-manager';
-import {PersistenceManager} from './persistence-manager';
+import {Replies} from './replies';
+import Config from './config';
+import {Persistence} from './persistence';
 import Network from './net';
 import {events} from './events'; // Import events
 
@@ -13,11 +13,11 @@ export default class DB {
     public readonly index: Y.Map<string>;
     public readonly provider: IndexeddbPersistence & { awareness?: any };
     public readonly store: Y.Doc;
-    private persistenceManager: PersistenceManager;
-    private replyManager: ReplyManager;
-    private readonly configManager: ConfigManager;
+    private persistenceManager: Persistence;
+    private replyManager: Replies;
+    private readonly configManager: Config;
     private net?: Network; // Add network reference
-    public get config(): ConfigManager { // Added public getter for configManager
+    public get config(): Config { // Added public getter for configManager
         return this.configManager;
     }
 
@@ -26,9 +26,9 @@ export default class DB {
         this.store = new Y.Doc();
         this.provider = provider || new IndexeddbPersistence('main-db', this.doc);
         this.index = this.doc.getMap<string>('objects');
-        this.replyManager = new ReplyManager(this);
-        this.configManager = new ConfigManager(this.doc); // Added
-        this.persistenceManager = new PersistenceManager(this.doc); // Added
+        this.replyManager = new Replies(this);
+        this.configManager = new Config(this.doc); // Added
+        this.persistenceManager = new Persistence(this.doc); // Added
 
         this.provider.on('synced', () => { // Listen for 'synced' event
             console.log('Synced');

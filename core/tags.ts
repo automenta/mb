@@ -1,4 +1,4 @@
-export class TagManager {
+export class Tags {
     private readonly tags: Record<string, any>;
 
     constructor() {
@@ -14,6 +14,6 @@ export class TagManager {
     }
 }
 
-const tagManager = new TagManager();
+const tagManager = new Tags();
 
 export default tagManager;

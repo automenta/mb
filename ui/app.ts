@@ -6,7 +6,7 @@ import Network from '../core/net';
 import { getStore, Store } from './store';
 import { Awareness } from 'y-protocols/awareness';
 import ViewManager from './view-manager';
-import { TagManager } from "../core/tag-manager";
+import { Tags } from "../core/tags";
 import MeView from "./me.view";
 import DBView from './db.view';
 import NetView from './net.view';
@@ -44,7 +44,7 @@ export default class App {
     public ele: HTMLElement;
     themes: ThemeManager;
     private views: ViewManager;
-    public tags: TagManager;
+    public tags: Tags;
 
     constructor(channel: string, rootElement: HTMLElement) {
         this.channel = channel;
@@ -55,7 +55,7 @@ export default class App {
         this.ele = $(rootElement);
         this.store = getStore(this.db);
         this.themes = new ThemeManager(this.ele);
-        this.tags = new TagManager();
+        this.tags = new Tags();
 
         this.views = new ViewManager(this, this.store);
         // this.viewManager.registerViews();

@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 import NObject from './obj';
 
-class ConfigManager {
+class Config {
     private configObj: NObject;
 
     constructor(doc: Y.Doc) {
@@ -25,4 +25,4 @@ class ConfigManager {
     }
 }
 
-export default ConfigManager;
+export default Config;
