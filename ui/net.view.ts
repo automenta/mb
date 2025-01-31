@@ -94,20 +94,14 @@ class NetViewer { // Corrected class definition
             <div class="stats-grid"></div>
 
             <div class="stat-box">
-                <strong>Connections</strong>
-                <div class="peers"></div>
-            </div>
-            <div class="stat-box">
-                <strong>Events</strong>
-                <div class="event-log"></div>
-            </div>
-            <div class="stat-box">
                 <strong>Peers</strong>
                 <div class="peers"></div>
-                <div class="peer-list"></div>  <!-- Add peer list container here -->
+                <div class="peer-list"></div>
             </div>
-         `, this.bootstrap.panel());
-        +this.ele.find('.peer-list').append(this.$peerList); // Append $peerList to the container
+         `,
+      this.bootstrap.panel()
+    );
+    this.ele.find(".peer-list").append(this.$peerList);
 
         // Append stat boxes to the stats-grid div
         const statsGrid = this.ele.find('.stats-grid');
@@ -122,72 +116,89 @@ class NetViewer { // Corrected class definition
         // Handle undefined eventData or missing properties
         const { type, data = {}, timestamp } = eventData;
         const stats = data.stats || {};
+    // Update metrics
+    const sentSpan = this.ele.find(".sent");
+    const receivedSpan = this.ele.find(".received");
+    const bytesSpan = this.ele.find(".bytes");
+    const peerList = this.ele.find(".peers");
+    const eventLog = this.ele.find(".event-log");
+    const connectionStatusSpan = this.ele.find(".connection-status");
 
-        // Update metrics
-        let r = this.ele[0] as HTMLElement; // Cast to HTMLElement
-        if (!r) return;
-        const sentSpan = r.querySelector('.sent');
-        const receivedSpan = r.querySelector('.received');
-        const bytesSpan = r.querySelector('.bytes');
-        const peerList = r.querySelector('.peers');
-        const eventLog = r.querySelector('.event-log');
+    if (connectionStatusSpan) connectionStatusSpan.text(this.connectionStatus);
 
+    if (sentSpan) sentSpan.text(stats.messagesSent);
+    if (receivedSpan) receivedSpan.text(stats.messagesReceived);
+    if (bytesSpan) bytesSpan.text(stats.bytesTransferred);
 
-        if (sentSpan) sentSpan.textContent = stats.messagesSent;
-        if (receivedSpan) receivedSpan.textContent = stats.messagesReceived;
-        if (bytesSpan) bytesSpan.textContent = stats.bytesTransferred;
+    // Update peer list
+    if (peerList) {
+      peerList.empty(); // Clear existing content
+      if (stats.awareness) {
+        peerList.append(stats.awareness.map(this.renderPeerBadge.bind(this)));
+      }
+    }
 
-        // Update peer list
-       // Update peer list
-        if (peerList) {
-            peerList.innerHTML = ''; // Clear existing content
-            if (stats.awareness) {
-                $(peerList).append(stats.awareness.map(this.renderPeerBadge.bind(this)));
-            }
-        }
-
-        // Update peer list in $peerList
-        this.$peerList.empty(); // Clear existing list
-        if (this.net.peers)
-            this.$peerList.append(Array.from(this.net.peers.values()).map(this.renderPeerListItem.bind(this)));
+    // Update peer list in $peerList
+    this.$peerList.empty(); // Clear existing list
+    if (this.net.peers)
+      this.$peerList.append(
+        Array.from(this.net.peers.values()).map(this.renderPeerListItem.bind(this))
+      );
 
         this.events.unshift({ type, timestamp, data });
-        this.events = this.events.slice(0, this.maxEvents);
+    this.events = this.events.slice(0, this.maxEvents);
 
-        if (eventLog) {
-            eventLog.innerHTML = ''; // Clear existing content
-            $(eventLog).append(this.events.map(this.renderEventEntry.bind(this)));
-        }
+    if (eventLog) {
+      eventLog.empty(); // Clear existing content
+      eventLog.append(this.events.map(this.renderEventEntry.bind(this)));
     }
+  }
 
-    renderPeerBadge(peer: any): JQuery { // Type 'any' for peer as its type is not defined
-        return $(`<div class="peer-badge">${peer.metadata.clientID} (${new Date(peer.lastActive).toLocaleTimeString()})</div>`) as JQuery;
-    }
+  renderPeerBadge(peer: any): JQuery {
+    // Type 'any' for peer as its type is not defined
+    return $(
+      `<div class="peer-badge">${peer.metadata.clientID} (${new Date(
+        peer.lastActive
+      ).toLocaleTimeString()})</div>`
+    ) as JQuery;
+  }
 
-    renderPeerListItem(peer: any): JQuery { // Type 'any' for peer, adjust if you have Peer interface available
-        return $(`<li>${peer.address}:${peer.port} - Last Seen: ${new Date(peer.lastSeen).toLocaleTimeString()}</li>`) as JQuery;
-    }
+  renderPeerListItem(peer: any): JQuery {
+    // Type 'any' for peer, adjust if you have Peer interface available
+    return $(
+      `<li>${peer.address}:${peer.port} - Last Seen: ${new Date(
+        peer.lastSeen
+      ).toLocaleTimeString()}</li>`
+    ) as JQuery;
+  }
 
-    renderEventEntry(event: any): JQuery { // Type 'any' for event as its type is not defined
-        return $(`<div class="event-entry ${event.type}>[${new Date(event.timestamp).toLocaleTimeString()}] ${event.type} ${event.data.peerId ? `(Peer: ${event.data.peerId})` : ''} ${event.data.bytes ? `(${event.data.bytes} bytes)` : ''}</div>`) as JQuery;
-    }
+  renderEventEntry(event: any): JQuery {
+    // Type 'any' for event as its type is not defined
+    return $(
+      `<div class="event-entry ${
+        event.type
+      }">[${new Date(event.timestamp).toLocaleTimeString()}] ${event.type} ${
+        event.data.peerId ? `(Peer: ${event.data.peerId})` : ""
+      } ${event.data.bytes ? `(${event.data.bytes} bytes)` : ""}</div>`
+    ) as JQuery;
+  }
 }
 
 export default class NetView {
-    ele: JQuery;
-    net: Network;
+  ele: JQuery;
+  net: Network;
 
-    constructor(ele: JQuery, net: Network) { // Corrected constructor type
-        this.ele = ele;
-        this.net = net;
-    }
+  constructor(ele: JQuery, net: Network) {
+    // Corrected constructor type
+    this.ele = ele;
+    this.net = net;
+  }
 
-    render(): JQuery { // Changed return type to JQuery<HTMLElement>
-        const updateStatus = () => this.ele.empty().append(
-            new NetViewer(this.net).ele
-        );
-        this.net.net.on('peers', updateStatus);
-        updateStatus();
-        return this.ele; // Return the root element
-    }
+  render(): JQuery {
+    // Changed return type to JQuery<HTMLElement>
+    const updateStatus = () => this.ele.empty().append(new NetViewer(this.net).ele);
+    this.net.net.on("peers", updateStatus);
+    updateStatus();
+    return this.ele; // Return the root element
+  }
 }

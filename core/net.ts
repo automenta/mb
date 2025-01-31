@@ -114,16 +114,27 @@ class Network {
     net!: WebrtcProvider;
     private readonly signalingServers: string[];
 
-    constructor(channel:string, db:DB) {
+constructor(channel: string, db: DB) {
         this.channel = channel;
         this.db = db;
-
         this.docsShared = new Set();
-        this.metrics = new NetworkMetrics(); // Initialize NetworkMetrics
+        this.metrics = new NetworkMetrics();
+        this.signalingServers = this.db.config.getSignalingServers();
+
+        // Initialize WebrtcProvider with signaling servers from db.config
+        this.net = new WebrtcProvider(this.channel, this.db.doc, {
+            signaling: this.signalingServers,
+        });
+
+        // Handle 'status' event
+        this.net.on('status', (event: { status: string }) => {
+            console.log('WebRTC Provider Status:', event.status); // Log for debugging
+            this.emit(NETWORK_ACTIVITY, { type: 'status',  { status: event.status }, timestamp: Date.now() });
+        });
 
         this.db.doc.on('update', (update, origin) => {
             this.metrics.incrementBytesTransferred(update.length);
-            if (origin === this.net!) {
+            if (origin === this.net) {
                 this.metrics.incrementMessagesSent();
                 this.emit(MESSAGE_SENT, { bytes: update.length });
             } else {
@@ -132,30 +143,26 @@ class Network {
             }
         });
 
-        // Load persisted signaling servers with fallback to default
-        try {
-            const storedServers = localStorage.getItem('signalingServers');
-            this.signalingServers = storedServers
-                ? JSON.parse(storedServers)
-                : ['ws://localhost:4444'];
-        } catch (error) {
-            console.warn('Failed to load signaling servers from localStorage:', error);
-            this.signalingServers = ['ws://localhost:4444'];
-        }
-
-        this.reset();
-    }
-
-    reset() {
-        if (this.net) {
-            this.net.destroy();
-        }
-
-        /** https://github.com/yjs/y-webrtc
-         *  https://github.com/feross/simple-peer#peer--new-peeropts */
-        this.net = new WebrtcProvider(this.channel, this.db.doc, {
-            signaling: this.signalingServers,
+        this.net.awareness.setLocalStateField('user', {
+            id: this.db.userID,
+            name: 'Anonymous',
+            color: '#' + Math.floor(Math.random() * 16777215).toString(16),
         });
+
+        // Track peer connections
+        this.net.on('peers', ({ added, removed }) => {
+            added.forEach((id) => {
+                this.metrics.addPeerConnected(id);
+                this.emit(PEER_CONNECTED, { peerId: id });
+            });
+            removed.forEach((id) => {
+                this.metrics.removePeerConnected(id);
+                this.emit(PEER_DISCONNECTED, { peerId: id });
+            });
+        });
+
+        this.net.awareness.on('change', (changes: any) => this.emit(AWARENESS_UPDATE, { changes }));
+    }
 
         this.net.awareness.setLocalStateField('user', {
             id: this.db.userID,
