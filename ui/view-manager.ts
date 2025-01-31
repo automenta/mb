@@ -3,9 +3,10 @@ import type { Store } from './store';
 import type App from './app';
 import DBView from './db.view';
 import NetView from './net.view';
-import MatchView from './match.view';
+// import MatchView from './match.view'; // Commented out for now
+import { Editor } from './editor/editor';
 import MeView from './me.view';
-import {SettingsView} from "./settings.view";
+import { SettingsView } from './settings.view';
 
 export default class ViewManager {
     private app: App;
