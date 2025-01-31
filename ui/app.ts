@@ -87,6 +87,8 @@ export default class App {
             //console.log("Disconnected from WebSocket server");
             this.store.setNetworkStatus('disconnected');
         });
+    getSelectedObject(): any | null {
+        return this.store.currentObject;
     }
 
     public render(): void {

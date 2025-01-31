@@ -1,6 +1,6 @@
 import DB from '../core/db';
 
-import { $, Y, Awareness } from './imports';
+import { $, Y } from './imports';
 import { Tags } from '../core/tags';
 import userTagsJson from '../tag/user.json';
 import { UserTags } from './tag';
@@ -35,16 +35,14 @@ class PresenceManager {
 
 export default class MeView {
   readonly getUser: () => UserInfo;
-  private awareness: () => Awareness;
-  private $: (selector: string, context?: any) => JQuery;
-  private db: DB;
+    private $: (selector: string, context?: any) => JQuery;
+    private db: DB;
 
-  constructor(ele: JQuery, getUser: () => UserInfo, awareness: () => Awareness, db: DB) {
-    this.getUser = getUser;
-    this.awareness = awareness;
-    this.db = db;
-    this.$ = (selector, context?) => $(selector, context || ele);
-  }
+    constructor(ele: JQuery, getUser: () => UserInfo, db: DB) {
+        this.getUser = getUser;
+        this.db = db;
+        this.$ = (selector, context?) => $(selector, context || ele);
+    }
 
   private handleAvatarUpload(e: Event) {
     const file = (e.target as HTMLInputElement)?.files?.[0];
@@ -141,20 +139,56 @@ export default class MeView {
             }
           })
         ),
+        // Sharing Section
+        $('<div/>', { class: 'sharing-section' }).append(
+          $('<h4/>', { text: 'Share Object' }),
+          $('<input/>', {
+            type: 'text',
+            id: 'share-with-input',
+            placeholder: 'Enter user ID',
+          }),
+          $('<button/>', {
+            text: 'Share',
+            click: () => {
+              const userId = this.$('#share-with-input').val() as string;
+              const selectedObject = this.db.getSelectedObject();
+              if (selectedObject && userId) {
+                selectedObject.shareWith(userId);
+                this.$('#share-with-input').val('');
+                alert(`Object shared with user: ${userId}`);
+              } else {
+                alert('Please select an object and enter a user ID.');
+              }
+            },
+          }),
+          $('<button/>', {
+            text: 'Unshare',
+            click: () => {
+              const userId = this.$('#share-with-input').val() as string;
+              const selectedObject = this.db.getSelectedObject();
+              if (selectedObject && userId) {
+                selectedObject.unshareWith(userId);
+                this.$('#share-with-input').val('');
+                alert(`Object unshared with user: ${userId}`);
+              } else {
+                alert('Please select an object and enter a user ID.');
+              }
+            },
+          })
+        ),
 
         // Action Buttons
         $('<div/>', { class: 'profile-actions' }).append(
           $('<button/>', { class: 'save-btn', text: '💾 Save Changes' }).on('click', () => {
             const user = this.getUser();
-            this.db.config?.setUserProfile(user); // Fixed error 7, using setUserProfile
+            this.db.config.setUserProfile(user);
             alert('Profile changes saved!');
           }),
           $('<button/>', { class: 'cancel-btn', text: '❌ Cancel' }).on('click', () => {
-            // Reset form logic
-            this.render(); // Re-render to reset form
+            this.render();
           })
         )
       )
-    )
+    );
   }
 }

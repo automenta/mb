@@ -62,9 +62,9 @@ export default class NObject {
       return content;
   }
   get tags() { return this.metadata.get('tags'); }
-  get sharedWith() { return this.metadata.get('sharedWith'); }
-  get replies(): Y.Array<string> { return this.links.get('reply') || new Y.Array<string>(); }
-  get repliesTo(): Y.Array<string> { return this.links.get('replyTo') || new Y.Array<string>(); }
+  get sharedWith(): Y.Array<string> { return this.metadata.get('sharedWith'); }
+  get replies(): Y.Array<string> { return this.links.get('reply'); }
+  get repliesTo(): Y.Array<string> { return this.links.get('replyTo'); }
 
   // Setters
   set name(v: string) { this.updateMetadata({ name: v }); }
