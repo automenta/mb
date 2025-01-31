@@ -1,5 +1,5 @@
 import {$, App, Awareness, NObject, Tags, Y} from '../imports';
-import {EditorConfig} from '../types';
+import {EditorConfig} from '../types'; // Import EditorConfig
 import type {Doc as YDoc} from 'yjs'; // Import Doc type
 import {ToolbarManager} from './toolbar-manager';
 import {MetadataManager} from './metadata-manager';
@@ -7,6 +7,7 @@ import {AwarenessManager} from './awareness-manager';
 import EditorCore from './editor-core';
 import UIBuilder from './ui-builder';
 import TagSelector from './tag-selector';
+import {randomUUID} from "crypto";
 
 export default class Editor {
     public editorCore: EditorCore;
@@ -77,7 +78,7 @@ export default class Editor {
 
     private createNewDocument(): Y.Map<any> {
         const yMapObjects = this.config.db.doc.getMap('yMapObjects');
-        const newId = Date.now().toString(); // Generate a unique ID
+        const newId = randomUUID(); // Generate a unique ID
 
         let newDoc;
         if (!yMapObjects.has(newId)) {
@@ -380,7 +381,7 @@ export default class Editor {
 
     private createNewDocument(): Y.Map<any> {
         const yMapObjects = this.config.db.doc.getMap('yMapObjects');
-        const newId = Date.now().toString(); // Generate a unique ID
+        const newId = randomUUID(); // Generate a unique ID
 
         let newDoc;
         if (!yMapObjects.has(newId)) {

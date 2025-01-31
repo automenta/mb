@@ -1,5 +1,6 @@
 import $ from 'jquery';
 import { io, Socket } from 'socket.io-client';
+import { Editor } from './editor/editor';
 import DB from '../core/db';
 import Matching from '../core/match';
 import Network from '../core/net';
@@ -12,6 +13,7 @@ import DBView from './db.view';
 import NetView from './net.view';
 import MatchView from './match.view';
 import { SettingsView } from './settings.view';
+import { randomUUID } from 'crypto';
 
 class ThemeManager {
     isDarkMode: boolean;
