@@ -81,17 +81,23 @@ class NetViewer { // Corrected class definition
 
     constructor(net: Network) {
         this.net = net;
-        this.ele = $('<div>').addClass('net-viewer') as JQuery;
+        this.ele = $("<div>").addClass("net-viewer") as JQuery;
         this.bootstrap = new BootstrapView(net);
-        this.$peerList = $('<ul>').addClass('peer-list'); // Initialize $peerList
+        this.$peerList = $("<ul>").addClass("peer-list"); // Initialize $peerList
         this.render();
-        events.on(NETWORK_ACTIVITY, (e: any) => this.update((e as CustomEvent).detail)); // Use Symbol
+        events.on(NETWORK_ACTIVITY, (e: any) => {
+            if (e.type === "status") {
+                this.connectionStatus = e.data.status;
+            }
+            this.update(e);
+        });
     }
 
     render(): void {
         this.ele.append(`
             <h3>Network</h3>
             <div class="stats-grid"></div>
+            <p>Connection Status: <span class="connection-status">${this.connectionStatus}</span></p>
 
             <div class="stat-box">
                 <strong>Peers</strong>
@@ -106,8 +112,8 @@ class NetViewer { // Corrected class definition
         // Append stat boxes to the stats-grid div
         const statsGrid = this.ele.find('.stats-grid');
         statsGrid.append(
-            createStatBox('Messages', {label: 'Sent', className: 'sent'}, {label: 'Received', className: 'received'}),
-            createStatBox('Bandwidth', {label: 'Total', className: 'bytes'})
+            createStatBox('Messages', { label: 'Sent', className: 'sent' }, { label: 'Received', className: 'received' }),
+            createStatBox('Bandwidth', { label: 'Total', className: 'bytes' })
         );
     }
 
@@ -116,43 +122,43 @@ class NetViewer { // Corrected class definition
         // Handle undefined eventData or missing properties
         const { type, data = {}, timestamp } = eventData;
         const stats = data.stats || {};
-    // Update metrics
-    const sentSpan = this.ele.find(".sent");
-    const receivedSpan = this.ele.find(".received");
-    const bytesSpan = this.ele.find(".bytes");
-    const peerList = this.ele.find(".peers");
-    const eventLog = this.ele.find(".event-log");
-    const connectionStatusSpan = this.ele.find(".connection-status");
+        // Update metrics
+        const sentSpan = this.ele.find(".sent");
+        const receivedSpan = this.ele.find(".received");
+        const bytesSpan = this.ele.find(".bytes");
+        const peerList = this.ele.find(".peers");
+        const eventLog = this.ele.find(".event-log");
+        const connectionStatusSpan = this.ele.find(".connection-status");
 
-    if (connectionStatusSpan) connectionStatusSpan.text(this.connectionStatus);
+        if (connectionStatusSpan) connectionStatusSpan.text(this.connectionStatus);
 
-    if (sentSpan) sentSpan.text(stats.messagesSent);
-    if (receivedSpan) receivedSpan.text(stats.messagesReceived);
-    if (bytesSpan) bytesSpan.text(stats.bytesTransferred);
+        if (sentSpan) sentSpan.text(stats.messagesSent);
+        if (receivedSpan) receivedSpan.text(stats.messagesReceived);
+        if (bytesSpan) bytesSpan.text(stats.bytesTransferred);
 
-    // Update peer list
-    if (peerList) {
-      peerList.empty(); // Clear existing content
-      if (stats.awareness) {
-        peerList.append(stats.awareness.map(this.renderPeerBadge.bind(this)));
-      }
-    }
+        // Update peer list
+        if (peerList) {
+            peerList.empty(); // Clear existing content
+            if (stats.awareness) {
+                peerList.append(stats.awareness.map(this.renderPeerBadge.bind(this)));
+            }
+        }
 
-    // Update peer list in $peerList
-    this.$peerList.empty(); // Clear existing list
-    if (this.net.peers)
-      this.$peerList.append(
-        Array.from(this.net.peers.values()).map(this.renderPeerListItem.bind(this))
-      );
+        // Update peer list in $peerList
+        this.$peerList.empty(); // Clear existing list
+        if (this.net.peers)
+            this.$peerList.append(
+                Array.from(this.net.peers.values()).map(this.renderPeerListItem.bind(this))
+            );
 
         this.events.unshift({ type, timestamp, data });
-    this.events = this.events.slice(0, this.maxEvents);
+        this.events = this.events.slice(0, this.maxEvents);
 
-    if (eventLog) {
-      eventLog.empty(); // Clear existing content
-      eventLog.append(this.events.map(this.renderEventEntry.bind(this)));
+        if (eventLog) {
+            eventLog.empty(); // Clear existing content
+            eventLog.append(this.events.map(this.renderEventEntry.bind(this)));
+        }
     }
-  }
 
   renderPeerBadge(peer: any): JQuery {
     // Type 'any' for peer as its type is not defined
