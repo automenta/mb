@@ -144,4 +144,10 @@ export default class DB {
   getNetwork(): Network | undefined {
     return this.net;
   }
+
+  create(): NObject {
+    const obj = new NObject(this.doc);
+    this.add(obj);
+    return obj;
+  }
 }
