@@ -47,17 +47,27 @@ export default class DBView extends View {
         );
 
         this.bindEvents();
-        this.updateTable();
-        this.updateStatistics(); // Call updateStatistics to update stats in header
-        return this.ele; // Make render() return JQuery
+        this.renderObjects(); // Initial render
+        this.app.store.subscribe(() => this.renderObjects()); // Re-render on store changes
+        return this.ele;
+    }
+
+    renderObjects() {
+        this.ele.empty(); // Clear existing content
+        const objects = this.app.store.getState().objects;
+        if (objects && objects.length > 0) {
+            const objectList = $('<ul>').addClass('db-object-list');
+            objects.forEach(obj => {
+                const objViewMini = new ObjViewMini(obj);
+                objectList.append(objViewMini.ele);
+            });
+            this.ele.append(objectList);
+        } else {
+            this.ele.append($('<p>').text('No objects in database.'));
+        }
     }
 
     bindEvents(): void {
-        this.ele.find('.filter-controls').on('input', '.filter-input', (e) => {
-            const field = $(e.target).data('field') as string; // Cast to string
-            this.filterValues[field] = ($(e.target).val() as string).toLowerCase(); // Store lowercase filter value
-            this.updateTable();
-        });
 
         this.ele.find('.sort-select').on('change', (e) => {
             this.sortKey = $(e.target).val() as string; // Cast to string
@@ -193,18 +203,10 @@ export default class DBView extends View {
         return filterControlsHTML;
     }
 
-    private createHeader(): JQuery {
-        const $header = $('<div>').addClass('db-header');
-        $header.append($('<h3>').text('Database Objects'));
+    // Remove createHeader, createControls, createNewObjectButton, and createTable
+    // as they are no longer needed for the list view
 
-        const $stats = $('<div>').addClass('db-stats');
-        $stats.append(
-            $('<span>').attr('id', 'object-count').text('Objects: 0'),
-            $('<span>').attr('id', 'peer-count').text('Peers: 0') // Placeholder for peer count
-        );
-        $header.append($stats);
-        return $header;
-    }
+    // Keep initView and renderObjects methods
 
 
     private createControls(filterControlsHTML: string): JQuery {
