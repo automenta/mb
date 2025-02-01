@@ -1,4 +1,4 @@
-import { $, Y, debounce } from '../imports';
+import { $, Y } from '../imports';
 import * as jsdiff from 'diff';
 import type { EditorConfig } from '../types';
 import { MetadataManager } from './metadata-manager';
@@ -9,15 +9,11 @@ export default class EditorCore {
     private ytext: Y.Text | null;
     private editor: JQuery;
     private config: EditorConfig;
-    private updateCallbacks: UpdateCallback[] = [];
-    private editorInstance: any;
     private metadataManager: any; // TODO: Type this properly once MetadataManager is typed
 
     constructor(config: EditorConfig, editorInstance: any, isReadOnly: boolean) {
         if (!config.db) throw new Error('DB instance required');
 
-        this.config = config;
-        this.editorInstance = editorInstance;
         this.metadataManager = new MetadataManager(isReadOnly); // Initialize MetadataManager
         this.config.isReadOnly = isReadOnly; // Store isReadOnly in config
         this.editor = this.renderEditor();
@@ -38,34 +34,18 @@ export default class EditorCore {
             spellcheck: true,
             text: content,
         })
-            .on('input', debounce((e) => this.saveContent(e), 100))
-            .on('keydown', e => {
-                if (!this.config.isReadOnly && (e.ctrlKey || e.metaKey)) {
-                    this.handleFormattingShortcuts(e);
-                }
-            });
-    }
-
-    public formatText(format: string, value: any): void {
-        const selection = this.editorInstance.getSelection();
-        if (selection) {
-            this.editorInstance.formatText(selection.index, selection.length, format, value, 'user');
-        }
-    }
-
-    public setBlockFormat(format: string): void {
-        const selection = this.editorInstance.getSelection();
-        if (selection) {
-            this.editorInstance.formatLine(selection.index, selection.length, format, true, 'user');
-        }
+            .on('input', (e) => this.saveContent(e))
+            .on('keydown', e => this.handleFormattingShortcuts(e));
+        return this.editor;
     }
 
 
 
-        private saveContentToDb(content: string) {
-            if (!this.ytext) return;
-            const oldContent = this.ytext.toString();
-            const diff = jsdiff.diffChars(oldContent, content);
+
+    private saveContentToDb(content: string) {
+        if (!this.ytext) return;
+        const oldContent = this.ytext.toString();
+        const diff = jsdiff.diffChars(oldContent, content);
 
             this.config.db.doc.transact(() => {
                 let index = 0;
@@ -77,11 +57,7 @@ export default class EditorCore {
                         index += part.value.length;
                     } else {
                         index += part.count;
-                    }
                 });
             });
-        }
-    private loadContent(content: string) {
-        this.updateContent(content);
     }
 }

@@ -1,5 +1,5 @@
 import { Tags } from '../../core/tags';
-import { renderTagForm } from '../util/form';
+import { renderTagForm, FormField } from '../util/form';
 
 export default class TagSelector {
     private readonly rootElement: HTMLElement;
@@ -25,7 +25,7 @@ export default class TagSelector {
             return;
         }
 
-        const form = renderTagForm(this.tag as any, {}, this.updateTag.bind(this));
+        const form = renderTagForm(this.tag as any, this.tags, this.updateTag.bind(this));
         this.rootElement.innerHTML = '';
         this.rootElement.appendChild(form[0]);
     }
@@ -35,10 +35,14 @@ export default class TagSelector {
         this.load();
     }
 
-    private updateTag(fieldPath: string, value: any): void {
-        console.log('Tag updated:', fieldPath, value);
-        this.tags[fieldPath] = value;
-        console.log('Current tags:', this.tags);
+    private updateTag(fieldPath: string, value: any, field: FormField): void {
+        if (field.type === 'array') {
+            // Handle array type fields
+            this.tags[fieldPath] = value;
+        } else {
+            // Handle other field types
+            this.tags[fieldPath] = value;
+        }
     }
 
     public getTags(): {[key: string]: any} {

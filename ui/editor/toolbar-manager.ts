@@ -39,7 +39,7 @@ export class ToolbarManager {
     { command: 'undo', icon: 'undo', title: 'Undo', action: (editor) => editor.formatText('undo') }, // Changed icon to class name
     { command: 'redo', icon: 'redo', title: 'Redo', action: (editor) => editor.formatText('redo') }, // Changed icon to class name
     { command: 'tagSelector', icon: 'tag', title: 'Tags', action: (editor) => this.toggleTagSelector() }, // Add TagSelector button
-    { command: 'toggleDarkMode', icon: 'dark-mode', title: 'Toggle Dark Mode', action: (editor) => editor.toggleDarkMode() }, // Changed icon to class name
+    { command: 'toggleDarkMode', icon: 'dark-mode', title: 'Toggle Dark Mode', action: (editor) => editor.toggleDarkMode() } // Changed icon to class name
   ];
 
   private isTagSelectorVisible = false;
@@ -51,7 +51,7 @@ export class ToolbarManager {
     this.isTagSelectorVisible = !this.isTagSelectorVisible;
     if (this.isTagSelectorVisible) {
       if (!this.tagSelector) {
-        this.tagSelector = new TagSelector(this.editor.getEditorElement()[0] as HTMLElement, 'page'); // Assuming 'page' is the tagName
+        this.tagSelector = new TagSelector(this.editor.getEditorElement()[0] as HTMLElement, this.editor.currentObject.id); // Assuming 'page' is the tagName
       } else {
         this.tagSelector.render(); // Re-render the TagSelector
       }

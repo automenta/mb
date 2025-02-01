@@ -18,15 +18,14 @@ export default class Editor {
     private readonly awareness: AwarenessManager;
     public readonly rootElement: HTMLElement;
     private tagSelector: TagSelector;
-    private darkMode = false;
 
     public currentObject?: NObject | Y.Map<any>;
     public isPublic: boolean;
 
     public toggleDarkMode(): void {
-        this._darkMode = !this._darkMode;
+        this.darkMode = !this.darkMode;
         //this.config.app.toggleDarkMode();
-        this.rootElement.classList.toggle('dark-mode', this._darkMode);
+        this.rootElement.classList.toggle('dark-mode', this.darkMode);
     }
 
     private applyFormat(command: string, value: string | undefined = undefined): void {
@@ -47,7 +46,7 @@ export default class Editor {
         // console.log('Editor.constructor: this.doc:', this.doc); // Add log
         this.rootElement = config.ele as HTMLElement; // Cast to HTMLElement
         this.isPublic = false;
-        // console.log('Editor.constructor: rootElement:', this.rootElement);
+        // Initialize TagSelector
         this.tagSelector = new TagSelector(this.rootElement);
 
         if (config.currentObject instanceof Y.Map) {
@@ -175,7 +174,7 @@ export default class Editor {
             this.saveCurrentObject();
             this.meta.showToast('Document saved');
         }
-    }
+    }    
 
     private saveCurrentObject() {
         if (this.currentObject instanceof Y.Map) {
@@ -189,15 +188,6 @@ export default class Editor {
             this.currentObject.text = (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML;
             this.currentObject.tags = this.tagSelector.getTags();
             this.config.db.persistDocument(this.currentObject);
-        }
-    }
-
-    public loadObject(objectId: string): void {
-        const obj = this.config.db.get(objectId);
-        if (obj) {
-            this.loadDocument(obj);
-        } else {
-            console.error('Failed to load object:', objectId);
         }
     }
 
@@ -245,6 +235,7 @@ export default class Editor {
             if (tags) {
                 this.tagSelector.setTags(tags);
             }
+            this.tagSelector.setTagName(object.get('id'));
         } else if (object instanceof NObject) {
             (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML = object.text.toString();
             (this.rootElement.querySelector('.document-title') as HTMLInputElement).value = object.name;
@@ -339,7 +330,6 @@ export default class Editor {
     private readonly awareness: AwarenessManager;
     public readonly rootElement: HTMLElement;
     private tagSelector: TagSelector;
-    private darkMode = false;
 
     public currentObject?: NObject | Y.Map<any>;
     public isPublic: boolean;
@@ -368,7 +358,7 @@ export default class Editor {
         // console.log('Editor.constructor: this.doc:', this.doc); // Add log
         this.rootElement = config.ele as HTMLElement; // Cast to HTMLElement
         this.isPublic = false;
-        // console.log('Editor.constructor: rootElement:', this.rootElement);
+        // Initialize TagSelector
         this.tagSelector = new TagSelector(this.rootElement);
 
         if (config.currentObject instanceof Y.Map) {
@@ -495,7 +485,7 @@ export default class Editor {
             this.saveCurrentObject();
             this.meta.showToast('Document saved');
         }
-    }
+    }    
 
     private saveCurrentObject() {
         if (this.currentObject instanceof Y.Map) {
