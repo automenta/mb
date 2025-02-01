@@ -22,7 +22,7 @@ export default class ViewManager {
     private initializeViews(): void {
         // Initialize views here
         this.views = {
-            'db-view': new DBView($('#db-view')), // Initialize DBView - corrected initialization
+            'db-view': new DBView(this.app, $('#db-view'), this.app.db), // Initialize DBView with app and db
             'net-view': new NetView($('#net-view'), this.app.net),
             // 'match-view': new MatchView($('#match-view'), this.app.match), // Commented out for now
             'profile-view': new MeView($('#profile-view'), this.store.getUser.bind(this.store), this.app.getAwareness.bind(this.app), this.app.db),
