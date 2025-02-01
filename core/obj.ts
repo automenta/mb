@@ -143,26 +143,6 @@ export default class NObject {
         this.updateArray(this.sharedWith, userId, false);
     }
 
-    toJSON(): any {
-        const jsonObj: { [key: string]: any } = {};
-        this.root.forEach((value, key) => {
-            if (value instanceof Y.AbstractType) {
-                jsonObj[key] = value.toJSON();
-            } else {
-                jsonObj[key] = value;
-            }
-        });
-        return jsonObj;
-    }
-
-    getMetadata(key: string): any {
-        return this.meta.get(key);
-    }
-
-    setMetadata(key: string, value: any): void {
-        this.updateMetadata({[key]: value});
-    }
-
     async generateKeyPair() {
         try {
             const keyPair = await crypto.subtle.generateKey(
@@ -190,21 +170,23 @@ export default class NObject {
         this.root.unobserveDeep(fn);
     }
 
-    toJSON(): any {
-        return this.root.toJSON();
-    }
-
-    getMetadata(key: string): any {
-        return this.meta.get(key);
-    }
-
-    setMetadata(key: string, value: any): void {
-        this.updateMetadata({[key]: value});
-    }
-
     protected getOrInitSubMap(key: string, initialData: [string, any][] = []): Y.Map<any> {
-        let y = (this.root.get(key) instanceof Y.Map ? this.root.get(key) : this.root.set(key, new Y.Map()).get(key)) as Y.Map<any>;
-        return y ? y : new Y.Map<any>();
+        let ymap = this.root.get(key);
+        if (!(ymap instanceof Y.Map)) {
+            ymap = new Y.Map();
+            this.root.set(key, ymap);
+        }
+        // Set initial data if provided
+        if (initialData.length > 0) {
+            this.doc.transact(() => {
+                initialData.forEach(([k, v]) => {
+                    if (!ymap.has(k)) {
+                        ymap.set(k, v);
+                    }
+                });
+            });
+        }
+        return ymap;
     }
 
     // Helper method for adding to Y.Array

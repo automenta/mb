@@ -142,9 +142,9 @@ describe("DB", () => {
             expect(provider.doc).toBe(doc);
         });
 
-        it('log synced event when provider completes synchronization', () => {
-            const provider = new IndexeddbPersistence('testdb', ydoc);
-            const db = new DB('testuser', provider);
+        it('log synced event when provider completes synchronization', async () => {
+            const provider = new IndexeddbPersistence('testdb', doc);
+            const db = new DB('testuser', doc, provider);
             // Verify initial state
             expect(provider.synced).toBe(false);
 
