@@ -114,7 +114,7 @@ export default class Sidebar {
             this.matchingView = new MatchingView($mainView[0], app, app.match); // Pass app and matching instance to MatchingView
 
         if (app.db) {
-            this.meView = new MeView($mainView, app.store.getUser.bind(app.store), app.getAwareness.bind(app), app.db);
+            this.meView = new MeView($mainView, app);
             this.dbView = new DBView($mainView[0], app); // Pass app instance
             this.notificationsView = new NotificationsView($mainView[0], app.db, app.editor!.loadDocument.bind(app.editor!));
         }

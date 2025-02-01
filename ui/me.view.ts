@@ -33,14 +33,52 @@ class PresenceManager {
   }
 }
 
+import DB from '../core/db';
+
+import { $, Y } from './imports';
+import { Tags } from '../core/tags';
+import userTagsJson from '../tag/user.json';
+import { UserTags } from './tag';
+import { validateSocialLink } from './util/validate';
+import { UserInfo } from './types';
+import { renderTagForm } from './util/form';
+import App from './app'; // Import App
+
+const tags = new Tags();
+tags.register('user', userTagsJson);
+const userTags: UserTags = tags.get('user') as UserTags;
+
+class PresenceManager {
+  private awareness: Awareness;
+  private presenceTimeout: number = 30000; // 30 seconds
+
+  constructor(doc: Y.Doc) {
+    this.awareness = new Awareness(doc);
+    this.startPresenceTracking();
+  }
+
+  private startPresenceTracking() {
+    setInterval(() => {
+      const states = this.awareness.getStates();
+      states.forEach((state, clientId) => {
+        if (Date.now() - state.lastActive > this.presenceTimeout) {
+          this.awareness.setLocalState({ status: 'away' });
+        }
+      });
+    }, 5000);
+  }
+}
+
 export default class MeView {
   readonly getUser: () => UserInfo;
     private $: (selector: string, context?: any) => JQuery;
     private db: DB;
+    app: App; // Add App instance
 
-    constructor(ele: JQuery, getUser: () => UserInfo, db: DB) {
-        this.getUser = getUser;
-        this.db = db;
+    constructor(ele: JQuery, app: App) { // Modify constructor to accept App
+        this.app = app; // Store App instance
+        this.getUser = () => this.app.store.currentUser!; // Get user from app.store
+        this.db = app.db; // Get db from app
         this.$ = (selector, context?) => $(selector, context || ele);
     }
 
@@ -50,10 +88,11 @@ export default class MeView {
       const reader = new FileReader();
       reader.onload = (event: any) => { // Type event as any to access target.result
         const user = this.getUser();
-        this.awareness().setLocalStateField('user', {
+        this.app.store.currentUser = { // Update currentUser in store
           ...user,
           avatar: event?.target?.result as string
-        });
+        };
+        this.app.store.notifyListeners(); // Notify store listeners
       };
       reader.readAsDataURL(file);
     }
@@ -87,11 +126,12 @@ export default class MeView {
 
       if (tagsConfig) {
         (current as any)[field] = value;
-        this.awareness().setLocalStateField('user', user);
+        this.app.store.currentUser = user; // Update currentUser in store
+        this.app.store.notifyListeners(); // Notify store listeners
       }
     }
   }
-  
+
   render() {
     const user = this.getUser();
 
@@ -194,7 +234,7 @@ export default class MeView {
         $('<div/>', { class: 'profile-actions' }).append(
           $('<button/>', { class: 'save-btn', text: '💾 Save Changes' }).on('click', () => {
             const user = this.getUser();
-            this.db.config.setUserProfile(user);
+            this.app.db.config.setUserProfile(user); // Use app.db to save profile
             alert('Profile changes saved!');
           }),
           $('<button/>', { class: 'cancel-btn', text: '❌ Cancel' }).on('click', () => {
