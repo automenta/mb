@@ -22,18 +22,11 @@ export interface ToolbarItem {
   handler?: () => void;
 }
 
-export interface EditorConfig {
-  ele: HTMLElement;
-  db: DB;
-  getAwareness: () => Awareness;
-  app: App;
-  networkStatusCallback: (status: boolean) => void;
-  currentObject?: NObject | YMap<any>;
-  isReadOnly?: boolean;
   net?: {
     bindDocument: (doc: YDoc) => void;
     syncAwareness: (state: Awareness) => void;
   };
+  ydoc: YDoc; // Add ydoc to EditorConfig
   ydoc: YDoc; // Add ydoc to EditorConfig
 }
 

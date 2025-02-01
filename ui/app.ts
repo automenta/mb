@@ -4,7 +4,7 @@ import { Editor } from './editor/editor';
 import DB from '../core/db';
 import Matching from '../core/match';
 import Network from '../core/net';
-import { getStore, Store } from './store';
+import NObject from '../core/obj';
 import { Awareness } from 'y-protocols/awareness';
 import ViewManager from './view-manager';
 import { Tags } from "../core/tags";
@@ -36,12 +36,6 @@ class ThemeManager {
     }
 }
 
-export default class App {
-    readonly channel: string;
-    private socket: Socket;
-    db: DB;
-    net: Network;
-    match: Matching;
     public store: Store;
     public ele: HTMLElement;
     themes: ThemeManager;
@@ -55,9 +49,20 @@ export default class App {
         this.match = new Matching(this.db, this.net);
 
         this.ele = $(rootElement);
+    constructor(channel: string, rootElement: HTMLElement) {
+        this.channel = channel;
+        this.db = new DB(channel);
+        this.net = new Network(channel, this.db);
+        this.match = new Matching(this.db, this.net);
+
+        this.ele = $(rootElement);
         this.store = getStore(this.db);
         this.themes = new ThemeManager(this.ele);
         this.tags = new Tags();
+
+    getSelectedObject(): any | null {
+        return this.store.currentObject;
+    }
 
         this.views = new ViewManager(this, this.store); // Initialize ViewManager
         this.views.showView('db-view'); // Show initial view
@@ -71,24 +76,7 @@ export default class App {
             this.initWebSocket();
     }
 
-    private initWebSocket() {
-        this.socket = io(); // Initialize socket connection
-        this.socket.on('connect_error', (err) => {
-            //console.error("Connection error:", err);
-            this.store.setNetworkStatus('error');
-        });
 
-        this.socket.on('connect', () => {
-            //console.log("Connected to WebSocket server");
-            this.store.setNetworkStatus('connected');
-        });
-
-        this.socket.on('disconnect', () => {
-            //console.log("Disconnected from WebSocket server");
-            this.store.setNetworkStatus('disconnected');
-        });
-    getSelectedObject(): any | null {
-        return this.store.currentObject;
     }
 
     public render(): void {
@@ -113,15 +101,18 @@ export default class App {
                 </div>
             </div>
         `);
+    }
+
     getAwareness(): Awareness {
         return this.net!.net.awareness;
     }
 
-    mount(ele: HTMLElement) {
-        $(ele).append(this.ele);
-    }
 
-    getObject(id: string): any {
-        return this.db?.get(id);
+    createNewObject(): void {
+        const newObj = new NObject(this.db.doc);
+        newObj.name = 'New Object';
+        newObj.author = this.store.currentUser?.userId || '';
+        this.db.add(newObj);
+        this.store.addObject(newObj);
     }
 }
