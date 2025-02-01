@@ -98,6 +98,7 @@ interface NetworkEventData {
 
 import {WebrtcProvider} from 'y-webrtc';
 import DB from "./db";
+import {events} from './events';
 
 /**
  * Network class handles WebRTC connections and document synchronization
@@ -107,12 +108,11 @@ import DB from "./db";
 class Network {
 
     readonly channel: string;
-    net!: WebrtcProvider;
     private db: DB;
     private docsShared: Set<string>;
-    private readonly metrics: NetworkMetrics;
+    private readonly metrics: NetworkMetrics; // Use the NetworkMetrics class
+    net!: WebrtcProvider;
     private readonly signalingServers: string[];
-+
 
     constructor(channel: string, db: DB) {
         this.channel = channel;
@@ -162,162 +162,113 @@ class Network {
         });
 
         this.net.awareness.on('change', (changes: any) => this.emit(AWARENESS_UPDATE, {changes}));
-    }
-.
 
-setLocalStateField(
+        this.net.awareness.setLocalStateField('user', {
+            id: this.db.userID,
+            name: 'Anonymous',
+            color: '#' + Math.floor(Math.random() * 16777215).toString(16),
+        });
 
+        // Track peer connections
+        this.net.on('peers', ({added, removed}) => {
+            added.forEach(id => {
+                this.metrics.addPeerConnected(id);
+                this.emit(PEER_CONNECTED, {peerId: id});
+            });
+            removed.forEach(id => {
+                this.metrics.removePeerConnected(id);
+                this.emit(PEER_DISCONNECTED, {peerId: id});
+            });
+        });
 
+        this.net.awareness.on('change', (changes: any) => this.emit(AWARENESS_UPDATE, {changes}));
 
-.
+        this.enableEncryption(); // Call enableEncryption after reset
 
-    floor(Math
-
-        random()).
-
-    * 16777215
-
-ring(
-
-
-),
-}
-
-)
-
-
-// Track peer connections
-this.net.on('peers', ({added, removed}) => {
-    added.forEach(id => {
-        this.metrics.addPeerConnected(id);
-        this.emit(PEER_CONNECTED, {peerId: id});
-    });
-    removed.forEach(id => {
-        this.metrics.removePeerConnected(id);
-        this.emit(PEER_DISCONNECTED, {peerId: id});
-    });
-});
-
-this.net.awareness.on('change', (changes: any) => this.emit(AWARENESS_UPDATE, {changes}));
-
-this.enableEncryption(); // Call enableEncryption after reset
-}
-
-private
-enableEncryption()
-{
-    /**
-     * End-to-end encryption for WebRTC data channels is provided by DTLS,
-     * which is a standard security feature of WebRTC and is utilized by y-webrtc by default.
-     * No additional implementation is needed here.
-     */
-}
-addBootstrap(url
-:
-string
-)
-{
-    const urlObj = new URL(url);
-    if (!urlObj.protocol.startsWith('ws')) {
-        console.warn("Invalid bootstrap URL protocol:", urlObj.protocol);
-        return;
-    }
-    if (this.signalingServers.includes(url)) {
-        console.warn("Bootstrap URL already added:", url);
-        return;
     }
 
-    this.signalingServers.push(url);
-    localStorage.setItem('signalingServers', JSON.stringify(this.signalingServers));
-    console.log("Bootstrap URL added:", url);
-    this.reset(); // Reconnect with new signaling servers
-}
 
-removeBootstrap(url
-:
-string
-)
-{
-    const index = this.signalingServers.indexOf(url);
-    if (index > -1) {
-        this.signalingServers.splice(index, 1);
+    private enableEncryption() {
+        /**
+         * End-to-end encryption for WebRTC data channels is provided by DTLS,
+         * which is a standard security feature of WebRTC and is utilized by y-webrtc by default.
+         * No additional implementation is needed here.
+         */
+    }
+
+    addBootstrap(url: string) {
+        const urlObj = new URL(url);
+        if (!urlObj.protocol.startsWith('ws')) {
+            console.warn("Invalid bootstrap URL protocol:", urlObj.protocol);
+            return;
+        }
+        if (this.signalingServers.includes(url)) {
+            console.warn("Bootstrap URL already added:", url);
+            return;
+        }
+
+        this.signalingServers.push(url);
         localStorage.setItem('signalingServers', JSON.stringify(this.signalingServers));
-        console.log("Bootstrap URL removed:", url);
-        this.reset(); // Reconnect without the removed signaling core
+        console.log("Bootstrap URL added:", url);
+        this.reset(); // Reconnect with new signaling servers
     }
-}
 
-shareObject(pageId
-:
-string
-)
-{
-    if (this.docsShared.has(pageId)) {
-        console.warn(`Document "${pageId}" already shared.`);
-        return;
+    removeBootstrap(url: string) {
+        const index = this.signalingServers.indexOf(url);
+        if (index > -1) {
+            this.signalingServers.splice(index, 1);
+            localStorage.setItem('signalingServers', JSON.stringify(this.signalingServers));
+            console.log("Bootstrap URL removed:", url);
+            this.reset(); // Reconnect without the removed signaling core
+        }
     }
-    this.docsShared.add(pageId);
-    this.emit(OBJECT_SHARED, {pageId});
-}
 
-unshareObject(pageId
-:
-string
-)
-{
-    if (!this.docsShared.has(pageId)) {
-        console.warn(`Object "${pageId}" not currently shared.`);
-        return;
+    shareObject(pageId: string) {
+        if (this.docsShared.has(pageId)) {
+            console.warn(`Document "${pageId}" already shared.`);
+            return;
+        }
+        this.docsShared.add(pageId);
+        this.emit(OBJECT_SHARED, {pageId});
     }
-    this.docsShared.delete(pageId);
-    this.emit(OBJECT_UNSHARED, {pageId});
-}
 
-getNetworkStats()
-:
-ReturnType<NetworkMetrics['getMetrics']> & {awareness: any[]}
-{
-    const metricsData = this.metrics.getMetrics();
-    return {
-        messagesSent: metricsData.messagesSent,
-        messagesReceived: metricsData.messagesReceived,
-        bytesTransferred: metricsData.bytesTransferred,
-        peersConnected: this.metrics.getPeersConnected(),
-        awareness: this.net?.awareness
-            ? Array.from(this.net.awareness.getStates().values())
-                .map(state => ({
-                    clientID: state.user?.id,
-                    userName: state.user?.name,
-                    userColor: state.user?.color,
-                    lastActive: state.lastActive,
-                    // ... any other relevant awareness info
-                }))
-            : [] // Default to empty array if awareness is undefined
-    };
-}
+    unshareObject(pageId: string) {
+        if (!this.docsShared.has(pageId)) {
+            console.warn(`Object "${pageId}" not currently shared.`);
+            return;
+        }
+        this.docsShared.delete(pageId);
+        this.emit(OBJECT_UNSHARED, {pageId});
+    }
 
-on(event
-:
-NetworkEventType, listener
-:
-{
-    (value: unknown): void
-}
-):
-void {
-    events.on(event, listener); // No prefix needed, using Symbols directly
-}
+    getNetworkStats(): ReturnType<NetworkMetrics['getMetrics']> & { awareness: any[] } {
+        const metricsData = this.metrics.getMetrics();
+        return {
+            messagesSent: metricsData.messagesSent,
+            messagesReceived: metricsData.messagesReceived,
+            bytesTransferred: metricsData.bytesTransferred,
+            peersConnected: this.metrics.getPeersConnected(),
+            awareness: this.net?.awareness
+                ? Array.from(this.net.awareness.getStates().values())
+                    .map(state => ({
+                        clientID: state.user?.id,
+                        userName: state.user?.name,
+                        userColor: state.user?.color,
+                        lastActive: state.lastActive,
+                        // ... any other relevant awareness info
+                    }))
+                : [] // Default to empty array if awareness is undefined
+        };
+    }
 
-emit(event
-:
-NetworkEventType, value
-:
-NetworkEventData
-):
-void {
-    events.emit(event, {...value, stats: this.getNetworkStats()});
-    events.emit(NETWORK_ACTIVITY, {type: event, ...value, stats: this.getNetworkStats(), timestamp: Date.now()});
-}
+    on(event: NetworkEventType, listener: { (value: unknown): void }): void {
+        events.on(event, listener); // No prefix needed, using Symbols directly
+    }
+
+    emit(event: NetworkEventType, value: NetworkEventData): void {
+        events.emit(event, {...value, stats: this.getNetworkStats()});
+        events.emit(NETWORK_ACTIVITY, {type: event, ...value, stats: this.getNetworkStats(), timestamp: Date.now()});
+    }
 }
 
 export default Network;

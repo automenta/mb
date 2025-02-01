@@ -43,6 +43,9 @@ export default class App {
     private themes: ThemeManager;
     private views: ViewManager;
     private sidebar: Sidebar;
+    private db: DB;
+    private net: Network;
+    private match: Matching;
 
     constructor(channel: string, config: AppConfig) {
         this.channel = channel;
@@ -97,7 +100,7 @@ export default class App {
         newObj.name = 'New Object';
         newObj.author = this.store.currentUser?.userId ?? 'Anonymous'; // Handle anonymous user
         newObj.public = false; // Ensure new objects are private by default
-        +newObj.isQuery = false; // Default to not being a query
+        newObj.isQuery = false; // Default to not being a query
         this.db.add(newObj);
         this.store.addObject(newObj);
         this.editor?.loadDocument(newObj);
