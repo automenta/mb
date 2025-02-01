@@ -1,13 +1,13 @@
-import {$, App, Awareness, NObject, Tags, Y} from '../imports';
-import {EditorConfig} from '../types'; // Import EditorConfig
-import type {Doc as YDoc} from 'yjs'; // Import Doc type
-import {ToolbarManager} from './toolbar-manager';
-import {MetadataManager} from './metadata-manager';
-import {AwarenessManager} from './awareness-manager';
+import { $, App, Awareness, NObject, Tags, Y } from '../imports';
+import { EditorConfig } from '../types'; // Import EditorConfig
+import type { Doc as YDoc } from 'yjs'; // Import Doc type
+import { ToolbarManager } from './toolbar-manager';
+import { MetadataManager } from './metadata-manager';
+import { AwarenessManager } from './awareness-manager';
 import EditorCore from './editor-core';
 import UIBuilder from './ui-builder';
 import TagSelector from './tag-selector';
-import {randomUUID} from "crypto";
+import { randomUUID } from "crypto";
 
 export default class Editor {
     public editorCore: EditorCore;
@@ -18,7 +18,7 @@ export default class Editor {
     private readonly awareness: AwarenessManager;
     public readonly rootElement: HTMLElement;
     private tagSelector: TagSelector;
-    private _darkMode = false;
+    private darkMode = false;
 
     public currentObject?: NObject | Y.Map<any>;
     public isPublic: boolean;
