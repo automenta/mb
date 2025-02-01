@@ -87,7 +87,12 @@ export default class App {
 
 
     public render(): void {
-        $(this.ele).html('<div class="container"><div class="sidebar"></div><div class="main-view"></div></div>');
+        $(this.ele).html(`
+            <div class="container">
+                <aside class="sidebar"></aside>
+                <main class="main-view"></main>
+            </div>
+        `);
     }
 
     getAwareness(): Awareness {
