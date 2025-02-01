@@ -326,40 +326,41 @@ class MatchingView {
             if (!canvas || !(canvas instanceof HTMLCanvasElement)) return;
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
-            // this.chart = new Chart(ctx, {
-            //     type: 'line',
-            //         labels: [],
-            //         datasets: [
-            //             {
-            //                 label: 'Pages Processed',
-            //                  [],
-            //                 borderColor: 'rgba(75, 192, 192, 1)',
-            //                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            //             },
-            //             {
-            //                 label: 'Matches Found',
-            //                  [],
-            //                 borderColor: 'rgba(255, 99, 132, 1)',
-            //                 backgroundColor: 'rgba(255, 99, 132, 0.2)',
-            //             },
-            //             {
-            //                 label: 'Worker Capacity',
-            //                  [],
-            //                 borderColor: 'rgba(54, 162, 235, 1)',
-            //                 backgroundColor: 'rgba(54, 162, 235, 0.2)',
-            //             }
-            //         ]
-            //     ,
-            //     options: {
-            //         responsive: true,
-            //         maintainAspectRatio: false,
-            //         scales: {
-            //             y: {
-            //                 beginAtZero: true
-            //             }
-            //         }
-            //     }
-            // });
+            this.chart = new Chart(ctx, {
+                type: 'line',
+                     {
+                        labels: [],
+                        datasets: [
+                            {
+                                label: 'Pages Processed',
+                                 [],
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            },
+                            {
+                                label: 'Matches Found',
+                                 [],
+                                borderColor: 'rgba(255, 99, 132, 1)',
+                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            },
+                            {
+                                label: 'Worker Capacity',
+                                 [],
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            }
+                        ]
+                    },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
         }
 
         this.chart.data.labels = this.history.timestamps.map(ts => new Date(ts).toLocaleTimeString());
