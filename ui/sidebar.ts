@@ -111,7 +111,7 @@ export default class Sidebar {
         this.agentsView = new AgentsView($mainView);
         this.netView = new NetView($mainView, app); // Pass app instance to NetView
         if (app.match)
-            this.matchingView = new MatchingView($mainView[0], app); // Pass app instance to MatchingView
+            this.matchingView = new MatchingView($mainView[0], app, app.match); // Pass app and matching instance to MatchingView
 
         if (app.db) {
             this.meView = new MeView($mainView, app.store.getUser.bind(app.store), app.getAwareness.bind(app), app.db);

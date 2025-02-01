@@ -81,13 +81,15 @@ class MatchingView {
     };
     updateTimer: any;
     chart: any;
+    app: App;
 
-   constructor(root: JQuery, matching: MatchingInterface) {
+   constructor(root: JQuery, app: App, matching: MatchingInterface) {
         this.matching = matching;
         this.root = root;
         this.ele = $('<div>').addClass('matching-dashboard');
         this.settings.workerCapacity = matching.workerCapacity;
         this.settings.processInterval = matching.processInterval / 1000;
+        this.app = app;
 
         const handleMatchingMetrics = (e: any) => this.updateMetrics(e.detail as MatchingMetrics);
         const handleActivity = (e: any) => this.logActivity(e.detail as ActivityEvent);
@@ -186,6 +188,14 @@ class MatchingView {
 
    render(): JQuery {
         this.ele.empty().html(this.template());
+        this.ele.append('<p>Pages Processed: <span id="pages-processed">0</span></p>');
+        this.ele.append('<p>Matches Found: <span id="matches-found">0</span></p>');
+        this.ele.append('<p>Processing Time: <span id="processing-time">0</span> ms</p>');
+
+        this.updateMetrics(); // Initial metrics update
+        setInterval(() => this.updateMetrics(), 5000); // Update metrics every 5 seconds
+
+
         if (this.root && this.root.length) {
             this.root.append(this.ele);
             this.bindControls();
@@ -368,6 +378,17 @@ class MatchingView {
         this.chart.data.datasets[1].data = this.history.matchesFound;
         this.chart.data.datasets[2].data = this.history.workerCapacity.map(c => c * 100);
         this.chart.update();
+    }
+
+    private updateMetrics(): void {
+        if (!this.matching || !this.ele) {
+            console.warn('Matching or element not initialized.');
+            return;
+        }
+        const metrics = this.matching.getMetrics();
+        this.ele.find('#pages-processed').text(metrics.pagesProcessed);
+        this.ele.find('#matches-found').text(metrics.matchesFound);
+        this.ele.find('#processing-time').text(metrics.processingTime);
     }
 }
 
