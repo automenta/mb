@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, ipcMain } = require('electron');
+const {app, BrowserWindow, Tray, Menu, ipcMain} = require('electron');
 const path = require('path');
 
 let mainWindow;
@@ -25,7 +25,7 @@ function createWindow() {
 
 function updateTrayMenu() {
     tray.setContextMenu(Menu.buildFromTemplate([
-        { label: 'Open', click: () => mainWindow.show() },
+        {label: 'Open', click: () => mainWindow.show()},
         {
             label: isPaused ? 'Resume Analysis' : 'Pause Analysis',
             click: () => {
@@ -34,7 +34,7 @@ function updateTrayMenu() {
                 mainWindow.webContents.send('update-status', isPaused ? 'Paused' : 'Running');
             }
         },
-        { label: 'Exit', click: () => app.quit() }
+        {label: 'Exit', click: () => app.quit()}
     ]));
 }
 
@@ -45,6 +45,13 @@ function createTray() {
     tray.setToolTip('Screenshot Analyzer');
 }
 
-app.whenReady().then(() => { createWindow(); createTray(); });
-app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
-app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+app.whenReady().then(() => {
+    createWindow();
+    createTray();
+});
+app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+});
+app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit();
+});

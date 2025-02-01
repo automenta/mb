@@ -2,16 +2,16 @@ import {afterAll, beforeAll, describe, expect, it} from 'vitest';
 import {Server as SocketIOServer, Socket} from 'socket.io';
 import {Server as HTTPServer} from 'http';
 import {io as Client, Socket as ClientSocket} from 'socket.io-client';
-import { createLibp2p } from 'libp2p';
-import { createEd25519PeerId } from '@libp2p/peer-id-factory';
-import { webSockets } from '@libp2p/websockets';
-import { Noise } from '@chainsafe/libp2p-noise';
-import { mplex } from '@libp2p/mplex';
-import { Bootstrap } from '@libp2p/bootstrap';
-import { GossipSub } from '@chainsafe/libp2p-gossipsub';
-import type { Libp2p } from 'libp2p';
+import type {Libp2p} from 'libp2p';
+import {createLibp2p} from 'libp2p';
+import {createEd25519PeerId} from '@libp2p/peer-id-factory';
+import {webSockets} from '@libp2p/websockets';
+import {Noise} from '@chainsafe/libp2p-noise';
+import {mplex} from '@libp2p/mplex';
+import {Bootstrap} from '@libp2p/bootstrap';
+import {GossipSub} from '@chainsafe/libp2p-gossipsub';
 import {AddressInfo} from 'net';
-import { createServer } from "../../server/server"; // Corrected import
+import {createServer} from "../../server/server"; // Corrected import
 import P2PNode from '../../server/p2p';
 
 describe('End-to-End Tests', () => {
@@ -28,7 +28,7 @@ describe('End-to-End Tests', () => {
 
     beforeAll(async () => {
         // Create and start the Express server
-        const { server: startedServer, io: startedIo } = await createServer();
+        const {server: startedServer, io: startedIo} = await createServer();
         server = startedServer;
         io = startedIo;
 
@@ -140,11 +140,11 @@ describe('End-to-End Tests', () => {
         expect(connection.stat.status).toBe('OPEN');
         expect(connection.stat.timeline.open).toBeDefined();
         expect(connection.stat.timeline.close).toBeUndefined();
-        
+
         // Verify both nodes have each other in their peer stores
         const node1Peers = await libp2pNode1.peerStore.all();
         const node2Peers = await libp2pNode2.peerStore.all();
-        
+
         expect(node1Peers.some(p => p.id.toString() === peerId2.toString())).toBe(true);
         expect(node2Peers.some(p => p.id.toString() === peerId1.toString())).toBe(true);
     });
@@ -165,7 +165,7 @@ describe('End-to-End Tests', () => {
 
     it('should authenticate valid WebSocket connections', async () => {
         const validToken = 'token1';
-        const authClientSocket = Client(serverUrl, { auth: { token: validToken } });
+        const authClientSocket = Client(serverUrl, {auth: {token: validToken}});
 
         await new Promise<void>((resolve) => {
             authClientSocket.on('connect', () => {
@@ -179,15 +179,15 @@ describe('End-to-End Tests', () => {
     it('should reject invalid WebSocket connections', async () => {
         const WebSocket = require('ws');
         const invalidToken = 'invalid-token';
-        
+
         const ws = new WebSocket('ws://localhost:8080?token=' + invalidToken);
-        
+
         const closed = await new Promise<boolean>((resolve) => {
             ws.on('close', () => {
                 resolve(true);
             });
         });
-        
+
         expect(closed).toBe(true);
     });
 
@@ -195,16 +195,16 @@ describe('End-to-End Tests', () => {
         const WebSocket = require('ws');
         const validToken = 'token1';
         const testMessage = 'Test WebSocket message';
-        
+
         const ws = new WebSocket('ws://localhost:8080?token=' + validToken);
-        
+
         await new Promise<void>((resolve) => {
             ws.on('open', () => {
                 ws.send(testMessage);
                 resolve();
             });
         });
-        
+
         // Verify message was handled by checking console output
         // This assumes the console.log in handleWebSocketMessage is sufficient
         // for testing purposes
@@ -212,7 +212,7 @@ describe('End-to-End Tests', () => {
             'Received WebSocket message:',
             testMessage
         );
-        
+
         ws.close();
     });
 });

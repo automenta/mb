@@ -1,11 +1,11 @@
 import $ from 'jquery';
-import type { Store } from './store';
+import type {Store} from './store';
 import type App from './app';
 import DBView from './db.view'; // Import DBView - keep this import
 import NetView from './net.view';
 // import MatchView from './match.view'; // Commented out for now
 import MeView from './me.view'; // Import MeView - keep this import
-import { SettingsView } from './settings.view'; // Import SettingsView - keep this import
+import {SettingsView} from './settings.view'; // Import SettingsView - keep this import
 
 export default class ViewManager {
     private app: App;
@@ -18,6 +18,22 @@ export default class ViewManager {
         this.initializeViews();
         this.setupNavigation();
     };
+
+    public showView(viewId: string): void {
+        $('.main-view > div').hide(); // Hide all views
+
+        if (this.views[viewId]) {
+            const view = this.views[viewId];
+
+            if (view.render) {
+                view.render();
+            }
+
+            $(`#${viewId}`).show(); // Show the selected view
+        } else {
+            console.error('View not found:', viewId);
+        }
+    }
 
     private initializeViews(): void {
         // Initialize views here
@@ -35,21 +51,5 @@ export default class ViewManager {
             const viewId = $(event.currentTarget).attr('id')!;
             this.showView(viewId);
         });
-    }
-
-    public showView(viewId: string): void {
-        $('.main-view > div').hide(); // Hide all views
-
-        if (this.views[viewId]) {
-            const view = this.views[viewId];
-
-            if (view.render) {
-                view.render();
-            }
-
-            $(`#${viewId}`).show(); // Show the selected view
-        } else {
-            console.error('View not found:', viewId);
-        }
     }
 }

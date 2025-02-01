@@ -10,7 +10,8 @@ export class QueryBuilder {
     private limit?: number;
     private offset?: number;
 
-    constructor(private readonly db: DB) {}
+    constructor(private readonly db: DB) {
+    }
 
     where(predicate: FilterPredicate): QueryBuilder {
         this.filters.push(predicate);
@@ -30,6 +31,13 @@ export class QueryBuilder {
     skip(offset: number): QueryBuilder {
         this.offset = offset;
         return this;
+    }
+
+    execute(): NObject[] {
+        let results = this.getBaseResults();
+        results = this.applyFilters(results);
+        results = this.applySorting(results);
+        return this.applyPagination(results);
     }
 
     private getBaseResults(): NObject[] {
@@ -59,12 +67,5 @@ export class QueryBuilder {
             paginated = paginated.slice(0, this.limit);
         }
         return paginated;
-    }
-
-    execute(): NObject[] {
-        let results = this.getBaseResults();
-        results = this.applyFilters(results);
-        results = this.applySorting(results);
-        return this.applyPagination(results);
     }
 }

@@ -1,16 +1,16 @@
-import { $, Y } from '../imports';
+import {$, Y} from '../imports';
 import * as jsdiff from 'diff';
-import type { EditorConfig } from '../types';
-import { MetadataManager } from './metadata-manager';
+import type {EditorConfig} from '../types';
+import {MetadataManager} from './metadata-manager';
 
 export type UpdateCallback = () => void;
 
 export default class EditorCore {
+    public editorElement: JQuery; // Publicly expose editor element
     private ytext: Y.Text | null;
     private editor: JQuery;
     private config: EditorConfig;
     private metadataManager: any; // TODO: Type this properly once MetadataManager is typed
-    public editorElement: JQuery; // Publicly expose editor element
 
     constructor(config: EditorConfig, editorInstance: any, isReadOnly: boolean) {
         if (!config.db) throw new Error('DB instance required');

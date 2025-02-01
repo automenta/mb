@@ -1,3 +1,5 @@
 {
-        "name": { "type": "string" }
+  "name": {
+    "type": "string"
+  }
 }

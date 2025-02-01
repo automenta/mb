@@ -1,61 +1,61 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import {beforeEach, describe, expect, it} from 'vitest';
 import * as Y from 'yjs';
 import NObject from '../../core/obj';
 
 describe('NObject', () => {
-  let doc: Y.Doc;
-  let obj: NObject;
+    let doc: Y.Doc;
+    let obj: NObject;
 
-  beforeEach(() => {
-    doc = new Y.Doc();
-    obj = new NObject(doc, 'test-id');
-    obj.author = 'testuser';
-  });
-
-  it('initializes with default values', () => {
-    const defaults = {
-      name: '?',
-      public: false,
-      author: 'testuser',
-      tags: [],
-      replies: [],
-      repliesTo: []
-    };
-    
-    expect(Object.entries(defaults).every(([k, v]) => 
-      Array.isArray(v) 
-        ? obj[k].length === v.length
-        : obj[k] === v
-    )).toBeTruthy();
-  });
-
-  it('handles metadata properties', () => {
-    const testData = {
-      name: 'Test Name',
-      public: true,
-      author: 'anotherUser'
-    };
-
-    Object.entries(testData).forEach(([key, value]) => {
-      obj[key] = value;
-      expect(obj[key]).toEqual(value);
+    beforeEach(() => {
+        doc = new Y.Doc();
+        obj = new NObject(doc, 'test-id');
+        obj.author = 'testuser';
     });
-  });
 
-  it('manages text content', () => {
-    const testText = 'Test text';
-    obj.text = testText;
-    expect(obj.text.toString()).toBe(testText);
-  });
+    it('initializes with default values', () => {
+        const defaults = {
+            name: '?',
+            public: false,
+            author: 'testuser',
+            tags: [],
+            replies: [],
+            repliesTo: []
+        };
 
-  it('manages tags', () => {
-    const tags = ['tag1', 'tag2'];
-    tags.forEach(t => obj.addTag(t));
-    expect(obj.tags.toArray()).toEqual(tags);
-    
-    obj.removeTag(tags[0]);
-    expect(obj.tags.toArray()).toEqual([tags[1]]);
-  });
+        expect(Object.entries(defaults).every(([k, v]) =>
+            Array.isArray(v)
+                ? obj[k].length === v.length
+                : obj[k] === v
+        )).toBeTruthy();
+    });
+
+    it('handles metadata properties', () => {
+        const testData = {
+            name: 'Test Name',
+            public: true,
+            author: 'anotherUser'
+        };
+
+        Object.entries(testData).forEach(([key, value]) => {
+            obj[key] = value;
+            expect(obj[key]).toEqual(value);
+        });
+    });
+
+    it('manages text content', () => {
+        const testText = 'Test text';
+        obj.text = testText;
+        expect(obj.text.toString()).toBe(testText);
+    });
+
+    it('manages tags', () => {
+        const tags = ['tag1', 'tag2'];
+        tags.forEach(t => obj.addTag(t));
+        expect(obj.tags.toArray()).toEqual(tags);
+
+        obj.removeTag(tags[0]);
+        expect(obj.tags.toArray()).toEqual([tags[1]]);
+    });
 
     it('add and remove replies', () => {
         obj.addReply('reply1');

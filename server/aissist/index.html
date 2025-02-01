@@ -4,17 +4,84 @@
     <meta charset="UTF-8">
     <title>Awesome Screenshot Analyzer</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9; }
-        #status { font-weight: bold; color: green; }
-        #data { margin-top: 20px; max-height: 300px; overflow-y: auto; background: #fff; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
-        pre { background: #f0f0f0; padding: 10px; border-radius: 4px; max-width: 100%; overflow: auto; }
-        #query-section { margin-top: 20px; padding: 10px; background: #fff; border: 1px solid #ccc; border-radius: 4px; }
-        #query-section h3 { margin-top: 0; }
-        label { display: inline-block; width: 100px; }
-        input[type="datetime-local"] { width: 250px; }
-        button { padding: 5px 10px; margin-top: 10px; cursor: pointer; }
-        #query-results { margin-top: 20px; max-height: 300px; overflow-y: auto; background: #fff; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
-        #notification { position: fixed; top: 20px; right: 20px; background: #444; color: #fff; padding: 15px; border-radius: 4px; opacity: 0.9; display: none; z-index: 1000; }
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f9f9f9;
+        }
+
+        #status {
+            font-weight: bold;
+            color: green;
+        }
+
+        #data {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            background: #fff;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        pre {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            max-width: 100%;
+            overflow: auto;
+        }
+
+        #query-section {
+            margin-top: 20px;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        #query-section h3 {
+            margin-top: 0;
+        }
+
+        label {
+            display: inline-block;
+            width: 100px;
+        }
+
+        input[type="datetime-local"] {
+            width: 250px;
+        }
+
+        button {
+            padding: 5px 10px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        #query-results {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            background: #fff;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        #notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #444;
+            color: #fff;
+            padding: 15px;
+            border-radius: 4px;
+            opacity: 0.9;
+            display: none;
+            z-index: 1000;
+        }
     </style>
 
 </head>
@@ -33,14 +100,13 @@
 
 <div id="query-section">
     <h3>Query Snapshots by Time Range</h3>
-    <label for="start">Start Time:</label><input type="datetime-local" id="start">
+    <label for="start">Start Time:</label><input id="start" type="datetime-local">
     <br><br>
-    <label for="end">End Time:</label><input type="datetime-local" id="end">
+    <label for="end">End Time:</label><input id="end" type="datetime-local">
     <br><br>
     <button id="query-btn">Query</button>
     <div id="query-results"><p>No query results.</p></div>
 </div>
-
 
 
 <div id="notification"></div>

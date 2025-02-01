@@ -1,4 +1,4 @@
-import { Tags } from '../imports';
+import {Tags} from '../imports';
 import TagSelector from './tag-selector';
 
 export default class UIBuilder {

@@ -1,18 +1,18 @@
-import { createLibp2p, Libp2p } from 'libp2p';
-import { bootstrap } from '@libp2p/bootstrap';
-import { kadDHT } from '@libp2p/kad-dht';
-import { webRTCStar } from '@libp2p/webrtc-star';
-import { WebSocketServer, RawData } from 'ws';
+import {createLibp2p, Libp2p} from 'libp2p';
+import {bootstrap} from '@libp2p/bootstrap';
+import {kadDHT} from '@libp2p/kad-dht';
+import {webRTCStar} from '@libp2p/webrtc-star';
+import {RawData, WebSocketServer} from 'ws';
 import * as Y from 'yjs';
-import { WebrtcProvider } from 'y-webrtc';
-import { GossipSub } from '@chainsafe/libp2p-gossipsub';
-import { Components } from '@libp2p/interface-components';
-import { MainlineDHT } from 'bittorrent-dht';
-import { EventEmitter } from 'events';
-import { noise } from '@chainsafe/libp2p-noise';
-import { mplex } from '@libp2p/mplex';
-import { PeerId } from '@libp2p/interface-peer-id';
-import { pino } from 'pino'; // Import pino logger
+import {WebrtcProvider} from 'y-webrtc';
+import {GossipSub} from '@chainsafe/libp2p-gossipsub';
+import {Components} from '@libp2p/interface-components';
+import {MainlineDHT} from 'bittorrent-dht';
+import {EventEmitter} from 'events';
+import {noise} from '@chainsafe/libp2p-noise';
+import {mplex} from '@libp2p/mplex';
+import {PeerId} from '@libp2p/interface-peer-id';
+import {pino} from 'pino'; // Import pino logger
 
 interface P2PNodeOptions {
     peerId: PeerId;
@@ -28,7 +28,7 @@ export default class P2PNode extends EventEmitter { // Changed to default export
     constructor(options: P2PNodeOptions, roomName: string = 'your-room-name') { // Added roomName parameter with default
         super();
         this.dht = new MainlineDHT();
-        this.wss = new WebSocketServer({ port: 8080 });
+        this.wss = new WebSocketServer({port: 8080});
 
         this.wss.on('connection', (ws, req) => {
             const token = new URLSearchParams(req.url?.split('?')[1] || '').get('token');
@@ -65,6 +65,29 @@ export default class P2PNode extends EventEmitter { // Changed to default export
         this.dht.destroy();
         this.wss.close();
         this.provider.destroy();
+    }
+
+    async sendGossipMessage(topic: string, message: string) {
+        if (!this.node) throw new Error('Libp2p node is not initialized');
+        await this.node.pubsub.publish(topic, Buffer.from(message));
+    }
+
+    async getPeers() {
+        if (!this.node) throw new Error('Libp2p node is not initialized');
+        return this.node.peerStore.getPeers();
+    }
+
+    async findNode(id: string) {
+        return new Promise((resolve, reject) => {
+            this.dht.lookup(id, (err, res) => {
+                if (err) reject(err);
+                resolve(res);
+            });
+        });
+    }
+
+    getMultiaddrs() {
+        return this.node?.getAddresses() || [];
     }
 
     private authenticatePeer(token: string | null): boolean {
@@ -104,7 +127,7 @@ export default class P2PNode extends EventEmitter { // Changed to default export
                 mplex()
             ],
             peerDiscovery: [
-                bootstrap({ list: bs })
+                bootstrap({list: bs})
             ],
             dht: kadDHT(),
             pubsub: new GossipSub({
@@ -133,28 +156,5 @@ export default class P2PNode extends EventEmitter { // Changed to default export
             console.log('Found peer:', peer);
             this.emit('dht:peer', peer);
         });
-    }
-
-    async sendGossipMessage(topic: string, message: string) {
-        if (!this.node) throw new Error('Libp2p node is not initialized');
-        await this.node.pubsub.publish(topic, Buffer.from(message));
-    }
-
-    async getPeers() {
-        if (!this.node) throw new Error('Libp2p node is not initialized');
-        return this.node.peerStore.getPeers();
-    }
-
-    async findNode(id: string) {
-        return new Promise((resolve, reject) => {
-            this.dht.lookup(id, (err, res) => {
-                if (err) reject(err);
-                resolve(res);
-            });
-        });
-    }
-
-    getMultiaddrs() {
-        return this.node?.getAddresses() || [];
     }
 }

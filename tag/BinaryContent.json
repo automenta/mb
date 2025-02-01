@@ -1,4 +1,9 @@
 {
-        "content": { "type": "string", "contentEncoding": "base64" },
-        "mimeType": { "type": "string" }
+  "content": {
+    "type": "string",
+    "contentEncoding": "base64"
+  },
+  "mimeType": {
+    "type": "string"
+  }
 }

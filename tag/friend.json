@@ -2,7 +2,9 @@
   "title": "Friend",
   "description": "Extended user tags for friend relationships",
   "allOf": [
-    { "$ref": "user.json" }
+    {
+      "$ref": "user.json"
+    }
   ],
   "properties": {
     "userType": {
@@ -18,10 +20,16 @@
       "type": "array",
       "items": {
         "type": "string",
-        "enum": ["chat", "gaming", "projects"]
+        "enum": [
+          "chat",
+          "gaming",
+          "projects"
+        ]
       },
       "description": "List of shared activities with this friend"
     }
   },
-  "required": ["friendshipDate"]
+  "required": [
+    "friendshipDate"
+  ]
 }

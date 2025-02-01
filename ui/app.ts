@@ -1,18 +1,13 @@
 import $ from 'jquery';
-import Editor from './editor/editor';
+import Editor from './editor/editor'; // Import Editor
 import DB from '../core/db';
 import Matching from '../core/match';
 import Network from '../core/net';
-import { Awareness } from 'y-protocols/awareness';
+import {Awareness} from 'y-protocols/awareness';
 import ViewManager from './view-manager';
-import { Tags } from "../core/tags";
-import MeView from "./me.view";
-import DBView from './db.view';
-import NetView from './net.view';
+import {Tags} from "../core/tags";
 import Sidebar from './sidebar'; // Corrected import
-import { SettingsView } from './settings.view';
-import { Store, getStore } from './store';
-import Editor from './editor/editor'; // Import Editor
+import {getStore, Store} from './store';
 
 class ThemeManager {
     private isDarkMode: boolean;
@@ -38,15 +33,16 @@ class ThemeManager {
 export interface AppConfig {
     element: HTMLElement;
 }
+
 export default class App {
     public store: Store;
+    public tags: Tags;
+    public editor?: Editor; // Add Editor property
+    public readonly channel: string;
     private ele: JQuery;
     private themes: ThemeManager;
     private views: ViewManager;
-    public tags: Tags;
     private sidebar: Sidebar;
-    public editor?: Editor; // Add Editor property
-    public readonly channel: string;
 
     constructor(channel: string, config: AppConfig) {
         this.channel = channel;
@@ -101,7 +97,7 @@ export default class App {
         newObj.name = 'New Object';
         newObj.author = this.store.currentUser?.userId ?? 'Anonymous'; // Handle anonymous user
         newObj.public = false; // Ensure new objects are private by default
-+       newObj.isQuery = false; // Default to not being a query
+        +newObj.isQuery = false; // Default to not being a query
         this.db.add(newObj);
         this.store.addObject(newObj);
         this.editor?.loadDocument(newObj);

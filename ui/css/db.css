@@ -1,71 +1,72 @@
 /* Database View Styles */
 .database-page {
-  padding: 1rem;
+    padding: 1rem;
 }
 
 .db-controls {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  
-  input, select, button {
-    padding: 0.5rem;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    color: var(--text-primary);
-    border-radius: 4px;
-  }
-  
-  button {
-    background: var(--accent);
-    border-color: var(--accent);
-    cursor: pointer;
-    transition: opacity 0.2s;
-    
-    &:hover {
-      opacity: 0.9;
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+
+    input, select, button {
+        padding: 0.5rem;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        color: var(--text-primary);
+        border-radius: 4px;
     }
-  }
+
+    button {
+        background: var(--accent);
+        border-color: var(--accent);
+        cursor: pointer;
+        transition: opacity 0.2s;
+
+        &:hover {
+            opacity: 0.9;
+        }
+    }
 }
 
 .database-wrapper {
-  overflow-x: auto;
+    overflow-x: auto;
 }
 
 .database-table {
-  min-width: 800px;
-  
-  th {
-    background: var(--bg-secondary);
-    position: sticky;
-    top: 0;
-  }
-  
-  tr:hover {
-    background: rgba(255,255,255,0.03);
-  }
-  
-  td {
-    vertical-align: top;
-    padding: 0.75rem;
-    
-    &:nth-child(3) { /* Content preview column */
-      max-width: 300px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    min-width: 800px;
+
+    th {
+        background: var(--bg-secondary);
+        position: sticky;
+        top: 0;
     }
-    
-    &:last-child { /* Public status column */
-      text-align: center;
+
+    tr:hover {
+        background: rgba(255, 255, 255, 0.03);
     }
-  }
+
+    td {
+        vertical-align: top;
+        padding: 0.75rem;
+
+        &:nth-child(3) { /* Content preview column */
+            max-width: 300px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        &:last-child { /* Public status column */
+            text-align: center;
+        }
+    }
 }
 
 /* Public status indicators */
-[data-public="true"] { 
-  color: var(--success);
+[data-public="true"] {
+    color: var(--success);
 }
+
 [data-public="false"] {
-  color: var(--warning);
+    color: var(--warning);
 }

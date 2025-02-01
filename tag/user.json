@@ -71,5 +71,7 @@
       "description": "User's current status"
     }
   },
-  "required": ["userType"]
+  "required": [
+    "userType"
+  ]
 }

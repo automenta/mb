@@ -3,7 +3,7 @@ import {waitFor} from '@testing-library/dom';
 import P2PNode from '../../server/p2p'; // Changed to default import
 import {createEd25519PeerId} from '@libp2p/peer-id-factory';
 import {PeerId} from '@libp2p/interface-peer-id';
-import { v4 as uuidv4 } from 'uuid'; // Import uuidv4
+import {v4 as uuidv4} from 'uuid'; // Import uuidv4
 
 describe('P2PNode', () => {
     let peerId1: PeerId, peerId2: PeerId;
@@ -20,7 +20,7 @@ describe('P2PNode', () => {
             peerId: peerId1,
             bootstrapList: ['/ip4/127.0.0.1/tcp/0/ws/p2p/' + peerId2.toString()],
         }, roomName1); // Pass roomName1 to P2PNode constructor
-        const node2 = new P2PNode({ peerId: peerId2 }, roomName2); // Pass roomName2 to P2PNode constructor
+        const node2 = new P2PNode({peerId: peerId2}, roomName2); // Pass roomName2 to P2PNode constructor
 
         const capturedLogs: string[] = [];
         const originalConsoleLog = console.log;
@@ -42,8 +42,8 @@ describe('P2PNode', () => {
             node2Connected = true;
         });
 
-        await waitFor(() => expect(node1Connected).toBe(true), { timeout: 10000 });
-        await waitFor(() => expect(node2Connected).toBe(true), { timeout: 10000 });
+        await waitFor(() => expect(node1Connected).toBe(true), {timeout: 10000});
+        await waitFor(() => expect(node2Connected).toBe(true), {timeout: 10000});
 
         const node1Peers = await node1.getPeers();
         const node2Peers = await node2.getPeers();
@@ -72,7 +72,7 @@ describe('P2PNode', () => {
             peerId: peerId1,
             bootstrapList: ['/ip4/127.0.0.1/tcp/0/ws/p2p/' + peerId2.toString()],
         }, roomName1); // Pass roomName1 to P2PNode constructor
-        const node2 = new P2PNode({ peerId: peerId2 }, roomName2); // Pass roomName2 to P2PNode constructor
+        const node2 = new P2PNode({peerId: peerId2}, roomName2); // Pass roomName2 to P2PNode constructor
 
         await node1.start({peerId: peerId1});
         await node2.start({peerId: peerId2});

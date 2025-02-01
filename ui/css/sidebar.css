@@ -74,7 +74,8 @@
     margin: 0.2rem 0; /* Reduced margin */
     border-radius: 6px; /* Slightly less rounded corners */
     cursor: pointer;
-    transition: background-color 0.3s ease, color: 0.3s ease; /* Include color in transition */
+    transition: background-color 0.3s ease,
+    color: 0.3s ease; /* Include color in transition */
     font-weight: var(--font-weight-normal);
     font-size: 0.9rem; /* Slightly smaller font size for page list items */
     color: var(--text-primary) !important; /* Ensure page list item text is visible */
@@ -113,6 +114,7 @@
     font-size: 0.9rem; /* Slightly smaller font size for context menu items */
     color: var(--text-primary) !important; /* Ensure text color is set */
 }
+
 .context-menu li span { /* Target span inside context menu items */
     color: var(--text-primary) !important; /* Explicitly set context menu label color */
 }

@@ -1,8 +1,24 @@
 {
-        "created": { "type": "number" },
-        "updated": { "type": "number" },
-        "author": { "type": "string" },
-        "content": { "type": "string" },
-        "format": { "type": "string", "enum": ["plain", "markdown"] },
-        "parentId": { "type": "string" }
+  "created": {
+    "type": "number"
+  },
+  "updated": {
+    "type": "number"
+  },
+  "author": {
+    "type": "string"
+  },
+  "content": {
+    "type": "string"
+  },
+  "format": {
+    "type": "string",
+    "enum": [
+      "plain",
+      "markdown"
+    ]
+  },
+  "parentId": {
+    "type": "string"
+  }
 }

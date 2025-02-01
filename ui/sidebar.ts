@@ -1,5 +1,5 @@
-import { $ } from './imports';
-import { store, initializeStore } from './store';
+import {$} from './imports';
+import {store} from './store';
 import NObject from '../core/obj';
 import ObjViewMini from './util/obj.view.mini';
 import '../ui/css/sidebar.css';
@@ -16,8 +16,9 @@ import View from './util/view';
 
 class PageContextMenu {
     readonly ele: JQuery;
-    private selectedPageId: string | null = null;
     app: App; // Add App instance
+    private selectedPageId: string | null = null;
+
     constructor(app: App) {
         this.app = app; // Access app from store
         this.ele = $('<div>').addClass('context-menu').html(`
@@ -87,7 +88,8 @@ class PageContextMenu {
 export default class Sidebar {
     readonly ele: JQuery;
     private contextMenu: PageContextMenu;
-    private readonly pageList: JQuery;    private readonly meView: MeView | null;
+    private readonly pageList: JQuery;
+    private readonly meView: MeView | null;
     private readonly friendsView: FriendsView;
     private readonly netView: NetView;
     private readonly dbView: DBView | null;
@@ -103,7 +105,7 @@ export default class Sidebar {
         this.ele = $(ele).addClass('sidebar');
         this.app = app;
         this.contextMenu = new PageContextMenu(this.app);
-        this.pageList = $('<ul>', { class: 'page-list' });
+        this.pageList = $('<ul>', {class: 'page-list'});
         const $mainView = $('.main-view');
         console.log('Sidebar: mainView jQuery object:', $mainView); // Log mainView
 
@@ -135,90 +137,6 @@ export default class Sidebar {
         this.switchView('my-objects'); // Initial view is page list
         console.log('Sidebar: initial view switched to my-objects'); // Log initial view switch
     }
-
-
-    private createAddPageButton(): JQuery {
-        return $('<button>', {
-            class: 'menubar-button add-page-button',
-            title: 'Add New Page'
-        }).append($('<i>', { class: 'fas fa-plus' })).on('click', () => { // Using font-awesome icon
-            this.app.createNewObject(); // Use app instance
-        });
-    }
-
-
-    private createMenubar(): JQuery {
-        const menuBar = $('<div>', { class: 'menubar' });
-        menuBar.append(
-            this.createViewMenuButtons(),
-            this.createUtilityButtons()
-        );
-        return menuBar;
-    }
-
-    private createViewMenuButtons(): JQuery {
-        const viewMenuButtons = $('<div>');
-        viewMenuButtons.append(
-            this.createAddPageButton(),
-            this.createMenuButton({ id: 'profile', title: 'Me', view: this.meView }),
-            this.createMenuButton({ id: 'friends', title: 'Friends', view: this.friendsView }),
-            this.createMenuButton({ id: 'network', title: 'Network', view: this.netView }),
-            this.createMenuButton({ id: 'database', title: 'DB', view: this.dbView }),
-            this.createMenuButton({ id: 'agents', title: 'Agents', view: this.agentsView }),
-            this.createMenuButton({ id: 'notifications', title: 'Notifications', view: this.notificationsView }),
-        );
-        return viewMenuButtons;
-    }
-
-    private createUtilityButtons(): JQuery {
-        const utilityButtons = $('<div>');
-        utilityButtons.append(
-            this.createToggleDarkModeButton(),
-            this.createNetworkStatusIndicator()
-        );
-        return utilityButtons;
-    }
-
-    private createNetworkStatusIndicator(): JQuery {
-        return $('<div>', {
-            class: 'network-status',
-            id: 'network-status-indicator',
-            title: 'Network Status'
-        }).append(
-            $('<span>', { text: 'Network: ' }),
-            $('<span>', { id: 'network-status-icon' }), // Placeholder for icon
-            $('<span>', { id: 'network-status-text', text: 'Disconnected' }) // Initial status
-        );
-    }
-
-    private createToggleDarkModeButton(): JQuery {
-        return $('<button>', {
-            class: 'menubar-button',
-            title: 'Toggle Dark Mode'
-        }).append(
-            $('<i>', { class: 'fas fa-adjust' }), // Example icon for dark mode toggle
-            $('<span>').text('Theme') // Text label for clarity
-        ).on('click', () => {
-            this.app.toggleDarkMode(); // Use app instance
-        });
-    }
-
-    private createMenuButton({ id, title, view }: { id: string; title: string; view: View | null }): JQuery {
-        const button = $('<button>', {
-            id: `menu-${id}`,
-            class: 'menubar-button',
-            'data-view-id': id, // Store view ID in data attribute
-            title: title
-        }).append(
-            $('<span>').text(title) // Keep text label
-        );
-
-        button.on('click', () => {
-            this.viewManager.showView(id); // Use ViewManager directly to switch view
-        });
-        return button;
-    }
-
 
     switchView(viewId: string) {
         //console.log('sidebar.switchView: viewId =', viewId); // No longer needed here, view switching handled by ViewManager
@@ -261,7 +179,6 @@ export default class Sidebar {
         }
     }
 
-
     updatePageList(objects: NObject[]) {
         console.log('updatePageList called with', objects.length, 'objects');
         this.pageList.empty().append(objects.map(obj => {
@@ -277,6 +194,87 @@ export default class Sidebar {
                 });
             return v.ele;
         }));
+    }
+
+    private createAddPageButton(): JQuery {
+        return $('<button>', {
+            class: 'menubar-button add-page-button',
+            title: 'Add New Page'
+        }).append($('<i>', {class: 'fas fa-plus'})).on('click', () => { // Using font-awesome icon
+            this.app.createNewObject(); // Use app instance
+        });
+    }
+
+    private createMenubar(): JQuery {
+        const menuBar = $('<div>', {class: 'menubar'});
+        menuBar.append(
+            this.createViewMenuButtons(),
+            this.createUtilityButtons()
+        );
+        return menuBar;
+    }
+
+    private createViewMenuButtons(): JQuery {
+        const viewMenuButtons = $('<div>');
+        viewMenuButtons.append(
+            this.createAddPageButton(),
+            this.createMenuButton({id: 'profile', title: 'Me', view: this.meView}),
+            this.createMenuButton({id: 'friends', title: 'Friends', view: this.friendsView}),
+            this.createMenuButton({id: 'network', title: 'Network', view: this.netView}),
+            this.createMenuButton({id: 'database', title: 'DB', view: this.dbView}),
+            this.createMenuButton({id: 'agents', title: 'Agents', view: this.agentsView}),
+            this.createMenuButton({id: 'notifications', title: 'Notifications', view: this.notificationsView}),
+        );
+        return viewMenuButtons;
+    }
+
+    private createUtilityButtons(): JQuery {
+        const utilityButtons = $('<div>');
+        utilityButtons.append(
+            this.createToggleDarkModeButton(),
+            this.createNetworkStatusIndicator()
+        );
+        return utilityButtons;
+    }
+
+    private createNetworkStatusIndicator(): JQuery {
+        return $('<div>', {
+            class: 'network-status',
+            id: 'network-status-indicator',
+            title: 'Network Status'
+        }).append(
+            $('<span>', {text: 'Network: '}),
+            $('<span>', {id: 'network-status-icon'}), // Placeholder for icon
+            $('<span>', {id: 'network-status-text', text: 'Disconnected'}) // Initial status
+        );
+    }
+
+    private createToggleDarkModeButton(): JQuery {
+        return $('<button>', {
+            class: 'menubar-button',
+            title: 'Toggle Dark Mode'
+        }).append(
+            $('<i>', {class: 'fas fa-adjust'}), // Example icon for dark mode toggle
+            $('<span>').text('Theme') // Text label for clarity
+        ).on('click', () => {
+            this.app.toggleDarkMode(); // Use app instance
+        });
+    }
+
+    private createMenuButton({id, title, view}: { id: string; title: string; view: View | null }): JQuery {
+        const button = $('<button>', {
+            id: `menu-${id}`,
+            class: 'menubar-button',
+            'data-view-id': id, // Store view ID in data attribute
+            title: title
+        }).append(
+            $('<span>').text(title) // Keep text label
+        );
+
+        button.on('click', () => {
+            this.viewManager.showView(id); // Use ViewManager directly to switch view
+        });
+        return button;
     }
 
     private updateNetworkStatus(status: string): void {

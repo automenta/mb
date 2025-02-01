@@ -12,10 +12,12 @@ Organize, prioritize, and grow thoughts into actionable results with real-time c
 
 ### Search and Match
 
-- **Persistent Queries:** `NObject`s can act as ongoing search interests (persistent queries), actively seeking matches within the network.
+- **Persistent Queries:** `NObject`s can act as ongoing search interests (persistent queries), actively seeking matches
+  within the network.
 - **Semantic Matching:** `NObject`s capture meaning and intent, acting as implicit goals to realize.
 - **Tags:** `NObject` tags (schemas) ensure unambiguous and multilingual meaningful exchange.
-- **Notifications:** The app receives matches to shared `NObject`s as replies, storing them for display similar to email or forum replies.
+- **Notifications:** The app receives matches to shared `NObject`s as replies, storing them for display similar to email
+  or forum replies.
 
 ### P2P Network
 
@@ -46,7 +48,6 @@ Organize, prioritize, and grow thoughts into actionable results with real-time c
 - Single-page application using TypeScript/JavaScript.
 - Dynamic components for flexibility and reusability.
 - `yjs` ensures real-time collaborative editing.
-
 
 ### Server ("Supernode")
 
@@ -98,16 +99,16 @@ Organize, prioritize, and grow thoughts into actionable results with real-time c
 - Clear, complete, clean, compact, efficient, self-documenting ES6+ code.
 - Include comments to explain complex logic or design decisions.
 - Use the latest TypeScript and JavaScript language features and APIs, including:
-  - Optional chaining (?.)
-  - Nullish coalescing (??)
-  - Ternary operators
-  - Logical OR for default values
-  - Arrow functions
-  - Destructuring
-  - Template literals
-  - Inline variable declarations
-  - Compact assertion syntax
-  - Use const instead of let where possible
+    - Optional chaining (?.)
+    - Nullish coalescing (??)
+    - Ternary operators
+    - Logical OR for default values
+    - Arrow functions
+    - Destructuring
+    - Template literals
+    - Inline variable declarations
+    - Compact assertion syntax
+    - Use const instead of let where possible
 - Combine related test cases
 - Use descriptive test names
 - Remove redundant declarations

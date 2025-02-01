@@ -1,9 +1,9 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { Server as SocketIOServer, Socket } from 'socket.io';
-import { Server as HTTPServer } from 'http';
-import { io as Client, Socket as ClientSocket } from 'socket.io-client';
-import { AddressInfo } from 'net';
-import { createServer } from '../../server/server';
+import {afterAll, beforeAll, describe, expect, it} from 'vitest';
+import {Server as SocketIOServer, Socket} from 'socket.io';
+import {Server as HTTPServer} from 'http';
+import {io as Client, Socket as ClientSocket} from 'socket.io-client';
+import {AddressInfo} from 'net';
+import {createServer} from '../../server/server';
 
 describe('WebSocket Communication', () => {
     let io: SocketIOServer;
@@ -13,7 +13,7 @@ describe('WebSocket Communication', () => {
 
     beforeAll(async () => {
         // Create and start the Express server
-        const { server: startedServer, io: startedIo } = await createServer();
+        const {server: startedServer, io: startedIo} = await createServer();
         server = startedServer;
         io = startedIo;
 
@@ -43,7 +43,6 @@ describe('WebSocket Communication', () => {
     });
 
 
-
     it('should establish a WebSocket connection between client and server', () => {
         return new Promise<void>((resolve) => {
             clientSocket.on('connect', () => {
@@ -55,7 +54,7 @@ describe('WebSocket Communication', () => {
 
     it('should relay a message from client to server via WebSocket', () => {
         return new Promise<void>((resolve) => {
-            const testMessage = { target: 'server', data: 'Hello from client' };
+            const testMessage = {target: 'server', data: 'Hello from client'};
 
             io.on('connection', (socket) => {
                 socket.on('signal', (message) => {
@@ -81,15 +80,15 @@ describe('WebSocket Communication', () => {
             }
             const client = Client(`http://localhost:${(address as AddressInfo).port}`);
             clients.push(client);
-            
+
             await new Promise<void>((resolve) => {
                 client.on('connect', () => resolve());
             });
         }
 
         // Test message broadcasting
-        const testMessage = { target: 'broadcast', data: 'Broadcast message' };
-        
+        const testMessage = {target: 'broadcast', data: 'Broadcast message'};
+
         io.on('connection', (socket) => {
             socket.on('broadcast', (message) => {
                 messages.push(message);
@@ -114,7 +113,7 @@ describe('WebSocket Communication', () => {
 
     it('should handle connection errors gracefully', async () => {
         const invalidClient = Client('http://localhost:9999');
-        
+
         const connectionError = await new Promise((resolve) => {
             invalidClient.on('connect_error', (err) => {
                 resolve(err.message);

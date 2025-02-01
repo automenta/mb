@@ -1,6 +1,6 @@
-import { $ } from './imports';
+import {$} from './imports';
 import View from './util/view';
-import { store } from './store';
+import {store} from './store';
 import ObjViewMini from './util/obj.view.mini';
 import type NObject from '../core/obj';
 

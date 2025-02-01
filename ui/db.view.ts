@@ -1,11 +1,10 @@
 import $ from 'jquery';
 import View from './util/view';
 import ObjViewMini from './util/obj.view.mini';
-import type { App } from './app';
+import type {App} from './app';
 import pageTags from '../tag/page.json';
 import DB from '../core/db'; // Import DB class
 import NObject from '../core/obj'; // Import NObject class
-
 import '/ui/css/db.css';
 
 interface FilterValues {
@@ -151,6 +150,26 @@ export default class DBView extends View {
         this.updateTable();
     }
 
+    initView() {
+        this.renderObjects(); // Initial render
+        this.app.store.subscribe(() => this.renderObjects()); // Re-render on store changes
+    }
+
+    renderObjects() {
+        this.ele.empty(); // Clear existing content
+        const objects = this.app.store.getState().objects;
+        if (objects && objects.length > 0) {
+            const objectList = $('<ul>').addClass('db-object-list');
+            objects.forEach(obj => {
+                const objViewMini = new ObjViewMini(obj);
+                objectList.append(objViewMini.ele);
+            });
+            this.ele.append(objectList);
+        } else {
+            this.ele.append($('<p>').text('No objects in database.'));
+        }
+    }
+
     private updateStatistics(): void {
         const objectCount = this.db.index.size;
         $('#object-count').text(`Objects: ${objectCount}`);
@@ -166,6 +185,10 @@ export default class DBView extends View {
         }
     }
 
+    // Remove createHeader, createControls, createNewObjectButton, and createTable
+    // as they are no longer needed for the list view
+
+    // Keep initView and renderObjects methods
 
     private createRow(page: NObject | null): JQuery {
         if (!page) return $('<tr>').append($('<td>').text('Error: Page is null'));
@@ -190,24 +213,19 @@ export default class DBView extends View {
         return $row;
     }
 
-
     private renderFilterControls(): string {
         let filterControlsHTML = '';
         pageTags?.properties && Object.entries(pageTags.properties).forEach(([field, property]) => {
             filterControlsHTML += `
                 <div class="filter-group">
                     <label for="filter-${field}">${(property as { description: string }).description}:</label>
-                    <input type="text" class="filter-input" id="filter-${field}" data-field="${field}" name="filter-${field}" placeholder="Filter by ${(property as { description: string }).description}">
+                    <input type="text" class="filter-input" id="filter-${field}" data-field="${field}" name="filter-${field}" placeholder="Filter by ${(property as {
+                description: string
+            }).description}">
                 </div>`;
         });
         return filterControlsHTML;
     }
-
-    // Remove createHeader, createControls, createNewObjectButton, and createTable
-    // as they are no longer needed for the list view
-
-    // Keep initView and renderObjects methods
-
 
     private createControls(filterControlsHTML: string): JQuery {
         const $controls = $('<div>').addClass('db-controls');
@@ -236,24 +254,5 @@ export default class DBView extends View {
         $thead.append($('<tr>').html(tableHeadersHTML));
         $table.append($thead, $('<tbody>'));
         return $table;
-    }
-    initView() {
-        this.renderObjects(); // Initial render
-        this.app.store.subscribe(() => this.renderObjects()); // Re-render on store changes
-    }
-
-    renderObjects() {
-        this.ele.empty(); // Clear existing content
-        const objects = this.app.store.getState().objects;
-        if (objects && objects.length > 0) {
-            const objectList = $('<ul>').addClass('db-object-list');
-            objects.forEach(obj => {
-                const objViewMini = new ObjViewMini(obj);
-                objectList.append(objViewMini.ele);
-            });
-            this.ele.append(objectList);
-        } else {
-            this.ele.append($('<p>').text('No objects in database.'));
-        }
     }
 }

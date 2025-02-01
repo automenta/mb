@@ -2,7 +2,8 @@ import NObject from './obj';
 import DB from './db';
 
 export class Replies {
-    constructor(private readonly db: DB) {}
+    constructor(private readonly db: DB) {
+    }
 
     /**
      * Creates a reply to an existing NObject.
@@ -32,10 +33,11 @@ export class Replies {
         return replyObject;
     }
 
-    getReplies(x:string): NObject[] {
+    getReplies(x: string): NObject[] {
         throw "todo";
     }
-    getRepliesTo(x:string): NObject[] {
+
+    getRepliesTo(x: string): NObject[] {
         if (!parentObject) {
             console.warn(`Parent object with ID ${parentId} not found.`);
             return null;
@@ -55,10 +57,11 @@ export class Replies {
         return replyObject;
     }
 
-    getReplies(x:string): NObject[] {
+    getReplies(x: string): NObject[] {
         throw "todo";
     }
-    getRepliesTo(x:string): NObject[] {
+
+    getRepliesTo(x: string): NObject[] {
         throw "todo";
     }
 }

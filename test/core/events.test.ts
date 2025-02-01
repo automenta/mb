@@ -89,11 +89,11 @@ describe('mitt', () => {
 
             const error = new Error('Failed');
             e.emit('network:error', error);
-            e.emit('auth:login', { user: 'test' });
+            e.emit('auth:login', {user: 'test'});
 
             expect(networkSpy).toHaveBeenCalledWith('network:error', error);
             expect(networkSpy).toHaveBeenCalledTimes(1);
-            expect(authSpy).toHaveBeenCalledWith('auth:login', { user: 'test' });
+            expect(authSpy).toHaveBeenCalledWith('auth:login', {user: 'test'});
             expect(authSpy).toHaveBeenCalledTimes(1);
             expect(globalSpy).toHaveBeenCalledTimes(2);
         });
@@ -101,10 +101,13 @@ describe('mitt', () => {
 
     describe('error handling', () => {
         it('should handle errors in event handlers', () => {
-            const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+            const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {
+            });
             const error = new Error('Handler error');
 
-            e.on('foo', () => { throw error; });
+            e.on('foo', () => {
+                throw error;
+            });
             e.emit('foo', 'test');
 
             expect(consoleError).toHaveBeenCalledWith('EventEmitter:', error);
@@ -123,7 +126,9 @@ describe('mitt', () => {
             expect(spy2).toHaveBeenCalledTimes(1);
         });
         it('should continue executing handlers after error', () => {
-            e.on('foo', () => { throw 'First handler error'; });
+            e.on('foo', () => {
+                throw 'First handler error';
+            });
             e.on('foo', spy);
 
             e.emit('foo', 'test');
@@ -134,7 +139,8 @@ describe('mitt', () => {
     describe('memory management', () => {
         it('should clean up empty handler sets', async () => {
             const off1 = e.on('foo', spy);
-            const off2 = e.on('foo', () => {});
+            const off2 = e.on('foo', () => {
+            });
 
             off1();
             off2();
@@ -188,15 +194,15 @@ describe('mitt', () => {
             const fooSpy = vi.fn((s: string) => s.toLowerCase());
             const barSpy = vi.fn((n: number) => n.toFixed());
             const errorSpy = vi.fn((e: Error) => e.message);
-            
+
             e.on('foo', fooSpy);
             e.on('bar', barSpy);
             e.on('network:error', errorSpy);
-            
+
             e.emit('foo', 'TEST');
             e.emit('bar', 42);
             e.emit('network:error', new Error('Test error'));
-            
+
             expect(fooSpy).toHaveBeenCalledWith('TEST');
             expect(fooSpy).toHaveReturnedWith('test');
             expect(barSpy).toHaveBeenCalledWith(42);
@@ -208,9 +214,9 @@ describe('mitt', () => {
         it('should allow void events without payload', () => {
             const logoutSpy = vi.fn();
             e.on('auth:logout', logoutSpy);
-            
+
             e.emit('auth:logout');
-            
+
             expect(logoutSpy).toHaveBeenCalledTimes(1);
             expect(logoutSpy).toHaveBeenCalledWith(undefined);
         });

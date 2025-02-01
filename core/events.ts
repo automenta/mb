@@ -25,9 +25,13 @@ type WeakHandlerMap<T extends Record<EventType, unknown>> = WeakMap<object, Hand
 
 export interface Emitter<T extends Record<EventType, unknown>> {
     on<K extends keyof T>(type: K | '*' | string, handler: K extends '*' ? WildcardHandler<T> : Handler<T[K]>): () => void;
+
     on(event: EventType | string, listener: Listener): void;
+
     off<K extends keyof T>(type: K | '*' | string, handler?: K extends '*' ? WildcardHandler<T> : Handler<T[K]>): void;
+
     emit<K extends keyof T>(type: K, event?: T[K]): void;
+
     clear(): void;
 }
 

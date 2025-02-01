@@ -105,22 +105,22 @@ class NetViewer { // Corrected class definition
                 <div class="peer-list"></div>
             </div>
          `,
-      this.bootstrap.panel()
-    );
-    this.ele.find(".peer-list").append(this.$peerList);
+            this.bootstrap.panel()
+        );
+        this.ele.find(".peer-list").append(this.$peerList);
 
         // Append stat boxes to the stats-grid div
         const statsGrid = this.ele.find('.stats-grid');
         statsGrid.append(
-            createStatBox('Messages', { label: 'Sent', className: 'sent' }, { label: 'Received', className: 'received' }),
-            createStatBox('Bandwidth', { label: 'Total', className: 'bytes' })
+            createStatBox('Messages', {label: 'Sent', className: 'sent'}, {label: 'Received', className: 'received'}),
+            createStatBox('Bandwidth', {label: 'Total', className: 'bytes'})
         );
     }
 
 
     update(eventData: any = {}): void {
         // Handle undefined eventData or missing properties
-        const { type, data = {}, timestamp } = eventData;
+        const {type, data = {}, timestamp} = eventData;
         const stats = data.stats || {};
         // Update metrics
         const sentSpan = this.ele.find(".sent");
@@ -151,7 +151,7 @@ class NetViewer { // Corrected class definition
                 Array.from(this.net.peers.values()).map(this.renderPeerListItem.bind(this))
             );
 
-        this.events.unshift({ type, timestamp, data });
+        this.events.unshift({type, timestamp, data});
         this.events = this.events.slice(0, this.maxEvents);
 
         if (eventLog) {
@@ -160,66 +160,66 @@ class NetViewer { // Corrected class definition
         }
     }
 
-  renderPeerBadge(peer: any): JQuery {
-    // Type 'any' for peer as its type is not defined
-    return $(
-      `<div class="peer-badge">${peer.metadata.clientID} (${new Date(
-        peer.lastActive
-      ).toLocaleTimeString()})</div>`
-    ) as JQuery;
-  }
+    renderPeerBadge(peer: any): JQuery {
+        // Type 'any' for peer as its type is not defined
+        return $(
+            `<div class="peer-badge">${peer.metadata.clientID} (${new Date(
+                peer.lastActive
+            ).toLocaleTimeString()})</div>`
+        ) as JQuery;
+    }
 
-  renderPeerListItem(peer: any): JQuery {
-    // Type 'any' for peer, adjust if you have Peer interface available
-    return $(
-      `<li>${peer.address}:${peer.port} - Last Seen: ${new Date(
-        peer.lastSeen
-      ).toLocaleTimeString()}</li>`
-    ) as JQuery;
-  }
+    renderPeerListItem(peer: any): JQuery {
+        // Type 'any' for peer, adjust if you have Peer interface available
+        return $(
+            `<li>${peer.address}:${peer.port} - Last Seen: ${new Date(
+                peer.lastSeen
+            ).toLocaleTimeString()}</li>`
+        ) as JQuery;
+    }
 
-  renderEventEntry(event: any): JQuery {
-    // Type 'any' for event as its type is not defined
-    return $(
-      `<div class="event-entry ${
-        event.type
-      }">[${new Date(event.timestamp).toLocaleTimeString()}] ${event.type} ${
-        event.data.peerId ? `(Peer: ${event.data.peerId})` : ""
-      } ${event.data.bytes ? `(${event.data.bytes} bytes)` : ""}</div>`
-    ) as JQuery;
-  }
+    renderEventEntry(event: any): JQuery {
+        // Type 'any' for event as its type is not defined
+        return $(
+            `<div class="event-entry ${
+                event.type
+            }">[${new Date(event.timestamp).toLocaleTimeString()}] ${event.type} ${
+                event.data.peerId ? `(Peer: ${event.data.peerId})` : ""
+            } ${event.data.bytes ? `(${event.data.bytes} bytes)` : ""}</div>`
+        ) as JQuery;
+    }
 }
 
 export default class NetView {
-  ele: JQuery;
-  net: Network;
-  app: App;
+    ele: JQuery;
+    net: Network;
+    app: App;
 
-  constructor(ele: JQuery, app: App) {
-    // Corrected constructor type
-    this.ele = ele;
-    this.app = app;
-    this.net = app.net; // Access network from app
-  }
+    constructor(ele: JQuery, app: App) {
+        // Corrected constructor type
+        this.ele = ele;
+        this.app = app;
+        this.net = app.net; // Access network from app
+    }
 
-  render(): JQuery {
-    this.ele.empty();
-    this.ele.append('<h2>Network Status</h2>');
+    render(): JQuery {
+        this.ele.empty();
+        this.ele.append('<h2>Network Status</h2>');
 
-    this.renderNetworkStats(); // Call renderNetworkStats to display stats
-    const refreshButton = $('<button>Refresh Stats</button>').on('click', () => {
-        this.renderNetworkStats(); // Re-render stats on button click
-    });
-    this.ele.append(refreshButton);
+        this.renderNetworkStats(); // Call renderNetworkStats to display stats
+        const refreshButton = $('<button>Refresh Stats</button>').on('click', () => {
+            this.renderNetworkStats(); // Re-render stats on button click
+        });
+        this.ele.append(refreshButton);
 
-    return this.ele;
-  }
+        return this.ele;
+    }
 
-  renderNetworkStats() {
-    const stats = this.net.getNetworkStats();
-    this.ele.append(`<p>Bytes Transferred: ${stats.bytesTransferred}</p>`);
-    this.ele.append(`<p>Messages Sent: ${stats.messagesSent}</p>`);
-    this.ele.append(`<p>Messages Received: ${stats.messagesReceived}</p>`);
-    this.ele.append(`<p>Peers Connected: ${stats.peersConnected.size}</p>`);
-  }
+    renderNetworkStats() {
+        const stats = this.net.getNetworkStats();
+        this.ele.append(`<p>Bytes Transferred: ${stats.bytesTransferred}</p>`);
+        this.ele.append(`<p>Messages Sent: ${stats.messagesSent}</p>`);
+        this.ele.append(`<p>Messages Received: ${stats.messagesReceived}</p>`);
+        this.ele.append(`<p>Peers Connected: ${stats.peersConnected.size}</p>`);
+    }
 }

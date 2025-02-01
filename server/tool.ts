@@ -1,4 +1,3 @@
-
 //import {Tool, OCRTool, VisionLLMTool, TextLLMTool} from './aissist/tools'; // Import tools
 //import {SnapshotManager} from './aissist/snapshotter';
 

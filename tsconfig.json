@@ -3,8 +3,15 @@
     "outDir": "./dist",
     "target": "ESNext",
     "module": "ESNext",
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "types": ["node", "vitest/globals"],
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "types": [
+      "node",
+      "vitest/globals"
+    ],
     "moduleResolution": "Bundler",
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -12,32 +19,29 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "allowJs": true,
-
     /* Strict Type-Checking Options */
-   "strict": true,
-//    "noImplicitAny": true,
-//    "strictNullChecks": true,
-//    "strictFunctionTypes": true,
-//    "strictBindCallApply": true,
-//    "strictPropertyInitialization": true,
-//    "noImplicitThis": true,
-//    "useUnknownInCatchVariables": true,
-//    "alwaysStrict": true,
+    "strict": true,
+    //    "noImplicitAny": true,
+    //    "strictNullChecks": true,
+    //    "strictFunctionTypes": true,
+    //    "strictBindCallApply": true,
+    //    "strictPropertyInitialization": true,
+    //    "noImplicitThis": true,
+    //    "useUnknownInCatchVariables": true,
+    //    "alwaysStrict": true,
 
     /* Additional Checks */
-//    "noUnusedLocals": true,
-//    "noUnusedParameters": true,
-//    "noImplicitReturns": true,
+    //    "noUnusedLocals": true,
+    //    "noUnusedParameters": true,
+    //    "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-
     /* Source Map Options */
     "sourceMap": true,
     "inlineSources": true,
     "inlineSourceMap": false,
-
     /* Experimental Options */
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
+    "emitDecoratorMetadata": true
   },
   "include": [
     "core/**/*.ts",

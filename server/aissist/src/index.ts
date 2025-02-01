@@ -1,51 +1,29 @@
+import {createSocket, RemoteInfo, Socket} from 'dgram';
+import {randomBytes, randomUUID} from 'crypto';
+import {cpus, networkInterfaces, platform} from 'os';
 import {
-    createSocket,
-    Socket,
-    RemoteInfo
-} from 'dgram';
-import {
-    randomUUID,
-    randomBytes
-} from 'crypto';
-import {
-    networkInterfaces,
-    platform,
-    cpus
-} from 'os';
-import {
-    QMainWindow,
-    QWidget,
+    FlexLayout,
+    QAction,
+    QApplication,
+    QFileDialog,
+    QIcon,
+    QKeySequence,
     QLabel,
-    QTextEdit,
     QLineEdit,
     QListWidget,
-    QStatusBar,
-    FlexLayout,
-    QApplication,
-    QPushButton,
-    QIcon,
-    QSystemTrayIcon,
-    QMenu,
-    QAction,
-    QFileDialog,
-    QProgressBar,
-    QMessageBox,
     QListWidgetItem,
-    QKeySequence
+    QMainWindow,
+    QMenu,
+    QMessageBox,
+    QProgressBar,
+    QPushButton,
+    QStatusBar,
+    QSystemTrayIcon,
+    QTextEdit,
+    QWidget
 } from '@nodegui/nodegui';
-import {
-    readFileSync,
-    writeFileSync,
-    existsSync,
-    mkdirSync,
-    statSync,
-    createReadStream,
-    createWriteStream
-} from 'fs';
-import {
-    resolve,
-    basename
-} from 'path';
+import {createReadStream, createWriteStream, existsSync, mkdirSync, readFileSync, statSync, writeFileSync} from 'fs';
+import {basename, resolve} from 'path';
 
 /**
  * If you are using ES modules, you need something like this:
@@ -127,10 +105,6 @@ const saveConfig = (config: any) => writeFileSync(resolve(DATA_DIR, 'config.json
 
 // -- Network Layer --
 class Network {
-    private socket: Socket = createSocket('udp4');
-    private peers = new Map<NodeId, Peer>();
-    private messageCache = new Set<string>();
-    private readonly id: NodeId = randomBytes(8).toString('hex');
     public fileTransfers: Map<string, FileTransfer> = new Map(); // Moved to public for UI access
     public port: number;
     public onChat?: (text: string, sender: NodeId) => void;
@@ -138,6 +112,10 @@ class Network {
     public onFileOffer?: (transferId: string, sender: NodeId, filename: string, size: number) => void;
     public onFileChunk?: (transferId: string, chunkIndex: number, data: Buffer) => void;
     public onFileDone?: (transferId: string, filepath?: string) => void;
+    private socket: Socket = createSocket('udp4');
+    private peers = new Map<NodeId, Peer>();
+    private messageCache = new Set<string>();
+    private readonly id: NodeId = randomBytes(8).toString('hex');
 
     constructor(port: number, bootstrapNodes: string[]) {
         this.port = port;
@@ -149,6 +127,58 @@ class Network {
             setInterval(this.gossip.bind(this), GOSSIP_INTERVAL);
         });
         this.socket.bind(this.port);
+    }
+
+    public sendChat(text: string) {
+        this.broadcast({type: 'index', payload: text, ttl: MAX_TTL});
+    }
+
+    // File transfer handling
+    public sendFileOffer(receiver: NodeId, filepath: string) {
+        const filename = basename(filepath);
+        const size = statSync(filepath).size;
+        const transferId = randomUUID();
+
+        this.fileTransfers.set(transferId, {
+            id: transferId,
+            sender: this.id,
+            receiver,
+            filename,
+            size,
+            filepath,
+            chunks: Math.ceil(size / FILE_CHUNK_SIZE),
+            receivedChunks: new Set<number>(),
+            progress: 0
+        });
+
+        this.broadcast({
+            type: 'file_offer',
+            payload: {filename, size, transferId, receiver},
+            ttl: MAX_TTL
+        });
+    }
+
+    public sendFileChunk(
+        transferId: string,
+        peer: Peer,
+        chunkIndex: number,
+        data: Buffer,
+        callback: () => void
+    ) {
+        this.send(
+            {
+                type: 'file_chunk',
+                payload: {
+                    transferId,
+                    chunkIndex,
+                    data: data.toString('base64')
+                },
+                ttl: 0
+            },
+            peer.address,
+            peer.port,
+            callback
+        );
     }
 
     private handleMessage(msg: Buffer, rinfo: RemoteInfo) {
@@ -172,7 +202,7 @@ class Network {
         switch (m.type) {
             case 'ping':
                 this.send(
-                    { type: 'pong', payload: Date.now(), ttl: 0, id: m.id },
+                    {type: 'pong', payload: Date.now(), ttl: 0, id: m.id},
                     rinfo.address,
                     rinfo.port
                 );
@@ -220,12 +250,12 @@ class Network {
 
     private discoverPeer(node: string) {
         const [address, port] = node.split(':');
-        this.send({ type: 'ping', payload: null, ttl: 0 }, address, parseInt(port));
+        this.send({type: 'ping', payload: null, ttl: 0}, address, parseInt(port));
     }
 
     private pingPeers() {
         this.peers.forEach((peer) =>
-            this.send({ type: 'ping', payload: null, ttl: 0 }, peer.address, peer.port)
+            this.send({type: 'ping', payload: null, ttl: 0}, peer.address, peer.port)
         );
     }
 
@@ -234,7 +264,8 @@ class Network {
         this.broadcast({
             type: 'peer_list',
             payload: Array.from(this.peers.values()).map((p) => `${p.address}:${p.port}`),
-            ttl: MAX_TTL });
+            ttl: MAX_TTL
+        });
     }
 
     // Optimized peer merging
@@ -282,40 +313,11 @@ class Network {
         });
     }
 
-    public sendChat(text: string) {
-        this.broadcast({ type: 'index', payload: text, ttl: MAX_TTL });
-    }
-
-    // File transfer handling
-    public sendFileOffer(receiver: NodeId, filepath: string) {
-        const filename = basename(filepath);
-        const size = statSync(filepath).size;
-        const transferId = randomUUID();
-
-        this.fileTransfers.set(transferId, {
-            id: transferId,
-            sender: this.id,
-            receiver,
-            filename,
-            size,
-            filepath,
-            chunks: Math.ceil(size / FILE_CHUNK_SIZE),
-            receivedChunks: new Set<number>(),
-            progress: 0
-        });
-
-        this.broadcast({
-            type: 'file_offer',
-            payload: { filename, size, transferId, receiver },
-            ttl: MAX_TTL
-        });
-    }
-
     private handleFileAccept(message: Message) {
-        const { transferId } = message.payload;
+        const {transferId} = message.payload;
         const transfer = this.fileTransfers.get(transferId);
         if (transfer && transfer.sender === this.id) {
-            const stream = createReadStream(transfer.filepath, { highWaterMark: FILE_CHUNK_SIZE });
+            const stream = createReadStream(transfer.filepath, {highWaterMark: FILE_CHUNK_SIZE});
             let chunkIndex = 0;
             stream.on('data', (chunk: Buffer) => {
                 stream.pause();
@@ -328,13 +330,13 @@ class Network {
                 }
             });
             stream.on('end', () => {
-                this.broadcast({ type: 'file_done', payload: { transferId }, ttl: 1 });
+                this.broadcast({type: 'file_done', payload: {transferId}, ttl: 1});
             });
         }
     }
 
     private handleFileReject(message: Message) {
-        const { transferId } = message.payload;
+        const {transferId} = message.payload;
         const transfer = this.fileTransfers.get(transferId);
         if (transfer && transfer.sender === this.id) {
             this.fileTransfers.delete(transferId);
@@ -343,7 +345,7 @@ class Network {
     }
 
     private handleFileChunk(message: Message) {
-        const { transferId, chunkIndex, data } = message.payload;
+        const {transferId, chunkIndex, data} = message.payload;
         const transfer = this.fileTransfers.get(transferId);
         if (
             transfer &&
@@ -364,29 +366,6 @@ class Network {
             if (transfer.receivedChunks.size === transfer.chunks)
                 this.assembleFile(transferId);
         }
-    }
-
-    public sendFileChunk(
-        transferId: string,
-        peer: Peer,
-        chunkIndex: number,
-        data: Buffer,
-        callback: () => void
-    ) {
-        this.send(
-            {
-                type: 'file_chunk',
-                payload: {
-                    transferId,
-                    chunkIndex,
-                    data: data.toString('base64')
-                },
-                ttl: 0
-            },
-            peer.address,
-            peer.port,
-            callback
-        );
     }
 
     private assembleFile(transferId: string) {
@@ -505,6 +484,10 @@ class UI {
         this.window.setWindowIcon(new QIcon(resolve(__dirname, 'icon.png')));
     }
 
+    public show() {
+        this.window.show();
+    }
+
     // UI setup
     private setupUI() {
         this.window.resize(1200, 700);
@@ -605,7 +588,7 @@ class UI {
         this.window.addAction(showHideShortcut);
     }
 
-    private newQLabel(s: string):QLabel {
+    private newQLabel(s: string): QLabel {
         const q = new QLabel();
         q.setText(s);
         return q;
@@ -640,7 +623,7 @@ class UI {
 
             if (response === QMessageBox.StandardButton.Yes) {
                 // Accept
-                this.network.broadcast({ type: 'file_accept', payload: { transferId }, ttl: 1 });
+                this.network.broadcast({type: 'file_accept', payload: {transferId}, ttl: 1});
 
                 this.network.fileTransfers.set(transferId, {
                     id: transferId,
@@ -681,7 +664,7 @@ class UI {
                 };
             } else {
                 // Reject
-                this.network.broadcast({ type: 'file_reject', payload: { transferId }, ttl: 1 });
+                this.network.broadcast({type: 'file_reject', payload: {transferId}, ttl: 1});
             }
         };
 
@@ -817,10 +800,6 @@ class UI {
         });
 
         return (1 - totalIdle / totalTick) * 100;
-    }
-
-    public show() {
-        this.window.show();
     }
 }
 

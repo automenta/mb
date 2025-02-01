@@ -1,7 +1,7 @@
-import { events, EventType, Listener } from './events';
+import {events} from './events';
 import DB from './db';
 import Network from './net';
-import Matches, { PageProperties, MatchResult } from './matches';
+import {MatchResult, PageProperties} from './matches';
 import Analysis from './analysis';
 
 interface Metrics {

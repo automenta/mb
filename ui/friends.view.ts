@@ -1,7 +1,6 @@
-import { $ } from './imports';
+import {$, Awareness} from './imports';
 import View from './util/view';
-import { UserInfo } from './types';
-import { Awareness } from './imports';
+import {UserInfo} from './types';
 import '/ui/css/friends.css';
 
 export default class FriendsView extends View {
@@ -12,19 +11,19 @@ export default class FriendsView extends View {
         this.getAwareness = getAwareness;
     }
 
-    protected getViewClass(): string {
-        return 'friends-list-page';
-    }
-
     render() {
         this.root.empty().append(
-            this.renderHeader('Friends'), 
-            $('<input>', { type: 'text', class: 'friends-search', placeholder: 'Search friends...' })
+            this.renderHeader('Friends'),
+            $('<input>', {type: 'text', class: 'friends-search', placeholder: 'Search friends...'})
                 .on('input', this.updateFriends.bind(this)),
             $('<ul>').addClass('friends-list')
         );
         this.getAwareness().on('change', this.updateFriends.bind(this));
-        return this.root; 
+        return this.root;
+    }
+
+    protected getViewClass(): string {
+        return 'friends-list-page';
     }
 
     private updateFriends() {
@@ -43,8 +42,12 @@ export default class FriendsView extends View {
         let statusIcon = '🔴';
         users.forEach(user => {
             switch (user.status) {
-                case 'online': statusIcon = '🟢'; break;
-                case 'away': statusIcon = '🌙'; break;
+                case 'online':
+                    statusIcon = '🟢';
+                    break;
+                case 'away':
+                    statusIcon = '🌙';
+                    break;
             }
             ul.append($('<li>').html(`${user.name} <span class="status">${statusIcon}</span>`));
         });

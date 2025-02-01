@@ -1,35 +1,35 @@
 {
-    "title": "NObject Content",
-    "type": "object",
-    "properties": {
-        "text": {
-            "type": "string",
-            "description": "The main textual content of the NObject"
-        },
-        "tags": {
-            "type": "array",
-            "description": "An array of tags embedded within the NObject",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "tag": {
-                        "type": "string"
-                    },
-                    "data": {
-                        "type": "object",
-                        "description": "The data for this tag",
-                        "properties": {},
-                        "additionalProperties": true
-                    }
-                },
-                "required": [
-                    "tag",
-                    "data"
-                ]
-            }
-        }
+  "title": "NObject Content",
+  "type": "object",
+  "properties": {
+    "text": {
+      "type": "string",
+      "description": "The main textual content of the NObject"
     },
-    "required": [
-        "text"
-    ]
+    "tags": {
+      "type": "array",
+      "description": "An array of tags embedded within the NObject",
+      "items": {
+        "type": "object",
+        "properties": {
+          "tag": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "description": "The data for this tag",
+            "properties": {},
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "tag",
+          "data"
+        ]
+      }
+    }
+  },
+  "required": [
+    "text"
+  ]
 }

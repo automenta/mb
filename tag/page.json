@@ -20,5 +20,10 @@
       "description": "Public"
     }
   },
-  "required": ["pageId", "title", "text", "p"]
+  "required": [
+    "pageId",
+    "title",
+    "text",
+    "p"
+  ]
 }

@@ -83,7 +83,7 @@ class MatchingView {
     chart: any;
     app: App;
 
-   constructor(root: JQuery, app: App, matching: MatchingInterface) {
+    constructor(root: JQuery, app: App, matching: MatchingInterface) {
         this.matching = matching;
         this.root = root;
         this.ele = $('<div>').addClass('matching-dashboard');
@@ -99,7 +99,7 @@ class MatchingView {
     }
 
     template(): string {
-        const { workerCapacity, processInterval, similarityThreshold, autoAdjustCapacity } = this.settings;
+        const {workerCapacity, processInterval, similarityThreshold, autoAdjustCapacity} = this.settings;
         return `
             <div class="control-panel">
                 <div class="panel-section controls">
@@ -186,7 +186,7 @@ class MatchingView {
             </div>`;
     }
 
-   render(): JQuery {
+    render(): JQuery {
         this.ele.empty().html(this.template());
         this.ele.append('<p>Pages Processed: <span id="pages-processed">0</span></p>');
         this.ele.append('<p>Matches Found: <span id="matches-found">0</span></p>');
@@ -210,7 +210,11 @@ class MatchingView {
         this.ele.on('change', '#processing-toggle', (e: JQuery.Event) => {
             this.settings.isProcessing = e.currentTarget.checked;
             this.matching[this.settings.isProcessing ? 'startProcessing' : 'stopProcessing']();
-            this.logActivity({ type: 'system', message: `Processing ${this.settings.isProcessing ? 'started' : 'stopped'}`, icon: this.settings.isProcessing ? '▶️' : '⏹️' });
+            this.logActivity({
+                type: 'system',
+                message: `Processing ${this.settings.isProcessing ? 'started' : 'stopped'}`,
+                icon: this.settings.isProcessing ? '▶️' : '⏹️'
+            });
         });
         this.ele.on('input', '#capacity-slider', (e: JQuery.Event) => {
             const value = parseFloat(e.currentTarget.value) / 100;
@@ -218,32 +222,36 @@ class MatchingView {
             this.ele.find('#capacity-value').text(`${value * 100}%`);
             if (!this.settings.autoAdjustCapacity) {
                 this.matching.setWorkerCapacity(value);
-                this.logActivity({ type: 'config', message: `Worker capacity: ${value * 100}%`, icon: '⚡' });
+                this.logActivity({type: 'config', message: `Worker capacity: ${value * 100}%`, icon: '⚡'});
             }
         });
         this.ele.on('input', '#interval-input', (e: JQuery.Event) => {
             const value = Math.max(1, Math.min(60, parseInt(e.currentTarget.value, 10)));
             this.settings.processInterval = value;
             this.matching.setProcessInterval(value * 1000);
-            this.logActivity({ type: 'config', message: `Interval: ${value}s`, icon: '⏱️' });
+            this.logActivity({type: 'config', message: `Interval: ${value}s`, icon: '⏱️'});
         });
         this.ele.on('input', '#similarity-slider', (e: JQuery.Event) => {
             const value = parseFloat(e.currentTarget.value) / 100;
             this.settings.similarityThreshold = value;
             this.ele.find('#similarity-value').text(`${value * 100}%`);
             this.matching.setSimilarityThreshold(this.settings.similarityThreshold); // Use the stored setting
-            this.logActivity({ type: 'config', message: `Threshold: ${value * 100}%`, icon: '🎯' });
+            this.logActivity({type: 'config', message: `Threshold: ${value * 100}%`, icon: '🎯'});
         });
         this.ele.on('change', '#auto-adjust-toggle', (e: JQuery.Event) => {
             this.settings.autoAdjustCapacity = e.currentTarget.checked;
             this.matching.setAutoAdjust(this.settings.autoAdjustCapacity);
             this.ele.find('#capacity-slider').prop('disabled', this.settings.autoAdjustCapacity);
-            this.logActivity({ type: 'config', message: `Auto-adjust: ${this.settings.autoAdjustCapacity ? 'on' : 'off'}`, icon: '🔄' });
+            this.logActivity({
+                type: 'config',
+                message: `Auto-adjust: ${this.settings.autoAdjustCapacity ? 'on' : 'off'}`,
+                icon: '🔄'
+            });
         });
     }
 
     logActivity(event: ActivityEvent): void {
-        const entry = { ...event, timestamp: new Date().toLocaleTimeString(), id: Date.now() };
+        const entry = {...event, timestamp: new Date().toLocaleTimeString(), id: Date.now()};
         this.activityLog.unshift(entry);
         this.activityLog = this.activityLog.slice(0, this.maxLogEntries);
 
@@ -254,10 +262,12 @@ class MatchingView {
                 <span class="activity-message">${event.message}</span>
                 <span class="activity-time">${entry.timestamp}</span>
             </div>
-        `).prependTo($log).animate({ opacity: 1 }, 300);
+        `).prependTo($log).animate({opacity: 1}, 300);
 
         if ($log.children().length > this.maxLogEntries) {
-            $log.children().last().fadeOut(300, function () { $(this).remove(); });
+            $log.children().last().fadeOut(300, function () {
+                $(this).remove();
+            });
         }
     }
 
@@ -278,9 +288,11 @@ class MatchingView {
         const $el = this.ele.find(selector);
         const current = parseInt($el.text(), 10);
         if (current !== newValue) {
-            $el.prop('counter', current).animate({ counter: newValue }, {
+            $el.prop('counter', current).animate({counter: newValue}, {
                 duration: 500,
-                step: function (now) { $(this).text(Math.ceil(now)); }
+                step: function (now) {
+                    $(this).text(Math.ceil(now));
+                }
             });
         }
     }
@@ -312,11 +324,13 @@ class MatchingView {
                         <div class="match-time">${new Date(match.timestamp).toLocaleTimeString()}</div>
                     </div>
                 </div>
-            `).prependTo($list).animate({ opacity: 1 }, 300);
+            `).prependTo($list).animate({opacity: 1}, 300);
         });
 
         while ($list.children().length > 10) {
-            $list.children().last().fadeOut(300, function () { $(this).remove(); });
+            $list.children().last().fadeOut(300, function () {
+                $(this).remove();
+            });
         }
     }
 
@@ -338,39 +352,47 @@ class MatchingView {
             if (!ctx) return;
             this.chart = new Chart(ctx, {
                 type: 'line',
-                     {
-                        labels: [],
-                        datasets: [
-                            {
-                                label: 'Pages Processed',
-                                 [],
-                                borderColor: 'rgba(75, 192, 192, 1)',
-                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                            },
-                            {
-                                label: 'Matches Found',
-                                 [],
-                                borderColor: 'rgba(255, 99, 132, 1)',
-                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                            },
-                            {
-                                label: 'Worker Capacity',
-                                 [],
-                                borderColor: 'rgba(54, 162, 235, 1)',
-                                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                            }
-                        ]
+            {
+                [],
+                    datasets
+            :
+                [
+                    {
+                        label: 'Pages Processed',
+                        [],
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
                     },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
+                    {
+                        label: 'Matches Found',
+                        [],
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    },
+                    {
+                        label: 'Worker Capacity',
+                        [],
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    }
+                ]
+            }
+        ,
+            {
+                true,
+                    maintainAspectRatio
+            :
+                false,
+                    scales
+            :
+                {
+                    {
+                        true
                     }
                 }
-            });
+            }
+        })
+
         }
 
         this.chart.data.labels = this.history.timestamps.map(ts => new Date(ts).toLocaleTimeString());

@@ -1,11 +1,10 @@
-
 //untested
 
 import * as IPFS from 'ipfs-core';
 
 let ipfs, myPeerId, peers = {}, peerConnection;
 
-const iceServers = [{ urls: 'stun:stun.l.google.com:19302' }];
+const iceServers = [{urls: 'stun:stun.l.google.com:19302'}];
 
 async function init() {
     ipfs = await IPFS.create();
@@ -14,7 +13,7 @@ async function init() {
 }
 
 async function subscribe(topic) {
-    ipfs.pubsub.subscribe(topic, async ({ from, data }) => {
+    ipfs.pubsub.subscribe(topic, async ({from, data}) => {
         if (from === myPeerId) return;
 
         const msg = JSON.parse(data);
@@ -26,7 +25,7 @@ async function subscribe(topic) {
         else if (type === 'ice_candidate')
             await handleIceCandidate(from, new RTCIceCandidate(msg.candidate));
     });
-    publish(topic, { type: 'peer_discovery' });
+    publish(topic, {type: 'peer_discovery'});
 }
 
 async function publish(topic, msg) {
@@ -34,18 +33,18 @@ async function publish(topic, msg) {
 }
 
 async function connect(peerId, offer) {
-    peerConnection = new RTCPeerConnection({ iceServers });
+    peerConnection = new RTCPeerConnection({iceServers});
     addIceCandidateHandler(peerId);
 
     if (!offer) {
         offer = await peerConnection.createOffer();
         await peerConnection.setLocalDescription(offer);
-        await publish('my-webrtc-app', { type: 'sdp_offer', offer: JSON.stringify(offer), to: peerId });
+        await publish('my-webrtc-app', {type: 'sdp_offer', offer: JSON.stringify(offer), to: peerId});
     } else {
         await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
         const answer = await peerConnection.createAnswer();
         await peerConnection.setLocalDescription(answer);
-        await publish('my-webrtc-app', { type: 'sdp_answer', answer: JSON.stringify(answer), to: peerId });
+        await publish('my-webrtc-app', {type: 'sdp_answer', answer: JSON.stringify(answer), to: peerId});
     }
 
     peers[peerId] = peerConnection; // Store connection
@@ -62,11 +61,11 @@ async function handleOffer(peerId, offer) {
     peers[peerId] = peerConnection;
 }
 
-async function handleAnswer(peerId, answer){
+async function handleAnswer(peerId, answer) {
     await peers[peerId].setRemoteDescription(answer);
 }
 
-async function handleIceCandidate(peerId, candidate){
+async function handleIceCandidate(peerId, candidate) {
     await peers[peerId].addIceCandidate(candidate);
 }
 

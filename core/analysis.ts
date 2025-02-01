@@ -1,6 +1,6 @@
 import DB from './db';
-import Matches, { PageProperties, MatchResult } from './matches';
-import { Replies } from './replies';
+import Matches, {MatchResult, PageProperties} from './matches';
+import {Replies} from './replies';
 
 interface ProcessingState {
     pageId: string;
@@ -71,7 +71,7 @@ export default class Analysis {
      */
     async processPage(pageId: string): Promise<void> {
         const startTime = Date.now();
-        this.processingQueue.set(pageId, { startTime });
+        this.processingQueue.set(pageId, {startTime});
 
         try {
             await this.findMatches(pageId);
@@ -190,6 +190,23 @@ export default class Analysis {
     }
 
     /**
+     * Stores the processing results (e.g., matches) for a page.
+     * Currently a placeholder, consider how and where to store these results.
+     * @param pageId - ID of the processed page.
+     * @param properties - Extracted properties of the page.
+     * @param matches - Array of MatchResult objects found for the page.
+     */
+    storeResults(pageId: string, properties: PageProperties, matches: MatchResult[]): void {
+        const page = this.db.get(pageId);
+        if (page) {
+            // Example: Storing matches as metadata (consider data structure and size limits)
+            // page.metadata.set('matchingProperties', properties);
+            // page.metadata.set('pageMatches', matches);
+            // console.log(`Stored results for page ${pageId}: ${matches.length} matches found.`);
+        }
+    }
+
+    /**
      * Internal helper method to find matches between two pages.
      * @param pageId - ID of the primary page.
      * @param page - NObject of the primary page.
@@ -217,23 +234,6 @@ export default class Analysis {
         }
         return null;
     }
-
-    /**
-     * Stores the processing results (e.g., matches) for a page.
-     * Currently a placeholder, consider how and where to store these results.
-     * @param pageId - ID of the processed page.
-     * @param properties - Extracted properties of the page.
-     * @param matches - Array of MatchResult objects found for the page.
-     */
-    storeResults(pageId: string, properties: PageProperties, matches: MatchResult[]): void {
-        const page = this.db.get(pageId);
-        if (page) {
-            // Example: Storing matches as metadata (consider data structure and size limits)
-            // page.metadata.set('matchingProperties', properties);
-            // page.metadata.set('pageMatches', matches);
-            // console.log(`Stored results for page ${pageId}: ${matches.length} matches found.`);
-        }
-    }
 }
 
-export { ProcessingState };
+export {ProcessingState};
