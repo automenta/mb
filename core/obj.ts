@@ -105,6 +105,20 @@ export default class NObject {
   shareWith(userId: string) { this.updateArray(this.sharedWith, userId, true); }
   unshareWith(userId: string) { this.updateArray(this.sharedWith, userId, false); }
 
+   set text(newText: string) {
+       this.doc.transact(() => {
+           const ytext = this.text;
+           ytext.delete(0, ytext.length);
+           ytext.insert(0, newText);
+           this.updateMetadata({});
+           this.generateKeyPair().then(keyPair => { // Regenerate key pair and sign on text change - for demonstration only
+               if (keyPair) {
+                   this.sign(keyPair.privateKey);
+               }
+           });
+       });
+   }
+
   async generateKeyPair() {
     try {
         const keyPair = await crypto.subtle.generateKey(

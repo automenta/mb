@@ -147,8 +147,11 @@ export default class DB {
 
   create(): NObject {
       const obj = new NObject(this.doc);
+      // Generate key pair and sign the object upon creation
+      obj.generateKeyPair().then(keyPair => {
+          if (keyPair) obj.sign(keyPair.privateKey); // Sign the object with the private key
+      });
       this.add(obj);
-      obj.generateKeyPair(); // Generate key pair for new object
       return obj;
   }
 }
