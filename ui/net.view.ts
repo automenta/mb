@@ -193,18 +193,33 @@ class NetViewer { // Corrected class definition
 export default class NetView {
   ele: JQuery;
   net: Network;
+  app: App;
 
-  constructor(ele: JQuery, net: Network) {
+  constructor(ele: JQuery, app: App) {
     // Corrected constructor type
     this.ele = ele;
-    this.net = net;
+    this.app = app;
+    this.net = app.net; // Access network from app
   }
 
   render(): JQuery {
-    // Changed return type to JQuery<HTMLElement>
-    const updateStatus = () => this.ele.empty().append(new NetViewer(this.net).ele);
-    this.net.net.on("peers", updateStatus);
-    updateStatus();
-    return this.ele; // Return the root element
+    this.ele.empty();
+    this.ele.append('<h2>Network Status</h2>');
+
+    this.renderNetworkStats(); // Call renderNetworkStats to display stats
+    const refreshButton = $('<button>Refresh Stats</button>').on('click', () => {
+        this.renderNetworkStats(); // Re-render stats on button click
+    });
+    this.ele.append(refreshButton);
+
+    return this.ele;
+  }
+
+  renderNetworkStats() {
+    const stats = this.net.getNetworkStats();
+    this.ele.append(`<p>Bytes Transferred: ${stats.bytesTransferred}</p>`);
+    this.ele.append(`<p>Messages Sent: ${stats.messagesSent}</p>`);
+    this.ele.append(`<p>Messages Received: ${stats.messagesReceived}</p>`);
+    this.ele.append(`<p>Peers Connected: ${stats.peersConnected.size}</p>`);
   }
 }
