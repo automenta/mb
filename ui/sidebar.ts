@@ -131,9 +131,15 @@ export default class Sidebar {
             this.notificationsView = new NotificationsView($mainView[0], app.db, app.editor!.loadDocument.bind(app.editor!));
         }
 
-        this.ele.append(this.createMenubar()); // Use createMenubar instead of menu
+        this.ele.append(this.createMenubar());
         this.ele.append(this.pageList);
         $(document.body).append(this.contextMenu.ele);
+
+        events.on(NETWORK_ACTIVITY, (event: any) => { // Subscribe to NETWORK_ACTIVITY
+            if (event.type === 'status') {
+                this.updateNetworkStatus(event.data.status);
+            }
+        });
 
         this.store.subscribe(state => this.updatePageList(state.objects));
 
@@ -177,9 +183,21 @@ export default class Sidebar {
             this.createMenuButton({ id: 'database', title: 'DB', view: this.dbView }),
             this.createMenuButton({ id: 'agents', title: 'Agents', view: this.agentsView }),
             this.createMenuButton({ id: 'notifications', title: 'Notifications', view: this.notificationsView }),
-            this.createToggleDarkModeButton()
+            this.createToggleDarkModeButton(),
+            this.createNetworkStatusIndicator() // Add network status indicator
         );
         return menuBar;
+    }
+
+    private createNetworkStatusIndicator(): JQuery {
+        return $('<div>', {
+            class: 'network-status',
+            id: 'network-status-indicator',
+            title: 'Network Status'
+        }).append(
+            $('<span>', { text: 'Network: ' }),
+            $('<span>', { id: 'network-status-text', text: 'Disconnected' }) // Initial status
+        );
     }
 
     private createToggleDarkModeButton(): JQuery {
@@ -268,5 +286,14 @@ export default class Sidebar {
                 });
             return v.ele;
         }));
+    }
+
+    private updateNetworkStatus(status: string): void {
+        const statusTextElement = this.ele.find('#network-status-text');
+        if (statusTextElement) {
+            statusTextElement.text(status);
+            statusTextElement.removeClass('connected disconnected connecting'); // Remove previous classes
+            statusTextElement.addClass(status); // Add class based on status
+        }
     }
 }
