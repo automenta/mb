@@ -101,10 +101,13 @@ export default class App {
 
 
     createNewObject(): void {
-        const newObj = new NObject(this.db.doc); // Use DB instance
+        const newObj = this.db.create();
         newObj.name = 'New Object';
-        newObj.author = this.store.currentUser?.userId || '';
+        newObj.author = this.store.currentUser?.userId || 'Anonymous'; // Handle anonymous user
+        newObj.public = false; // Ensure new objects are private by default
+        newObj.isQuery = false; // Default to not being a query
         this.db.add(newObj);
         this.store.addObject(newObj);
+        this.editor?.loadDocument(newObj);
     }
 }
