@@ -34,6 +34,7 @@ export class MetadataManager {
                 propKey: 'isQuery',
                 onChange: (newValue: boolean) => this.updateIsQuery(currentObject, newValue),
               },
+              { type: 'checkbox', label: 'Is Query', propKey: 'isQuery', onChange: (newValue: boolean) => this.updateIsQuery(currentObject, newValue), },
               { type: 'text', label: 'Name', value: currentObject.name, propKey: 'name', onChange: (newValue: string) => this.updateName(currentObject, newValue), },
               { type: 'checkbox', label: 'Public', value: currentObject.public, propKey: 'public', onChange: (newValue: boolean) => this.updatePublic(currentObject, newValue), },
               { type: 'text', label: 'Author', value: currentObject.author, propKey: 'author', isReadOnly: true },
@@ -102,19 +103,25 @@ export class MetadataManager {
         );
 
 
+            this.updateTagsDisplay(container, currentObject);
+          })
+        );
       tagsDiv.append(tagElement);
     });
 
-    if (!container.find('.tags-list').length)
-      container.append(tagsDiv);
-
+    if (!container.find(".tags-list").length) container.append(tagsDiv);
   }
 
-  showToast(message: string) {
-    const toast = $('<div>', { class: 'toast', text: message });
-    $('body').append(toast);
-    setTimeout(() => toast.remove(), 3000);
-  }
+    updateIsQuery(currentObject: NObject, newValue: boolean) {
+        currentObject.isQuery = newValue;
+        this.showToast(`${newValue ? "Set" : "Unset"} as query`);
+    }
+
+    showToast(message: string) {
+        const toast = $('<div>', { class: 'toast', text: message });
+        $('body').append(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
 
   updatePrivacyIndicator(isPublic: boolean) {
     // Logic to update privacy indicator in the UI

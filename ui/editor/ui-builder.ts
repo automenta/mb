@@ -97,11 +97,72 @@ export default class UIBuilder {
         if (content) {
             element.textContent = content;
         }
-        return element;
+        const formElement = this.createElement("div", "tag-element");
+        formElement.dataset.schemaName = tagName;
+
+        if (this.isReadOnly) formElement.classList.add("read-only");
+
+        // Add a button to remove the tag element
+        const removeButton = this.createElement("button", "remove-tag-element");
+        removeButton.textContent = "x";
+        removeButton.addEventListener("click", () => formElement.remove());
+        formElement.append(removeButton);
+
+        // Add form fields based on tag properties
+        if (tag.properties) {
+            for (const propName in tag.properties) {
+                const property = tag.properties[propName];
+                const label = this.createElement("label");
+                label.textContent = property.title || propName;
+                label.setAttribute("for", `${propName}-field`);
+
+                let inputElement: HTMLElement;
+
+                switch (property.type) {
+                    case "string":
+                        inputElement =
+                            property.format === "textarea"
+                                ? this.createElement("textarea", null, `${propName}-field`)
+                                : (this.createElement("input", null, `${propName}-field`) as HTMLInputElement);
+                        (inputElement as HTMLInputElement).type = "text";
+                        break;
+                    case "number":
+                        inputElement = this.createElement("input", null, `${propName}-field`) as HTMLInputElement;
+                        (inputElement as HTMLInputElement).type = "number";
+                        break;
+                    case "boolean":
+                        inputElement = this.createElement("input", null, `${propName}-field`) as HTMLInputElement;
+                        (inputElement as HTMLInputElement).type = "checkbox";
+                        break;
+                    case "array":
+                        if (property.items.type === "string" && property.items.enum) {
+                            inputElement = this.createElement("select", null, `${propName}-field`);
+                            property.items.enum.forEach((option: string) => {
+                                const optionElement = this.createElement("option") as HTMLOptionElement;
+                                optionElement.value = option;
+                                optionElement.text = option;
+                                (inputElement as HTMLSelectElement).add(optionElement);
+                            });
+                        }
+                        break;
+                    default:
+                        inputElement = this.createElement("input", null, `${propName}-field`) as HTMLInputElement;
+                        (inputElement as HTMLInputElement).type = "text";
+                        console.warn(`Unsupported tag property type: ${property.type}`);
+                }
+
+                inputElement.dataset.schemaProperty = propName;
+                if (this.isReadOnly) (inputElement as HTMLInputElement).disabled = true;
+
+                formElement.append(label, inputElement);
+            }
+        }
+
+        return formElement;
     }
 
     private createTitleEditor(): HTMLElement {
-        const titleEditor = this.createElement('input', 'document-title') as HTMLInputElement;
+        const titleEditor = this.createElement("input", "document-title") as HTMLInputElement;
         titleEditor.type = 'text';
         return titleEditor;
     }
