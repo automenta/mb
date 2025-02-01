@@ -47,6 +47,7 @@ export default class DBView extends View {
 
         this.bindEvents();
         this.updateTable();
+        this.updateStatistics(); // Call updateStatistics to update stats in header
         return this.ele; // Make render() return JQuery
     }
 
@@ -121,8 +122,24 @@ export default class DBView extends View {
         this.updateTable();
     }
 
+    private updateStatistics(): void {
+        const objectCount = this.db.index.size;
+        $('#object-count').text(`Objects: ${objectCount}`);
+
+        // Get peer count from network (if network is available and connected)
+        const network = this.app.net;
+        if (network) {
+            const networkStats = network.getNetworkStats();
+            const peerCount = networkStats.peersConnected.size;
+            $('#peer-count').text(`Peers: ${peerCount}`);
+        } else {
+            $('#peer-count').text('Peers: N/A'); // Indicate N/A if network is not available
+        }
+    }
+
+
     private createRow(page: NObject | null): JQuery {
-        if (!page) return $('<tr>').append($('<td>').text('Error: Page is null')); // Handle null page
+        if (!page) return $('<tr>').append($('<td>').text('Error: Page is null'));
 
         const $row = $('<tr>');
         pageTags?.properties && Object.entries(pageTags.properties).forEach(([field, property]) => {
@@ -158,8 +175,18 @@ export default class DBView extends View {
     }
 
     private createHeader(): JQuery {
-        return $('<h3>').text('Database Objects'); // Updated header text
+        const $header = $('<div>').addClass('db-header');
+        $header.append($('<h3>').text('Database Objects'));
+
+        const $stats = $('<div>').addClass('db-stats');
+        $stats.append(
+            $('<span>').attr('id', 'object-count').text('Objects: 0'),
+            $('<span>').attr('id', 'peer-count').text('Peers: 0') // Placeholder for peer count
+        );
+        $header.append($stats);
+        return $header;
     }
+
 
     private createControls(filterControlsHTML: string): JQuery {
         const $controls = $('<div>').addClass('db-controls');
