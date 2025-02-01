@@ -74,9 +74,27 @@ export default class DBView extends View {
 
     updateTable(): void {
         // Convert Y.Map to array of NObjects
-        const pages: NObject[] = Array.from(this.db.index.values())
+        let pages: NObject[] = Array.from(this.db.index.values())
             .map(id => this.db.get(id))
             .filter(obj => obj !== null) as NObject[]; // Filter out null objects and cast
+
+        // Apply filters
+        if (this.filterValues && Object.keys(this.filterValues).length > 0) {
+            pages = pages.filter(page => {
+                if (!page) return false;
+                let isMatch = true;
+                for (const field in this.filterValues) {
+                    if (!this.filterValues.hasOwnProperty(field)) continue;
+                    const filterValue = this.filterValues[field];
+                    const pageValue = page.getMetadata(field);
+                    if (filterValue && pageValue && !String(pageValue).toLowerCase().includes(filterValue)) {
+                        isMatch = false;
+                        break;
+                    }
+                }
+                return isMatch;
+            });
+        }
 
         this.renderTable(pages);
     }
@@ -168,7 +186,7 @@ export default class DBView extends View {
             filterControlsHTML += `
                 <div class="filter-group">
                     <label for="filter-${field}">${(property as { description: string }).description}:</label>
-                    <input type="text" class="filter-input" id="filter-${field}" data-field="${field}" placeholder="Filter by ${(property as { description: string }).description}">
+                    <input type="text" class="filter-input" id="filter-${field}" data-field="${field}" name="filter-${field}" placeholder="Filter by ${(property as { description: string }).description}">
                 </div>`;
         });
         return filterControlsHTML;
