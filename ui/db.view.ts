@@ -17,14 +17,15 @@ export default class DBView extends View {
     sortKey: string;
     sortOrder: string;
     filterValues: FilterValues = {}; // Initialize filterValues
-    db: DB; // Use imported DB class
+    db: DB;
+    app: App;
 
-    constructor(app: App, root: JQuery<HTMLElement>, db: DB) { // Update constructor to accept DB
-        super(root);
+    constructor(root: HTMLElement, app: App) {
+        super($(root));
         this.app = app;
-        this.db = db;
+        this.db = app.db;
         this.ele = $('<div>').addClass('database-page');
-        this.sortKey = 'name'; // Default sort key to 'name'
+        this.sortKey = 'name';
         this.sortOrder = 'asc';
     }
 
@@ -233,5 +234,24 @@ export default class DBView extends View {
         $thead.append($('<tr>').html(tableHeadersHTML));
         $table.append($thead, $('<tbody>'));
         return $table;
+    }
+    initView() {
+        this.renderObjects(); // Initial render
+        this.app.store.subscribe(() => this.renderObjects()); // Re-render on store changes
+    }
+
+    renderObjects() {
+        this.ele.empty(); // Clear existing content
+        const objects = this.app.store.getState().objects;
+        if (objects && objects.length > 0) {
+            const objectList = $('<ul>').addClass('db-object-list');
+            objects.forEach(obj => {
+                const objViewMini = new ObjViewMini(obj);
+                objectList.append(objViewMini.ele);
+            });
+            this.ele.append(objectList);
+        } else {
+            this.ele.append($('<p>').text('No objects in database.'));
+        }
     }
 }
