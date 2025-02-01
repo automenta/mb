@@ -132,15 +132,15 @@ describe("DB", () => {
       const provider = new IndexeddbPersistence("testdb", doc);
       const db = new DB("testuser", doc, provider);
 
-            // Verify initial state
-            expect(provider.synced).toBe(false);
+      // Verify initial state
+      expect(provider.synced).toBe(false);
 
-            await provider.whenSynced;
+      await provider.whenSynced;
 
-            // Verify sync completion
-            expect(provider.synced).toBe(true);
-            expect(provider.doc).toBe(ydoc);
-        });
+      // Verify sync completion
+      expect(provider.synced).toBe(true);
+      expect(provider.doc).toBe(doc);
+    });
 
         it('log synced event when provider completes synchronization', () => {
             const provider = new IndexeddbPersistence('testdb', ydoc);

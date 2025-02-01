@@ -5,7 +5,7 @@ export default class NObject {
   public readonly id: string;
   public readonly doc: Y.Doc;
   public readonly root: Y.Map<any>;
-  protected readonly meta Y.Map<any>;
+  protected readonly meta: Y.Map<any>;
   protected readonly links: Y.Map<Y.Array<string>>;
 
   constructor(doc: Y.Doc, id?: string) {
