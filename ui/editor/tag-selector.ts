@@ -11,11 +11,13 @@ export default class TagSelector {
 
     constructor(parentElement: HTMLElement, tagName: string) {
     constructor(parentElement: HTMLElement, tagName: string) {
+    constructor(parentElement: HTMLElement, tagName: string) {
         this.rootElement = parentElement;
         this._tagName = tagName;
         this.load();
     }
 
+    private async load() {
     private async load() {
     private async load() {
         this.tag = await this.tagManager.get(this._tagName);
@@ -24,11 +26,15 @@ export default class TagSelector {
 
     private renderUI(): void {
     private renderUI(): void {
+    private renderUI(): void {
         if (!this.tag || typeof this.tag !== 'object' || !this.tag.properties) {
             this.rootElement.innerHTML = 'Tag not found or invalid.';
             return;
         }
 
+        const form = renderTagForm(this.tag as any, this.tags, this.updateTag.bind(this));
+        this.rootElement.innerHTML = '';
+        this.rootElement.appendChild(form[0]);
         const form = renderTagForm(this.tag as any, this.tags, this.updateTag.bind(this));
         this.rootElement.innerHTML = '';
         this.rootElement.appendChild(form[0]);

@@ -21,6 +21,15 @@ export default class EditorCore {
     private metadataManager: any; // TODO: Type this properly once MetadataManager is typed
 
     constructor(config: EditorConfig, editorInstance: any, isReadOnly: boolean) {
+export type UpdateCallback = () => void;
+
+export default class EditorCore {
+    private ytext: Y.Text | null;
+    private editor: JQuery;
+    private config: EditorConfig;
+    private metadataManager: any; // TODO: Type this properly once MetadataManager is typed
+
+    constructor(config: EditorConfig, editorInstance: any, isReadOnly: boolean) {
         if (!config.db) throw new Error('DB instance required');
 
         this.metadataManager = new MetadataManager(isReadOnly); // Initialize MetadataManager
@@ -36,9 +45,11 @@ export default class EditorCore {
 
     private getContentFromObject(obj: any): Y.Text | null {
     private getContentFromObject(obj: any): Y.Text | null {
+    private getContentFromObject(obj: any): Y.Text | null {
         return obj instanceof Y.Map ? obj.get('content') : obj.text;
     }
 
+    private renderEditor(): JQuery {
     private renderEditor(): JQuery {
     private renderEditor(): JQuery {
         const content = this.ytext ? this.ytext.toString() : '';

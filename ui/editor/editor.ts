@@ -212,6 +212,20 @@ export default class Editor {
         } else {
             console.error('Failed to load object:', objectId);
         }
+        } else if (this.currentObject instanceof NObject) {
+            this.currentObject.text = (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML;
+            this.currentObject.tags = this.tagSelector.getTags();
+            this.config.db.persistDocument(this.currentObject);
+        }
+    }
+
+    public loadObject(objectId: string): void {
+        const obj = this.config.db.get(objectId);
+        if (obj) {
+            this.loadDocument(obj);
+        } else {
+            console.error('Failed to load object:', objectId);
+        }
     }
 
     public loadDocument(object: NObject | Y.Map<any>): void {
