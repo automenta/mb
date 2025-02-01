@@ -214,40 +214,53 @@ export default class Editor {
 
     public loadDocument(object: NObject | Y.Map<any>): void {
         this.currentObject = object;
+
         if (object instanceof Y.Map) {
-            const title = object.get('name') || 'Untitled';
-            const content = object.get('content');
-            const contentEditor = this.rootElement.querySelector('.content-editor') as HTMLElement;
-            const titleEditor = this.rootElement.querySelector('.document-title') as HTMLInputElement;
-
-            if (titleEditor) titleEditor.value = title;
-
-            if (content instanceof Y.Text) {
-                contentEditor.innerHTML = content.toString();
-            } else if (content !== null && content !== undefined) {
-                contentEditor.innerHTML = content.toString();
-            } else {
-                if (!object.has('content')) {
-                    object.set('content', new Y.Text());
-                }
-                contentEditor.innerHTML = '';
-            }
-            const name = object.get('name') || 'Untitled';
-            if (titleEditor) titleEditor.value = name;
-            const tags = object.get('tags');
-            if (tags) {
-                this.tagSelector.setTags(tags);
-            }
-            this.tagSelector.setTagName(object.get('id'));
+            this.loadYMapDocument(object);
         } else if (object instanceof NObject) {
-            (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML = object.text.toString();
-            (this.rootElement.querySelector('.document-title') as HTMLInputElement).value = object.name;
-            this.meta.renderMetadataPanel(object);
+            this.loadNObjectDocument(object);
         } else {
-            (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML = '';
-            this.meta.clearMetadataPanel();
+            this.clearDocumentView();
         }
         this.updatePrivacy();
+    }
+
+    private loadYMapDocument(object: Y.Map<any>): void {
+        const title = object.get('name') || 'Untitled';
+        const content = object.get('content');
+        const contentEditor = this.rootElement.querySelector('.content-editor') as HTMLElement;
+        const titleEditor = this.rootElement.querySelector('.document-title') as HTMLInputElement;
+
+        if (titleEditor) titleEditor.value = title;
+
+        if (content instanceof Y.Text) {
+            contentEditor.innerHTML = content.toString();
+        } else if (content !== null && content !== undefined) {
+            contentEditor.innerHTML = content.toString();
+        } else {
+            if (!object.has('content')) {
+                object.set('content', new Y.Text());
+            }
+            contentEditor.innerHTML = '';
+        }
+        const name = object.get('name') || 'Untitled';
+        if (titleEditor) titleEditor.value = name;
+        const tags = object.get('tags');
+        if (tags) {
+            this.tagSelector.setTags(tags);
+        }
+        this.tagSelector.setTagName(object.get('id'));
+    }
+
+    private loadNObjectDocument(object: NObject): void {
+        (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML = object.text.toString();
+        (this.rootElement.querySelector('.document-title') as HTMLInputElement).value = object.name;
+        this.meta.renderMetadataPanel(object);
+    }
+
+    private clearDocumentView(): void {
+        (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML = '';
+        this.meta.clearMetadataPanel();
     }
 
     public togglePrivacy(): void {
