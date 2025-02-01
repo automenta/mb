@@ -269,7 +269,7 @@ export default class Sidebar {
                 })
                 .on('click', async () => {
                     this.store.setCurrentObject(obj);
-                    await this.store.app?.editor?.loadDocument(obj);
+                    this.viewManager.app.editor?.loadDocument(obj); // Load document in editor
                     this.switchView('my-objects'); // Keep 'my-objects' view active
                 });
             return v.ele;

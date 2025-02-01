@@ -15,6 +15,7 @@ import MatchView from './match.view';
 import Sidebar from './sidebar';
 import { SettingsView } from './settings.view';
 import { randomUUID } from 'crypto';
+import Editor from './editor/editor'; // Import Editor
 
 class ThemeManager {
     isDarkMode: boolean;
@@ -42,7 +43,8 @@ class ThemeManager {
     themes: ThemeManager;
     private views: ViewManager;
     public tags: Tags;
-    private sidebar: Sidebar; // Add Sidebar instance
+    private sidebar: Sidebar;
+    public editor?: Editor; // Add Editor property
 
     constructor(channel: string, rootElement: HTMLElement) {
         this.channel = channel;
@@ -59,9 +61,18 @@ class ThemeManager {
         return this.store.currentObject;
     }
 
-        this.views = new ViewManager(this, this.store); // Initialize ViewManager
-        this.sidebar = new Sidebar(this.views, $('.sidebar')[0]); // Initialize Sidebar and pass ViewManager
-        this.views.showView('db-view'); // Show initial view
+        this.views = new ViewManager(this, this.store);
+        this.sidebar = new Sidebar(this.views, $('.sidebar')[0]);
+        this.editor = new Editor({ // Initialize Editor
+            db: this.db,
+            net: this.net,
+            tags: this.tags,
+            ele: $('.main-view')[0], // Pass main-view as editor container
+            app: this,
+            ydoc: this.db.doc,
+            getAwareness: () => this.getAwareness()
+        });
+        this.views.showView('db-view');
 
         this.render();
         console.log('App initialized', this);
