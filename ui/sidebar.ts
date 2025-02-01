@@ -150,19 +150,33 @@ export default class Sidebar {
     private createMenubar(): JQuery {
         const menuBar = $('<div>', { class: 'menubar' });
         menuBar.append(
+            this.createViewMenuButtons(),
+            this.createUtilityButtons()
+        );
+        return menuBar;
+    }
+
+    private createViewMenuButtons(): JQuery {
+        const viewMenuButtons = $('<div>');
+        viewMenuButtons.append(
             this.createAddPageButton(),
-            //this.createTestAddObjectButton(), // Removed test button
-            //this.createListViewModeDropdown(), // Removed dropdown for now
             this.createMenuButton({ id: 'profile', title: 'Me', view: this.meView }),
             this.createMenuButton({ id: 'friends', title: 'Friends', view: this.friendsView }),
             this.createMenuButton({ id: 'network', title: 'Network', view: this.netView }),
             this.createMenuButton({ id: 'database', title: 'DB', view: this.dbView }),
             this.createMenuButton({ id: 'agents', title: 'Agents', view: this.agentsView }),
             this.createMenuButton({ id: 'notifications', title: 'Notifications', view: this.notificationsView }),
-            this.createToggleDarkModeButton(),
-            this.createNetworkStatusIndicator() // Add network status indicator
         );
-        return menuBar;
+        return viewMenuButtons;
+    }
+
+    private createUtilityButtons(): JQuery {
+        const utilityButtons = $('<div>');
+        utilityButtons.append(
+            this.createToggleDarkModeButton(),
+            this.createNetworkStatusIndicator()
+        );
+        return utilityButtons;
     }
 
     private createNetworkStatusIndicator(): JQuery {
