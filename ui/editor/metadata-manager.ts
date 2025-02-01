@@ -13,13 +13,29 @@ export class MetadataManager {
         }).append(
           new Form({
             fields: [
+import $ from 'jquery';
+import NObject from '../../core/obj';
+import { Form } from '../util/form';
+
+export class MetadataManager {
+  constructor(private readonly isReadOnly: boolean) {}
+
+  renderMetadataPanel(currentObject: NObject): JQuery {
+    return !currentObject
+      ? $('<div>')
+      : $('<div>', {
+          class: 'metadata-panel form-container',
+        }).append(
+          new Form({
+            fields: [
               {
                 type: 'checkbox',
                 label: 'Is Query',
                 propKey: 'isQuery',
+                onChange: (newValue: boolean) => this.updateIsQuery(currentObject, newValue),
               },
-              { type: 'text', label: 'Name', value: currentObject.name, propKey: 'name' },
-              { type: 'checkbox', label: 'Public', value: currentObject.public, propKey: 'public' },
+              { type: 'text', label: 'Name', value: currentObject.name, propKey: 'name', onChange: (newValue: string) => this.updateName(currentObject, newValue), },
+              { type: 'checkbox', label: 'Public', value: currentObject.public, propKey: 'public', onChange: (newValue: boolean) => this.updatePublic(currentObject, newValue), },
               { type: 'text', label: 'Author', value: currentObject.author, propKey: 'author', isReadOnly: true },
               { type: 'text', label: 'Page ID', value: currentObject.id, propKey: 'id', isReadOnly: true },
               { type: 'text', label: 'Created', value: new Date(currentObject.created).toLocaleString(), propKey: 'created', isReadOnly: true },
