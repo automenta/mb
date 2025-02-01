@@ -17,7 +17,7 @@ export default class ViewManager {
         this.store = store;
         this.initializeViews();
         this.setupNavigation();
-    }
+    };
 
     private initializeViews(): void {
         // Initialize views here
