@@ -15,6 +15,8 @@ import MatchView from './match.view';
 import Sidebar from './sidebar';
 import { SettingsView } from './settings.view';
 import { randomUUID } from 'crypto';
+import { Store, initializeStore, getStore } from './store';
+import ViewManager from './view-manager';
 import Editor from './editor/editor'; // Import Editor
 
 class ThemeManager {
@@ -38,6 +40,10 @@ class ThemeManager {
     }
 }
 
+export interface AppConfig {
+    element: HTMLElement;
+}
+export default class App {
     public store: Store;
     public ele: JQuery;
     themes: ThemeManager;
@@ -46,25 +52,25 @@ class ThemeManager {
     private sidebar: Sidebar;
     public editor?: Editor; // Add Editor property
 
-    constructor(channel: string, rootElement: HTMLElement) {
+    constructor(channel: string, config: AppConfig) {
         this.channel = channel;
         this.db = new DB(channel);
         this.net = new Network(channel, this.db);
         this.match = new Matching(this.db, this.net);
 
-        this.ele = $(rootElement);
+        this.ele = $(config.element);
         this.store = getStore(this.db);
-        this.themes = new ThemeManager(this.ele);
+        this.themes = new ThemeManager(this.ele[0]);
         this.tags = new Tags();
-
+        this.views = new ViewManager(this, this.store);
     getSelectedObject(): any | null {
         return this.store.currentObject;
     }
 
         this.views = new ViewManager(this, this.store);
-        this.sidebar = new Sidebar(this.views, $('.sidebar')[0]);
+        this.sidebar = new Sidebar(this.views, this, $('.sidebar')[0]);
         this.editor = new Editor({ // Initialize Editor
-            db: this.db,
+            db: this.db, // Pass DB instance
             net: this.net,
             tags: this.tags,
             ele: $('.main-view')[0], // Pass main-view as editor container
@@ -72,7 +78,7 @@ class ThemeManager {
             ydoc: this.db.doc,
             getAwareness: () => this.getAwareness()
         });
-        this.views.showView('db-view');
+        this.views.showView('db'); // Show the DB view initially
 
         this.render();
         console.log('App initialized', this);
@@ -124,7 +130,7 @@ class ThemeManager {
 
 
     createNewObject(): void {
-        const newObj = new NObject(this.db.doc);
+        const newObj = new NObject(this.db.doc); // Use DB instance
         newObj.name = 'New Object';
         newObj.author = this.store.currentUser?.userId || '';
         this.db.add(newObj);

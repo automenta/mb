@@ -11,24 +11,15 @@ import DBView from "./db.view";
 import MatchingView from "./match.view.js";
 import AgentsView from "./agents.view";
 import App from './app';
-import App from './app';
+import ViewManager from './view-manager';
 import View from './util/view';
 
 class PageContextMenu {
     readonly ele: JQuery;
     private selectedPageId: string | null = null;
     app: App; // Add App instance
-
-    constructor(store: ReturnType<typeof initializeStore> & { app?: App }) {
-        this.app = store.app!; // Access app from store
-        this.ele = $('<div>').addClass('context-menu').html(`
-            <ul>
-                <li data-action="rename-page">Rename</li>
-                <li data-action="delete-page">delete-page</li>
-            </ul>
-        `).hide(); // Initially hide context menu
-
-    constructor(private store: ReturnType<typeof initializeStore> & { app?: App }) {
+    constructor(app: App) {
+        this.app = app; // Access app from store
         this.ele = $('<div>').addClass('context-menu').html(`
             <ul>
                 <li data-action="rename-page">Rename</li>
@@ -46,11 +37,11 @@ class PageContextMenu {
             const action = $(e.target).data('action');
             if (!action) return;
 
-            const currentObject = store.getState().currentObject;
+            const currentObject = this.app.store.getState().currentObject;
             if (!currentObject) return;
 
             if (action === 'rename-page') this.renamePage(currentObject);
-            else if (action === 'delete-page') this.deletePage(currentObject);
+            else if (action === 'delete-page') this.deletePage(currentObject!);
             this.hide();
         });
     }
@@ -63,17 +54,16 @@ class PageContextMenu {
         }
     }
 
-    deletePage(obj: NObject) {
+    deletePage(obj: NObject): void {
         if (confirm(`Are you sure you want to delete page "${obj.name}"?`)) { // Confirm with page name
             const wasPublic = obj.public;
-            store.removeObject(obj.id);
+            this.app.store.removeObject(obj.id);
 
-            this.store.app?.db?.delete(obj.id);
-            this.store.app?.editor?.clearIfCurrent(obj.id);
+            this.app.db.delete(obj.id);
+            this.app.editor?.clearIfCurrent(obj.id);
 
             if (wasPublic) {
-                const net = this.store.app?.net;
-                net?.unshareObject(obj.id);
+                this.app.net?.unshareObject(obj.id);
             }
         }
     }
@@ -97,9 +87,7 @@ class PageContextMenu {
 export default class Sidebar {
     readonly ele: JQuery;
     private contextMenu: PageContextMenu;
-    private readonly pageList: JQuery;
-    private readonly store: ReturnType<typeof initializeStore> & { app?: App; };
-    private readonly meView: MeView | null;
+    private readonly pageList: JQuery;    private readonly meView: MeView | null;
     private readonly friendsView: FriendsView;
     private readonly netView: NetView;
     private readonly dbView: DBView | null;
@@ -108,13 +96,13 @@ export default class Sidebar {
     private readonly agentsView: AgentsView;
     private currentView: View | null = null; // Track current view
     private viewManager: ViewManager;
+    private app: App;
 
-    constructor(viewManager: ViewManager, ele: HTMLElement) {
+    constructor(viewManager: ViewManager, app: App, ele: HTMLElement) {
         this.viewManager = viewManager;
         this.ele = $(ele).addClass('sidebar');
-        this.store = initializeStore(this.viewManager.app.db); // Access app from viewManager
-        this.store.app = this.viewManager.app; // Access app from viewManager
-        this.contextMenu = new PageContextMenu(this.store);
+        this.app = app;
+        this.contextMenu = new PageContextMenu(this.app);
         this.pageList = $('<ul>', { class: 'page-list' });
         const $mainView = $('.main-view');
         console.log('Sidebar: mainView jQuery object:', $mainView); // Log mainView
@@ -141,7 +129,7 @@ export default class Sidebar {
             }
         });
 
-        this.store.subscribe(state => this.updatePageList(state.objects));
+        this.app.store.subscribe(state => this.updatePageList(state.objects));
 
         // Initially show 'My Objects' list
         this.switchView('my-objects'); // Initial view is page list
@@ -154,7 +142,7 @@ export default class Sidebar {
             class: 'menubar-button add-page-button',
             title: 'Add New Page'
         }).append($('<i>', { class: 'fas fa-plus' })).on('click', () => { // Using font-awesome icon
-            this.app.createNewObject();
+            this.app.createNewObject(); // Use app instance
         });
     }
 
@@ -196,7 +184,7 @@ export default class Sidebar {
             $('<i>', { class: 'fas fa-adjust' }), // Example icon for dark mode toggle
             $('<span>').text('Theme') // Text label for clarity
         ).on('click', () => {
-            this.store.app?.toggleDarkMode();
+            this.app.toggleDarkMode(); // Use app instance
         });
     }
 
@@ -268,7 +256,7 @@ export default class Sidebar {
                     this.contextMenu.show(e, obj.id); // Use simplified 'show' method
                 })
                 .on('click', async () => {
-                    this.store.setCurrentObject(obj);
+                    this.app.store.setCurrentObject(obj);
                     this.viewManager.app.editor?.loadDocument(obj); // Load document in editor
                     this.switchView('my-objects'); // Keep 'my-objects' view active
                 });
