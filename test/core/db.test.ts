@@ -167,20 +167,14 @@ describe("DB", () => {
     });
   });
 
-  // New test for error handling in createReply
-  it("log error for invalid name in createReply", () => {
+  it.each([
+    [null, "null"],
+    [undefined, "undefined"],
+  ])("log error for invalid name in createReply with %s name", (invalidName, nameType) => {
     const obj = db.create();
     const consoleSpy = vi.spyOn(console, "error");
-    const reply = db.createReply(obj.id, null);
-    expect(consoleSpy).toHaveBeenCalledWith("Invalid name:", null);
-    expect(reply).toBeNull();
-  });
-
-  it("log error for invalid name in createReply", () => {
-    const obj = db.create();
-    const consoleSpy = vi.spyOn(console, "error");
-    const reply = db.createReply(obj.id, undefined);
-    expect(consoleSpy).toHaveBeenCalledWith("Invalid name:", undefined);
+    const reply = db.createReply(obj.id, invalidName);
+    expect(consoleSpy).toHaveBeenCalledWith("Invalid name:", invalidName);
     expect(reply).toBeNull();
   });
 
