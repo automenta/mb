@@ -220,7 +220,6 @@ export default class Editor {
     }
 
     public loadDocument(object: NObject | Y.Map<any>): void {
-        console.log('Editor.loadDocument: loading object', object?.get('id') || object?.id); // Add console log
         this.currentObject = object;
         if (object instanceof Y.Map) {
             const title = object.get('name') || 'Untitled';

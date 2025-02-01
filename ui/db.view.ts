@@ -167,7 +167,6 @@ export default class DBView extends View {
 
         const editButton = $('<button>').text('Edit').addClass('edit-button').on('click', () => {
             console.log('Edit button clicked for pageId:', page.id);
-            console.log('this.app.editor:', this.app.editor); // Check if this.app.editor is defined
             this.app.editor?.loadDocument(page); // Load document in editor
         });
         $row.append($('<td>').append(editButton));
