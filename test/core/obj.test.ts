@@ -99,4 +99,28 @@ describe('NObject', () => {
         expect(subMap2 instanceof Y.Map).toBe(true);
         expect(subMap2.get('key2')).toEqual('value2');
     });
+
+    describe('crypto functions', () => {
+        it('generateKeyPair() should generate a key pair and store publicKey', async () => {
+            await obj.generateKeyPair();
+            const publicKey = obj.getMetadata('publicKey');
+            expect(publicKey).toBeDefined();
+            expect(typeof publicKey).toBe('string'); // Public key should be stored as stringified JWK
+        });
+
+        it('sign() and verifySignature() should sign and verify object', async () => {
+            const keyPair = await obj.generateKeyPair();
+            await obj.sign(keyPair.privateKey);
+            const signature = obj.getMetadata('signature');
+            expect(signature).toBeDefined();
+
+            const isValidSignature = await obj.verifySignature();
+            expect(isValidSignature).toBe(true);
+
+            // Tamper with object content
+            obj.name = 'Tampered Name';
+            const isStillValid = await obj.verifySignature();
+            expect(isStillValid).toBe(false); // Signature should no longer be valid
+        });
+    });
 });
