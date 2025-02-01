@@ -125,4 +125,13 @@ export class MetadataManager {
   clearMetadataPanel(): void {
     $('.metadata-panel').empty(); // Or however you want to clear the panel
   }
+
+  updatePrivacyIndicator(isPublic: boolean) {
+    const privacyIndicator = $('.privacy-indicator');
+    if (privacyIndicator.length) {
+        privacyIndicator.text(isPublic ? 'Public' : 'Private');
+        privacyIndicator.toggleClass('public', isPublic);
+        privacyIndicator.toggleClass('private', !isPublic);
+    }
+  }
 }
