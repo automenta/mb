@@ -37,10 +37,41 @@ export default class Editor {
     }
 
     public setBlockFormat(format: string): void {
-        this.editorCore.setBlockFormat(format);
+        if (format === 'heading') {
+            document.execCommand('formatBlock', false, '<h1>'); // Default to H1 for heading
+        } else if (format === 'pre') {
+            document.execCommand('formatBlock', false, '<pre>');
+        } else if (format === 'ordered-list') {
+            document.execCommand('insertOrderedList', false);
+        } else if (format === 'bulleted-list') {
+            document.execCommand('insertUnorderedList', false);
+        } else if (format === 'blockquote') {
+            document.execCommand('formatBlock', false, '<blockquote>');
+        }
+         else if (format.startsWith('<h') && format.endsWith('1>')) {
+            document.execCommand('formatBlock', false, format);
+        }
+         else if (format.startsWith('<h') && format.endsWith('2>')) {
+            document.execCommand('formatBlock', false, format);
+        }
+         else if (format.startsWith('<h') && format.endsWith('3>')) {
+            document.execCommand('formatBlock', false, format);
+        }
+         else if (format.startsWith('<h') && format.endsWith('4>')) {
+            document.execCommand('formatBlock', false, format);
+        }
+         else if (format.startsWith('<h') && format.endsWith('5>')) {
+            document.execCommand('formatBlock', false, format);
+        }
+         else if (format.startsWith('<h') && format.endsWith('6>')) {
+            document.execCommand('formatBlock', false, format);
+        }
+         else {
+            document.execCommand('formatBlock', false, format);
+        }
     }
 
-    constructor(config: EditorConfig) {
+    constructor(config: EditorConfig, editorInstance: any, isReadOnly: boolean) {
         this.config = config;
         this.doc = config.ydoc; // Use ydoc from config
         // console.log('Editor.constructor: this.doc:', this.doc); // Add log
