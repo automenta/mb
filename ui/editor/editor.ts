@@ -133,10 +133,10 @@ export default class Editor {
         if (this.currentObject) {
             if (this.currentObject instanceof NObject) {
                 this.currentObject.name = newTitle;
-                this.config.app.store.setCurrentObject(this.currentObject);
-            } else {
+            } else if (this.currentObject instanceof Y.Map) {
                 this.currentObject.set('name', newTitle);
             }
+            this.config.app.store.setCurrentObject(this.currentObject);
         }
     }
 
@@ -209,17 +209,8 @@ export default class Editor {
                 }
                 contentEditor.innerHTML = '';
             }
-
-            if (titleEditor) titleEditor.value = title;
-
-            if (content instanceof Y.Text) {
-                contentEditor.innerHTML = content.toString();
-            } else {
-                if (!object.has('content')) {
-                    object.set('content', new Y.Text());
-                }
-                contentEditor.innerHTML = '';
-            }
+            const name = object.get('name') || 'Untitled';
+            if (titleEditor) titleEditor.value = name;
             const tags = object.get('tags');
             if (tags) {
                 this.tagSelector.setTags(tags);
