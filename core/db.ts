@@ -104,10 +104,19 @@ export default class DB {
     }
   }
 
-  get(id: string): NObject | null {
+  async get(id: string): Promise<NObject | null> {
     try {
       const objectId = this.index.get(id) as string;
-      return objectId ? new NObject(this.doc, objectId) : null;
+      if (!objectId) return null;
+      const obj = new NObject(this.doc, objectId);
+
+      const isValidSignature = await obj.verifySignature();
+      if (!isValidSignature) {
+        console.error(`Signature verification failed for object ID: ${id}`);
+        return null; // Return null if signature is invalid
+      }
+
+      return obj;
     } catch (error) {
       console.error("Error getting object:", error);
       // Handle error appropriately, possibly notifying the user
