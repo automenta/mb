@@ -10,52 +10,33 @@ export default class EditorCore {
     private editor: JQuery;
     private config: EditorConfig;
     private metadataManager: any; // TODO: Type this properly once MetadataManager is typed
-
-    constructor(config: EditorConfig, editorInstance: any, isReadOnly: boolean) {
-export type UpdateCallback = () => void;
-
-export default class EditorCore {
-    private ytext: Y.Text | null;
-    private editor: JQuery;
-    private config: EditorConfig;
-    private metadataManager: any; // TODO: Type this properly once MetadataManager is typed
-
-    constructor(config: EditorConfig, editorInstance: any, isReadOnly: boolean) {
-export type UpdateCallback = () => void;
-
-export default class EditorCore {
-    private ytext: Y.Text | null;
-    private editor: JQuery;
-    private config: EditorConfig;
-    private metadataManager: any; // TODO: Type this properly once MetadataManager is typed
+    public editorElement: JQuery; // Publicly expose editor element
 
     constructor(config: EditorConfig, editorInstance: any, isReadOnly: boolean) {
         if (!config.db) throw new Error('DB instance required');
 
-        this.metadataManager = new MetadataManager(isReadOnly); // Initialize MetadataManager
+        this.config = config;
         this.metadataManager = new MetadataManager(isReadOnly); // Initialize MetadataManager
         this.config.isReadOnly = isReadOnly; // Store isReadOnly in config
-    if (config.currentObject)
-        this.ytext = this.getContentFromObject(this.config.currentObject);
-}
-
+        this.ytext = null; // Initialize ytext to null
+        if (config.currentObject) {
+            this.ytext = this.getContentFromObject(config.currentObject);
+        }
+        this.editorElement = this.renderEditor(); // Initialize and store editor element
     }
 
-    private getContentFromObject(obj: any): Y.Text | null {
-    private getContentFromObject(obj: any): Y.Text | null {
+
     private getContentFromObject(obj: any): Y.Text | null {
         return obj instanceof Y.Map ? obj.get('content') : obj.text;
     }
 
     private renderEditor(): JQuery {
-    private renderEditor(): JQuery {
-    private renderEditor(): JQuery {
         const content = this.ytext ? this.ytext.toString() : '';
-        return $('<div>', {
-            class: 'editor',
+        this.editor = $('<div>', {
+            class: 'content-editor', // Changed class name to 'content-editor'
             contenteditable: !this.config.isReadOnly,
             spellcheck: true,
-            text: content,
+            html: content, // Use 'html' to set content, not 'text'
         })
             .on('input', (e) => this.saveContent(e))
             .on('keydown', e => this.handleFormattingShortcuts(e));
