@@ -6,7 +6,7 @@ import DB from '../../core/db';
 import Network from '../../core/net';
 import NObject from '../../core/obj';
 import {createEd25519PeerId} from '@libp2p/peer-id-factory';
-import P2PNode from '../../server/p2p';
+import P2PNode from '../../server/net/p2p';
 import type {EventEmitter} from 'events';
 
 export const createTestDB = (userId = 'testuser') => {

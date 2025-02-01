@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 import NObject from './obj';
 
-class Config {
+export default class Config {
     private configObj: NObject;
 
     constructor(doc: Y.Doc) {
@@ -24,5 +24,3 @@ class Config {
         this.configObj.setMetadata('userProfile', profile);
     }
 }
-
-export default Config;

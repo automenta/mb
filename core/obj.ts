@@ -1,276 +1,236 @@
-import * as Y from 'yjs';
-import {uuidv4} from "lib0/random";
+import { JSONValue, JSONType, UpdateEncoderV1, UpdateEncoderAny } from "yjs";
+import { generateKeyPairSync, createSign, createVerify } from "node:crypto";
 
-export default class NObject {
-    public readonly id: string;
-    public readonly doc: Y.Doc;
-    public readonly root: Y.Map<any>;
-    protected readonly meta: Y.Map<any>;
-    protected readonly links: Y.Map<Y.Array<string>>;
+import * as Y from "yjs";
+import { uuidv4 } from "lib0/random";
 
-    constructor(doc: Y.Doc, id?: string) {
-        this.doc = doc;
-        this.id = id || uuidv4();
-        this.root = doc.getMap(this.id);
-        this.meta = this.getOrInitSubMap('metadata', [
-            ['id', this.id],
-            ['name', '?'],
-            ['created', Date.now()],
-            ['updated', Date.now()],
-            ['public', false],
-            ['isQuery', false],
-            ['author', ''],
-            ['tags', new Y.Array<string>()],
-            ['signature', ''], // Add signature metadata field
-            ['publicKey', ''], // Add publicKey metadata field
-            ['sharedWith', new Y.Array<string>()]
-        ]);
-        this.links = this.getOrInitSubMap('links', [
-            ['reply', new Y.Array<string>()],
-            ['replyTo', new Y.Array<string>()]
-        ]);
-
-        this.getOrInitSubMap('content'); // Ensure content map is initialized
-    }
-
-    // Getters
-    get created() {
-        return this.meta.get('created');
-    }
-
-    get updated() {
-        return this.meta.get('updated');
-    }
-
-    get name() {
-        return this.meta.get('name');
-    }
-
-    // Setters
-    set name(v: string) {
-        this.updateMetadata({name: v});
-    }
-
-    get public() {
-        return this.meta.get('public');
-    }
-
-    set public(v: boolean) {
-        this.updateMetadata({public: v});
-    }
-
-    get isQuery() {
-        return this.meta.get('isQuery');
-    }
-
-    set isQuery(v: boolean) {
-        this.updateMetadata({isQuery: v});
-    }
-
-    get author() {
-        return this.meta.get('author');
-    }
-
-    set author(v: string) {
-        this.updateMetadata({author: v});
-    }
-
-    get text(): Y.Text {
-        let content = this.root.get('content');
-        if (!(content instanceof Y.Text)) {
-            content = new Y.Text();
-            content.insert(0, 'Test text');
-            this.root.set('content', content);
-        }
-        return content;
-    }
-
-    set text(newText: string) {
-        this.doc.transact(() => {
-            const ytext = this.text;
-            ytext.delete(0, ytext.length);
-            ytext.insert(0, newText);
-            this.updateMetadata({});
-        });
-    }
-
-    get tags() {
-        return this.meta.get('tags');
-    }
-
-    get sharedWith(): Y.Array<string> {
-        return this.meta.get('sharedWith');
-    }
-
-    get replies(): Y.Array<string> {
-        return this.links.get('reply');
-    }
-
-    get repliesTo(): Y.Array<string> {
-        return this.links.get('replyTo');
-    }
-
-    // Methods using the helpers
-    addTag(tag: string) {
-        this.updateArray(this.tags, tag, true);
-    }
-
-    removeTag(tag: string) {
-        this.updateArray(this.tags, tag, false);
-    }
-
-    addReply(id: string) {
-        this.updateArray(this.replies, id, true);
-    }
-
-    removeReply(id: string) {
-        this.updateArray(this.replies, id, false);
-    }
-
-    addReplyTo(id: string) {
-        this.updateArray(this.repliesTo, id, true);
-    }
-
-    removeReplyTo(id: string) {
-        this.updateArray(this.repliesTo, id, false);
-    }
-
-    shareWith(userId: string) {
-        this.updateArray(this.sharedWith, userId, true);
-    }
-
-    unshareWith(userId: string) {
-        this.updateArray(this.sharedWith, userId, false);
-    }
-
-    async generateKeyPair() {
-        try {
-            const keyPair = await crypto.subtle.generateKey(
-                {
-                    name: "ECDSA",
-                    namedCurve: "P-256"
-                },
-                true,
-                ["sign", "verify"]
-            );
-            const publicKeyJwk = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
-            this.meta.set('publicKey', JSON.stringify(publicKeyJwk));
-            return keyPair;
-        } catch (error) {
-            console.error("Error generating key pair:", error);
-            throw error;
-        }
-    }
-
-    async sign(privateKey: CryptoKey) {
-        try {
-            const text = this.text.toString();
-            const encoder = new TextEncoder();
-            const data = encoder.encode(text);
-            const signature = await crypto.subtle.sign(
-                {
-                    name: "ECDSA",
-                    hash: {name: "SHA-256"}
-                },
-                privateKey,
-                data
-            );
-            this.meta.set('signature', Buffer.from(signature).toString('base64'));
-        } catch (error) {
-            console.error("Error signing object:", error);
-            throw error;
-        }
-    }
-
-    async verifySignature() {
-        try {
-            const publicKeyJwk = JSON.parse(this.meta.get('publicKey'));
-            const publicKey = await crypto.subtle.importKey(
-                "jwk",
-                publicKeyJwk,
-                {
-                    name: "ECDSA",
-                    namedCurve: "P-256"
-                },
-                true,
-                ["verify"]
-            );
-            
-            const signature = Buffer.from(this.meta.get('signature'), 'base64');
-            const text = this.text.toString();
-            const encoder = new TextEncoder();
-            const data = encoder.encode(text);
-            
-            return await crypto.subtle.verify(
-                {
-                    name: "ECDSA",
-                    hash: {name: "SHA-256"}
-                },
-                publicKey,
-                signature,
-                data
-            );
-        } catch (error) {
-            console.error("Error verifying signature:", error);
-            return false;
-        }
-    }
-
-    observe(fn: (events: Y.YEvent<any>[]) => void) {
-        this.root.observeDeep(fn);
-    }
-
-    unobserve(fn: (events: Y.YEvent<any>[]) => void) {
-        this.root.unobserveDeep(fn);
-    }
-
-    toJSON() {
-        return {
-            metadata: this.meta.toJSON(),
-            content: this.text.toString(),
-            links: this.links.toJSON()
-        };
-    }
-
-    protected getOrInitSubMap(key: string, initialData: [string, any][] = []): Y.Map<any> {
-        let ymap = this.root.get(key);
-        if (!(ymap instanceof Y.Map)) {
-            ymap = new Y.Map();
-            this.root.set(key, ymap);
-        }
-        // Set initial data if provided
-        if (initialData.length > 0) {
-            this.doc.transact(() => {
-                initialData.forEach(([k, v]) => {
-                    if (!ymap.has(k)) {
-                        ymap.set(k, v);
-                    }
-                });
-            });
-        }
-        return ymap;
-    }
-
-    // Helper method for adding to Y.Array
-    protected updateArray(arr: Y.Array<string>, item: string, add: boolean) {
-        this.doc.transact(() => {
-            const index = arr.toArray().indexOf(item);
-            if (add && index === -1) {
-                arr.push([item]);
-            } else if (!add && index > -1) {
-                arr.delete(index, 1); // Use index directly to delete
-            }
-            this.updateMetadata({}); // Just to update 'updated'
-        });
-    }
-
-    // Helper to update metadata within a transaction
-    private updateMetadata(updates: { [key: string]: any }) {
-        this.doc.transact(() => {
-            for (const key in updates) {
-                this.meta.set(key, updates[key]);
-            }
-            this.meta.set('updated', Date.now());
-        });
-    }
+// Define metadata structure
+interface Metadata {
+  [key: string]: JSONValue;
 }
+
+// Define links structure
+interface Links {
+  [key: string]: string; // Assuming links are stored as strings
+}
+
+// NObject represents an object in the system.
+class NObject {
+  public readonly id: string;
+  private doc: Y.Doc;
+  private readonly metadata: Y.Map<JSONValue>;
+  private text: Y.Text;
+  private readonly links: Y.Map<string>;
+
+  constructor(doc: Y.Doc, id?: string) {
+    this.id = id ? id : uuidv4();
+    this.doc = doc;
+
+    this.metadata = doc.getMap<JSONValue>(`metadata-${this.id}`);
+    this.text = doc.getText(`text-${this.id}`);
+    this.links = doc.getMap<string>(`links-${this.id}`);
+  }
+
+  // getMetadata retrieves a specific metadata value by key.
+  getMetadata(key: string): JSONValue | undefined {
+    return this.metadata.get(key);
+  }
+
+  // setMetadata sets a specific metadata key-value pair.
+  setMetadata(key: string, value: JSONValue): void {
+    this.metadata.set(key, value);
+  }
+
+  // getAllMetadata retrieves all metadata as a plain object.
+  getAllMetadata(): Metadata {
+    return this.metadata.toJSON();
+  }
+
+  // Metadata-related methods
+  get name(): string | undefined {
+    return this.metadata.get("name") as string | undefined;
+  }
+
+  set name(value: string | undefined) {
+    if (value) {
+      this.metadata.set("name", value);
+    } else {
+      this.metadata.delete("name");
+    }
+  }
+
+  // Text-related methods
+  get textContent(): string {
+    return this.text.toString();
+  }
+
+  set textContent(value: string) {
+    if (this.textContent !== value) {
+      this.doc.transact(() => {
+        this.text.delete(0, this.text.length); // Clear existing text
+        this.text.insert(0, value); // Insert new text
+      });
+    }
+  }
+
+  // Links-related methods
+  get linksContent(): Links {
+    return this.links.toJSON();
+  }
+
+  addLink(key: string, targetId: string): void {
+    this.links.set(key, targetId);
+  }
+
+  removeLink(key: string): void {
+    this.links.delete(key);
+  }
+
+  // Tags-related methods
+  get tags(): string[] {
+    const tagsValue = this.metadata.get("tags");
+    if (Array.isArray(tagsValue)) {
+      return tagsValue.filter((tag): tag is string => typeof tag === "string");
+    }
+    return [];
+  }
+
+  set tags(tags: string[]) {
+    this.metadata.set("tags", tags as JSONValue);
+  }
+
+  addTag(tag: string): void {
+    const currentTags = this.tags;
+    if (!currentTags.includes(tag)) {
+      currentTags.push(tag);
+      this.tags = currentTags;
+    }
+  }
+
+  removeTag(tag: string): void {
+    this.tags = this.tags.filter((t) => t !== tag);
+  }
+
+  // Replies-related methods
+  get replies(): string[] {
+    const repliesValue = this.metadata.get("replies");
+    return Array.isArray(repliesValue)
+      ? repliesValue.filter((id): id is string => typeof id === "string")
+      : [];
+  }
+
+  addReply(replyId: string): void {
+    const currentReplies = this.replies;
+    if (!currentReplies.includes(replyId)) {
+      currentReplies.push(replyId);
+      this.metadata.set("replies", currentReplies as JSONValue);
+    }
+  }
+
+  removeReply(replyId: string): void {
+    this.metadata.set(
+      "replies",
+      this.replies.filter((id) => id !== replyId) as JSONValue
+    );
+  }
+
+  // RepliesTo-related methods
+  get repliesTo(): string[] {
+    const repliesToValue = this.metadata.get("repliesTo");
+    return Array.isArray(repliesToValue)
+      ? repliesToValue.filter((id): id is string => typeof id === "string")
+      : [];
+  }
+
+  addReplyTo(objectId: string): void {
+    const currentRepliesTo = this.repliesTo;
+    if (!currentRepliesTo.includes(objectId)) {
+      currentRepliesTo.push(objectId);
+      this.metadata.set("repliesTo", currentRepliesTo as JSONValue);
+    }
+  }
+
+  removeReplyTo(objectId: string): void {
+    this.metadata.set(
+      "repliesTo",
+      this.repliesTo.filter((id) => id !== objectId) as JSONValue
+    );
+  }
+
+  async verifySignature(): Promise<boolean> {
+    const signature = this.getMetadata("signature") as string;
+    const publicKey = JSON.parse(this.getMetadata("publicKey") as string);
+    if (!signature || !publicKey) return false;
+
+    const dataToVerify = this.getDataToSign();
+    const verify = createVerify("SHA256");
+    verify.update(dataToVerify);
+    verify.end();
+
+    const jwk = {
+      ...publicKey,
+      alg: "RS256", // Specify the algorithm here
+    };
+
+    return verify.verify(jwk, signature, "base64");
+  }
+
+  observe(callback: (event: Y.YMapEvent<JSONValue>) => void): () => void {
+    const observer = (event: Y.YMapEvent<JSONValue>) => {
+      callback(event);
+    };
+    this.metadata.observe(observer);
+    return () => this.metadata.unobserve(observer);
+  }
+
+  // toJSON returns a plain JavaScript object representation of the NObject.
+  toJSON(): { metadata: Metadata; content: string; links: Links } {
+    return {
+      metadata: this.getAllMetadata(),
+      content: this.textContent,
+      links: this.linksContent,
+    };
+  }
+
+  private getDataToSign(): string {
+    // Exclude signature and publicKey from the data that is signed
+    const metadataToSign = this.getAllMetadata();
+    delete metadataToSign["signature"];
+    delete metadataToSign["publicKey"];
+
+    // Include other relevant data in the signature
+    return JSON.stringify({
+      metadata: metadataToSign,
+      content: this.textContent,
+      links: this.linksContent,
+    });
+  }
+
+  async generateKeyPair() {
+    const keyPair = generateKeyPairSync("rsa", {
+      modulusLength: 2048,
+      publicKeyEncoding: {
+        type: "spki",
+        format: "jwk",
+      },
+      privateKeyEncoding: {
+        type: "pkcs8",
+        format: "jwk",
+      },
+    });
+
+    this.setMetadata("publicKey", JSON.stringify(keyPair.publicKey));
+    return keyPair;
+  }
+
+  async sign(privateKey: any) {
+    const dataToSign = this.getDataToSign();
+    const sign = createSign("SHA256");
+    sign.update(dataToSign);
+    sign.end();
+    const signature = sign.sign(privateKey, "base64");
+    this.setMetadata("signature", signature);
+  }
+}
+
+export default NObject;

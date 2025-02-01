@@ -12,7 +12,7 @@ import {Bootstrap} from '@libp2p/bootstrap';
 import {GossipSub} from '@chainsafe/libp2p-gossipsub';
 import {AddressInfo} from 'net';
 import {createServer} from "../../server/server"; // Corrected import
-import P2PNode from '../../server/p2p';
+import P2PNode from '../../server/net/p2p';
 
 describe('End-to-End Tests', () => {
     let io: SocketIOServer;

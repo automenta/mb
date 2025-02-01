@@ -1,10 +1,10 @@
 import * as Y from "yjs";
 import {IndexeddbPersistence} from "y-indexeddb";
 import NObject from "./obj";
-import {Network} from "./net";
+import Network from "./net";
 import {Persistence} from "./persistence";
 import {Replies} from "./replies";
-import {Config} from "./config";
+import Config from "./config";
 
 export default class DB {
     readonly doc: Y.Doc;
@@ -70,8 +70,13 @@ export default class DB {
         try {
             const objectId = this.index.get(id);
             if (!objectId) return null;
-
-            return new NObject(this.doc, objectId);
+            
+            const obj = new NObject(this.doc, objectId);
+            if (!await obj.verifySignature()) {
+                console.error(`Signature verification failed for object ${id}`);
+                return null;
+            }
+            return obj;
         } catch (error) {
             console.error("Error getting object:", error);
             return null;
