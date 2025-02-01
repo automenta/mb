@@ -146,8 +146,9 @@ export default class DB {
   }
 
   create(): NObject {
-    const obj = new NObject(this.doc);
-    this.add(obj);
-    return obj;
+      const obj = new NObject(this.doc);
+      this.add(obj);
+      obj.generateKeyPair(); // Generate key pair for new object
+      return obj;
   }
 }

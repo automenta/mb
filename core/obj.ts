@@ -5,7 +5,7 @@ export default class NObject {
   public readonly id: string;
   public readonly doc: Y.Doc;
   public readonly root: Y.Map<any>;
-  protected readonly metadata: Y.Map<any>;
+  protected readonly meta Y.Map<any>;
   protected readonly links: Y.Map<Y.Array<string>>;
 
   constructor(doc: Y.Doc, id?: string) {
@@ -21,6 +21,8 @@ export default class NObject {
       ['isQuery', false],
       ['author', ''],
       ['tags', new Y.Array<string>()],
+      ['signature', ''], // Add signature metadata field
+      ['publicKey', ''], // Add publicKey metadata field
       ['sharedWith', new Y.Array<string>()]
     ]);
     this.links = this.getOrInitSubMap('links', [
@@ -103,6 +105,24 @@ export default class NObject {
   shareWith(userId: string) { this.updateArray(this.sharedWith, userId, true); }
   unshareWith(userId: string) { this.updateArray(this.sharedWith, userId, false); }
 
+  async generateKeyPair() {
+    try {
+        const keyPair = await crypto.subtle.generateKey(
+            {
+                name: "ECDSA",
+                namedCurve: "P-256" // or "P-384" or "P-521"
+            },
+            true, // extractable
+            ["sign", "verify"] // key usages
+        );
+        // Store public key in metadata (consider encoding it to a string format like base64)
+        const publicKeyJwk = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
+        this.setMetadata('publicKey', JSON.stringify(publicKeyJwk)); // Store public key as stringified JWK
+        return keyPair; // Return the key pair (privateKey and publicKey) - IMPORTANT: Handle privateKey securely outside NObject
+    } catch (error) {
+        console.error("Error generating key pair:", error);
+    }
+  }
   observe(fn: (events: Y.YEvent<any>[]) => void) {
     this.root.observeDeep(fn);
   }
@@ -114,7 +134,7 @@ export default class NObject {
   toJSON(): any {
     return this.root.toJSON();
   }
-  
+
   getMetadata(key: string): any {
       return this.metadata.get(key);
   }

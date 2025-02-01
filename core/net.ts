@@ -188,7 +188,11 @@ constructor(channel: string, db: DB) {
      }
 
     private enableEncryption() {
-        // Future implementation will handle encryption setup for WebRTC
+        /**
+         * End-to-end encryption for WebRTC data channels is provided by DTLS,
+         * which is a standard security feature of WebRTC and is utilized by y-webrtc by default.
+         * No additional implementation is needed here.
+         */
     }
     addBootstrap(url:string) {
         const urlObj = new URL(url);
