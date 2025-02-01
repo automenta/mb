@@ -154,6 +154,52 @@ describe("DB", () => {
       expect(provider.synced).toBe(true);
       expect(provider.doc).toBe(doc);
     });
+  });
+
+  describe("Signature Integration", () => {
+    it("should create a signed object", async () => {
+      const obj = db.create();
+      await db.provider.whenSynced;
+
+      const retrievedObj = await db.get(obj.id);
+      expect(retrievedObj).not.toBeNull();
+      if (retrievedObj) { // Type guard to ensure retrievedObj is not null
+        const isValid = await retrievedObj.verifySignature();
+        expect(isValid).toBe(true);
+      }
+    });
+
+    it("should re-sign object on text update and verify signature", async () => {
+      const obj = db.create();
+      await db.provider.whenSynced;
+      let retrievedObj = await db.get(obj.id);
+      if (!retrievedObj) fail("Failed to retrieve object after creation");
+
+
+      retrievedObj.text = "Updated text content";
+      await db.provider.whenSynced;
+      retrievedObj = await db.get(obj.id);
+      if (!retrievedObj) fail("Failed to retrieve object after update");
+
+      const isValid = await retrievedObj.verifySignature();
+      expect(isValid).toBe(true);
+    });
+
+    it("should fail signature verification for tampered object", async () => {
+      const obj = db.create();
+      await db.provider.whenSynced;
+
+      const retrievedObj = await db.get(obj.id);
+      expect(retrievedObj).not.toBeNull();
+      if (!retrievedObj) fail("Failed to retrieve object after creation");
+
+      // Tamper with the signature
+      retrievedObj.setMetadata('signature', 'invalid-signature');
+
+      const tamperedObj = await db.get(obj.id);
+      expect(tamperedObj).toBeNull(); // Expect get() to return null due to signature failure
+    });
+  });
 
     it("log synced event when provider completes synchronization", () => {
       const provider = new IndexeddbPersistence("testdb", doc);
