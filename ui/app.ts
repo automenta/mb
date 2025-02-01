@@ -1,43 +1,38 @@
 import $ from 'jquery';
-import { io, Socket } from 'socket.io-client';
-import { Editor } from './editor/editor';
+import Editor from './editor/editor';
 import DB from '../core/db';
 import Matching from '../core/match';
 import Network from '../core/net';
-import NObject from '../core/obj';
 import { Awareness } from 'y-protocols/awareness';
 import ViewManager from './view-manager';
 import { Tags } from "../core/tags";
 import MeView from "./me.view";
 import DBView from './db.view';
 import NetView from './net.view';
-import MatchView from './match.view';
-import Sidebar from './sidebar';
+import Sidebar from './sidebar'; // Corrected import
 import { SettingsView } from './settings.view';
-import { randomUUID } from 'crypto';
-import { Store, initializeStore, getStore } from './store';
-import ViewManager from './view-manager';
+import { Store, getStore } from './store';
 import Editor from './editor/editor'; // Import Editor
 
 class ThemeManager {
-    isDarkMode: boolean;
-    appElement: JQuery;
+    private isDarkMode: boolean;
+    private appElement: JQuery;
 
     constructor(appElement: HTMLElement) {
-        this.appElement = appElement;
+        this.appElement = $(appElement);
         this.isDarkMode = localStorage.getItem('themePreference') === 'dark';
         this.applyTheme();
-    }
+    };
 
     applyTheme() {
         $(this.appElement).toggleClass('dark-mode', this.isDarkMode);
-    }
+    };
 
     toggleTheme() {
         this.isDarkMode = !this.isDarkMode;
         localStorage.setItem('themePreference', this.isDarkMode ? 'dark' : 'light');
         this.applyTheme();
-    }
+    };
 }
 
 export interface AppConfig {
@@ -45,12 +40,13 @@ export interface AppConfig {
 }
 export default class App {
     public store: Store;
-    public ele: JQuery;
-    themes: ThemeManager;
+    private ele: JQuery;
+    private themes: ThemeManager;
     private views: ViewManager;
     public tags: Tags;
     private sidebar: Sidebar;
     public editor?: Editor; // Add Editor property
+    public readonly channel: string;
 
     constructor(channel: string, config: AppConfig) {
         this.channel = channel;
@@ -65,7 +61,6 @@ export default class App {
         this.views = new ViewManager(this, this.store);
 
         this.views = new ViewManager(this, this.store);
-        this.sidebar = new Sidebar(this.views, this, $('.sidebar')[0]);
         this.editor = new Editor({ // Initialize Editor
             db: this.db, // Pass DB instance
             net: this.net,
@@ -75,6 +70,7 @@ export default class App {
             ydoc: this.db.doc,
             getAwareness: () => this.getAwareness()
         });
+        this.sidebar = new Sidebar(this.views, this, $('.sidebar')[0]);
         this.views.showView('db'); // Show the DB view initially
 
         this.render();
@@ -83,7 +79,7 @@ export default class App {
         const websocket = false; //TODO configure
         if (websocket)
             this.initWebSocket();
-    }
+    };
 
 
     public render(): void {
@@ -93,21 +89,21 @@ export default class App {
                 <main class="main-view"></main>
             </div>
         `);
-    }
+    };
 
     getAwareness(): Awareness {
         return this.net!.net.awareness;
-    }
+    };
 
 
     createNewObject(): void {
         const newObj = this.db.create();
         newObj.name = 'New Object';
-        newObj.author = this.store.currentUser?.userId || 'Anonymous'; // Handle anonymous user
+        newObj.author = this.store.currentUser?.userId ?? 'Anonymous'; // Handle anonymous user
         newObj.public = false; // Ensure new objects are private by default
-        newObj.isQuery = false; // Default to not being a query
++       newObj.isQuery = false; // Default to not being a query
         this.db.add(newObj);
         this.store.addObject(newObj);
         this.editor?.loadDocument(newObj);
-    }
+    };
 }
