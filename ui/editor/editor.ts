@@ -1,13 +1,12 @@
-import { $, App, Awareness, NObject, Tags, Y } from '../imports';
-import { EditorConfig } from '../types'; // Import EditorConfig
-import type { Doc as YDoc } from 'yjs'; // Import Doc type
-import { ToolbarManager } from './toolbar-manager';
-import { MetadataManager } from './metadata-manager';
-import { AwarenessManager } from './awareness-manager';
+import {$, App, Awareness, NObject, Tags, Y} from '../imports';
+import {EditorConfig} from '../types';
+import type {Doc as YDoc} from 'yjs'; // Import Doc type
+import {ToolbarManager} from './toolbar-manager';
+import {MetadataManager} from './metadata-manager';
+import {AwarenessManager} from './awareness-manager';
 import EditorCore from './editor-core';
 import UIBuilder from './ui-builder';
 import TagSelector from './tag-selector';
-import { randomUUID } from "crypto";
 
 export default class Editor {
     public editorCore: EditorCore;
@@ -47,7 +46,8 @@ export default class Editor {
         this.rootElement = config.ele as HTMLElement; // Cast to HTMLElement
         this.isPublic = false;
         // Initialize TagSelector
-        this.tagSelector = new TagSelector(this.rootElement);
+        // Initialize TagSelector
+        this.tagSelector = new TagSelector(this.rootElement, '');
 
         if (config.currentObject instanceof Y.Map) {
             this.isPublic = config.currentObject.get('public') || false;
@@ -184,6 +184,20 @@ export default class Editor {
                 const tags = this.tagSelector.getTags();
                 (this.currentObject as Y.Map<any>).set('tags', tags);
             });
+        } else if (this.currentObject instanceof NObject) {
+            this.currentObject.text = (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML;
+            this.currentObject.tags = this.tagSelector.getTags();
+            this.config.db.persistDocument(this.currentObject);
+        }
+    }
+
+    public loadObject(objectId: string): void {
+        const obj = this.config.db.get(objectId);
+        if (obj) {
+            this.loadDocument(obj);
+        } else {
+            console.error('Failed to load object:', objectId);
+        }
         } else if (this.currentObject instanceof NObject) {
             this.currentObject.text = (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML;
             this.currentObject.tags = this.tagSelector.getTags();
@@ -359,7 +373,8 @@ export default class Editor {
         this.rootElement = config.ele as HTMLElement; // Cast to HTMLElement
         this.isPublic = false;
         // Initialize TagSelector
-        this.tagSelector = new TagSelector(this.rootElement);
+        // Initialize TagSelector
+        this.tagSelector = new TagSelector(this.rootElement, '');
 
         if (config.currentObject instanceof Y.Map) {
             this.isPublic = config.currentObject.get('public') || false;
@@ -537,6 +552,7 @@ export default class Editor {
             if (tags) {
                 this.tagSelector.setTags(tags);
             }
+            this.tagSelector.setTagName(object.get('id'));
         } else if (object instanceof NObject) {
             (this.rootElement.querySelector('.content-editor') as HTMLElement).innerHTML = object.text.toString();
             (this.rootElement.querySelector('.document-title') as HTMLInputElement).value = object.name;
