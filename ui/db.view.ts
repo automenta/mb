@@ -1,34 +1,39 @@
 import $ from 'jquery';
 import View from './util/view';
 import ObjViewMini from './util/obj.view.mini';
-import type {App} from './app';
+import type { App } from './app';
 import pageTags from '../tag/page.json';
+import DB from '../core/db'; // Import DB class
+import NObject from '../core/obj'; // Import NObject class
 
 import '/ui/css/db.css';
+
+interface FilterValues {
+    [key: string]: string;
+}
 
 export default class DBView extends View {
     app: App;
     sortKey: string;
     sortOrder: string;
-    filterText: string;
-    db: any;
+    filterValues: FilterValues = {}; // Initialize filterValues
+    db: DB; // Use imported DB class
 
-    constructor(app: App, root: HTMLElement, db: any) {
-        super($(root).find('.main-view'));
+    constructor(app: App, root: JQuery<HTMLElement>, db: DB) { // Update constructor to accept DB
+        super(root);
         this.app = app;
         this.db = db;
         this.ele = $('<div>').addClass('database-page');
-        this.sortKey = 'title';
+        this.sortKey = 'name'; // Default sort key to 'name'
         this.sortOrder = 'asc';
-        this.filterText = '';
     }
 
-    render() {
+    render(): JQuery {
         this.root.empty().append(this.ele);
 
         let tableHeadersHTML = '';
         pageTags?.properties && Object.entries(pageTags.properties).forEach(([field, property]) => {
-            tableHeadersHTML += `<th>${(property as {description:string}).description}</th>`;
+            tableHeadersHTML += `<th>${(property as { description: string }).description}</th>`;
         });
 
         const filterControlsHTML = this.renderFilterControls();
@@ -42,61 +47,92 @@ export default class DBView extends View {
 
         this.bindEvents();
         this.updateTable();
+        return this.ele; // Make render() return JQuery
+    }
+
     bindEvents(): void {
         this.ele.find('.filter-controls').on('input', '.filter-input', (e) => {
-            const field = $(e.target).data('field');
-            this.filterValues[field] = ($(e.target).val() as string);
+            const field = $(e.target).data('field') as string; // Cast to string
+            this.filterValues[field] = ($(e.target).val() as string).toLowerCase(); // Store lowercase filter value
             this.updateTable();
         });
 
         this.ele.find('.sort-select').on('change', (e) => {
-            this.sortKey = $(e.target).val() as string;
+            this.sortKey = $(e.target).val() as string; // Cast to string
             this.updateTable();
         });
 
-        this.ele.find('.sort-button').click(() => {
+        this.ele.find('.sort-button').on('click', () => { // Use .on('click') for event binding
             this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
             this.updateTable();
         });
 
+        // Observe changes to the index map for real-time updates
         this.db.index.observe(() => this.updateTable());
+    }
+
     updateTable(): void {
-        const entries = Array.from(this.db.index.entries()) as [string, any][];
-        const pages = entries.map(([key, value]) => ({ pageId: key, ...value }));
+        // Convert Y.Map to array of NObjects
+        const pages: NObject[] = Array.from(this.db.index.values())
+            .map(id => this.db.get(id))
+            .filter(obj => obj !== null) as NObject[]; // Filter out null objects and cast
+
         this.renderTable(pages);
-    renderTable(pages: any[]): void {
+    }
+
+
+    renderTable(pages: NObject[]): void {
         const $tbody = this.ele.find('tbody').empty();
         const filteredPages = pages.filter(page => {
+            if (!page) return false; // Ensure page is not null
+
             let isMatch = true;
             for (const field in this.filterValues) {
-                const filterValue = this.filterValues[field].toLowerCase();
-                if (filterValue && !String(page[field]).toLowerCase().includes(filterValue)) {
+                if (!this.filterValues.hasOwnProperty(field)) continue; // Skip inherited properties
+
+                const filterValue = this.filterValues[field];
+                const pageValue = page.getMetadata(field); // Use getMetadata to access properties
+                if (filterValue && !String(pageValue).toLowerCase().includes(filterValue)) {
                     isMatch = false;
                     break;
                 }
             }
             return isMatch;
         });
+
+
         filteredPages.sort((a, b) => {
-            const aValue = a[this.sortKey] || '';
-            const bValue = b[this.sortKey] || '';
-            return this.sortOrder === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+            const aValue = a?.getMetadata(this.sortKey) || ''; // Use getMetadata and handle null
+            const bValue = b?.getMetadata(this.sortKey) || ''; // Use getMetadata and handle null
+
+            return this.sortOrder === 'asc' ? String(aValue).localeCompare(String(bValue)) : String(bValue).localeCompare(String(aValue));
         });
+
         $tbody.append(filteredPages.map(this.createRow.bind(this)));
-    addObject(obj: any): void {
+    }
+
+
+    addObject(obj: NObject): void {
         this.handleNewObject(obj);
-    handleNewObject(obj: any): void {
-        this.db.index.set(obj.id, obj);
+    }
+
+    handleNewObject(obj: NObject): void {
+        this.db.add(obj);
         this.updateTable();
     }
 
-    private createRow(page: any): JQuery {
+    private createRow(page: NObject | null): JQuery {
+        if (!page) return $('<tr>').append($('<td>').text('Error: Page is null')); // Handle null page
+
         const $row = $('<tr>');
         pageTags?.properties && Object.entries(pageTags.properties).forEach(([field, property]) => {
-            $row.append($('<td>').text(page[field] || ''));
+            const text = page.getMetadata(field) || ''; // Use getMetadata to access properties
+            $row.append($('<td>').text(text));
         });
+
         const editButton = $('<button>').text('Edit').addClass('edit-button').on('click', () => {
-            console.log('Edit button clicked for pageId:', page.pageId);
+            console.log('Edit button clicked for pageId:', page.id);
+            this.app.editor?.loadDocument(page); // Load document in editor
         });
         $row.append($('<td>').append(editButton));
 
@@ -107,6 +143,7 @@ export default class DBView extends View {
         objViewMini.ele.find('.obj-name').text(name); // Update object name in ObjViewMini
         return $row;
     }
+
 
     private renderFilterControls(): string {
         let filterControlsHTML = '';
@@ -121,13 +158,16 @@ export default class DBView extends View {
     }
 
     private createHeader(): JQuery {
-        return $('<h3>').text('Database Statistics');
+        return $('<h3>').text('Database Objects'); // Updated header text
     }
 
     private createControls(filterControlsHTML: string): JQuery {
         const $controls = $('<div>').addClass('db-controls');
         $controls.append($('<div>').addClass('filter-controls').html(filterControlsHTML));
-        $controls.append($('<select>').addClass('sort-select').append($('<option>').text('Title').val('title'), $('<option>').text('Page ID').val('pageId')));
+        $controls.append($('<select>').addClass('sort-select').append(
+            $('<option>').text('Name').val('name'), // Sort by Name
+            $('<option>').text('Page ID').val('id') // Sort by ID
+        ));
         $controls.append($('<button>').addClass('sort-button').text('Sort'));
         return $controls;
     }
@@ -137,7 +177,7 @@ export default class DBView extends View {
             .text('New NObject')
             .addClass('new-object-button')
             .on('click', () => {
-                this.app.createNewObject();
+                this.app.createNewObject(); // Use app.createNewObject to create new object
             });
         return newObjectButton;
     }
