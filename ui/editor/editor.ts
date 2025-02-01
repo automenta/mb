@@ -7,6 +7,7 @@ import {AwarenessManager} from './awareness-manager';
 import EditorCore from './editor-core';
 import UIBuilder from './ui-builder';
 import TagSelector from './tag-selector';
+import { randomUUID } from "crypto";
 
 export default class Editor {
     public editorCore: EditorCore;
@@ -47,18 +48,8 @@ export default class Editor {
         this.isPublic = false;
         // Initialize TagSelector
         // Initialize TagSelector
+        // Initialize TagSelector
         this.tagSelector = new TagSelector(this.rootElement, '');
-
-        if (config.currentObject instanceof Y.Map) {
-            this.isPublic = config.currentObject.get('public') || false;
-        } else if (config.currentObject) {
-            this.isPublic = config.currentObject.public || false;
-        }
-
-        // Initialize core components
-        this.toolbar = new ToolbarManager(this);
-        this.meta = new MetadataManager(this.config.isReadOnly ?? false);
-        this.editorCore = new EditorCore(this.config, this, this.config.isReadOnly ?? false);
 
         // Initialize UI and then document state
         const tagManager = config.app.tags;

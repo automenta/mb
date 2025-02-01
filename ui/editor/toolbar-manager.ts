@@ -144,6 +144,9 @@ export class ToolbarManager {
         this.tagSelector = new TagSelector(this.editor.getEditorElement()[0] as HTMLElement, this.editor.currentObject.id); // Assuming 'page' is the tagName
       } else {
         this.tagSelector.render(); // Re-render the TagSelector
+        this.tagSelector = new TagSelector(this.editor.getEditorElement()[0] as HTMLElement, this.editor.currentObject.id); // Assuming 'page' is the tagName
+      } else {
+        this.tagSelector.render(); // Re-render the TagSelector
       }
       this.editor.getEditorElement().after(this.tagSelector.rootElement);
     } else {

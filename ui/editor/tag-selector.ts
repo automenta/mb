@@ -1,5 +1,5 @@
-import {Tags} from '../../core/tags';
-import {renderTagForm, FormField} from '../util/form';
+import { Tags } from '../../core/tags';
+import { renderTagForm, FormField } from '../util/form';
 
 export default class TagSelector {
     private readonly rootElement: HTMLElement;
@@ -7,7 +7,7 @@ export default class TagSelector {
     private tag: any;
     private tag: any;
     private tagManager = new Tags();
-    private tags: { [key: string]: any } = {};
+    private tags: {[key: string]: any} = {};
 
     constructor(parentElement: HTMLElement, tagName: string) {
     constructor(parentElement: HTMLElement, tagName: string) {
@@ -64,7 +64,7 @@ export default class TagSelector {
         }
     }
 
-    public getTags(): { [key: string]: any } {
+    public getTags(): {[key: string]: any} {
         return this.tags;
     }
 

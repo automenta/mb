@@ -1,7 +1,7 @@
-import {$, Y} from '../imports';
+import { $, Y } from '../imports';
 import * as jsdiff from 'diff';
-import type {EditorConfig} from '../types';
-import {MetadataManager} from './metadata-manager';
+import type { EditorConfig } from '../types';
+import { MetadataManager } from './metadata-manager';
 
 export type UpdateCallback = () => void;
 
@@ -39,8 +39,6 @@ export default class EditorCore {
         this.ytext = this.getContentFromObject(this.config.currentObject);
 }
 
-        if (config.currentObject)
-            this.ytext = this.getContentFromObject(this.config.currentObject);
     }
 
     private getContentFromObject(obj: any): Y.Text | null {
