@@ -73,71 +73,41 @@ export default class DB {
     });
   }
 
-  setNetwork(net: Network) {
-    this.net = net;
-  }
-
-  async add(obj: NObject) {
-    try {
-      this.doc.transact(() => {
-        this.index.set(obj.id, obj.id);
-        obj.observe((event) => {
-          if (event.transaction.origin !== this.provider) {
-            const objId = obj.id;
-            const objData = obj.toJSON();
-            this.store.transact(
-              () => {
-                const storeObj = this.store.getMap(objId);
-                for (const key in objData) {
-                  storeObj.set(key, objData[key]);
-                }
-              },
-              this.provider,
-              false
-            );
-          }
-        });
-      }, this.provider);
-    } catch (error) {
-      console.error("Error adding object:", error);
-      // Handle error appropriately, possibly notifying the user
+    setNetwork(net: Network) {
+        this.net = net;
     }
-  }
 
-  async get(id: string): Promise<NObject | null> {
-    try {
-      const objectId = this.index.get(id) as string;
-      if (!objectId) return null;
-      const obj = new NObject(this.doc, objectId);
-
-      const isValidSignature = await obj.verifySignature();
-      if (!isValidSignature) {
-        console.error(`Signature verification failed for object ID: ${id}`);
-        return null; // Return null if signature is invalid
-      }
-
-      return obj;
-    } catch (error) {
-      console.error("Error getting object:", error);
-      // Handle error appropriately, possibly notifying the user
-      return null;
-    }
-  }
-
-  delete(id: string) {
-    try {
-      this.doc.transact(() => {
-        this.index.delete(id);
-        const obj = this.get(id);
-        if (obj) {
-          obj.unobserve();
+    async add(obj: NObject) {
+        try {
+            this.doc.transact(() => {
+                this.index.set(obj.id, obj.id);
+            }, this.provider);
+        } catch (error) {
+            console.error("Error adding object:", error);
         }
-      }, this.provider);
-    } catch (error) {
-      console.error("Error deleting object:", error);
-      // Handle error appropriately, possibly notifying the user
     }
-  }
+
+    async get(id: string): Promise<NObject | null> {
+        try {
+            const objectId = this.index.get(id);
+            if (!objectId) return null;
+
+            return new NObject(this.doc, objectId);
+        } catch (error) {
+            console.error("Error getting object:", error);
+            return null;
+        }
+    }
+
+    delete(id: string) {
+        try {
+            this.doc.transact(() => {
+                this.index.delete(id);
+            }, this.provider);
+        } catch (error) {
+            console.error("Error deleting object:", error);
+        }
+    }
 
   createReply(parentId: string, name: string): NObject | null {
     return this.replyManager.createReply(parentId, name);
