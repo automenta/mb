@@ -172,6 +172,7 @@ export default class Sidebar {
             title: 'Network Status'
         }).append(
             $('<span>', { text: 'Network: ' }),
+            $('<span>', { id: 'network-status-icon' }), // Placeholder for icon
             $('<span>', { id: 'network-status-text', text: 'Disconnected' }) // Initial status
         );
     }
@@ -266,10 +267,17 @@ export default class Sidebar {
 
     private updateNetworkStatus(status: string): void {
         const statusTextElement = this.ele.find('#network-status-text');
-        if (statusTextElement) {
-            statusTextElement.text(status);
-            statusTextElement.removeClass('connected disconnected connecting'); // Remove previous classes
-            statusTextElement.addClass(status); // Add class based on status
+        const statusIconElement = this.ele.find('#network-status-icon');
+        if (statusTextElement && statusIconElement) {
+            statusTextElement.text(status.charAt(0).toUpperCase() + status.slice(1)); // Capitalize first letter
+            statusIconElement.removeClass('fas fa-check-circle fas fa-times-circle fas fa-spinner fa-spin'); // Remove previous icons
+            if (status === 'connected') {
+                statusIconElement.addClass('fas fa-check-circle').css('color', 'green'); // Connected: green check
+            } else if (status === 'disconnected') {
+                statusIconElement.addClass('fas fa-times-circle').css('color', 'red'); // Disconnected: red cross
+            } else if (status === 'connecting') {
+                statusIconElement.addClass('fas fa-spinner fa-spin').css('color', 'orange'); // Connecting: orange spinner
+            }
         }
     }
 }
