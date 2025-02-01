@@ -129,7 +129,7 @@ constructor(channel: string, db: DB) {
         // Handle 'status' event
         this.net.on('status', (event: { status: string }) => {
             console.log('WebRTC Provider Status:', event.status); // Log for debugging
-            this.emit(NETWORK_ACTIVITY, { type: 'status',  { status: event.status }, timestamp: Date.now() });
+            this.emit(NETWORK_ACTIVITY, { type: 'status',  status: event.status , timestamp: Date.now() });
         });
 
         this.db.doc.on('update', (update, origin) => {

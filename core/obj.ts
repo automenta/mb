@@ -8,6 +8,10 @@ export default class NObject {
   protected readonly meta: Y.Map<any>;
   protected readonly links: Y.Map<Y.Array<string>>;
 
+  get metadata() {
+      return this.meta;
+  }
+
   constructor(doc: Y.Doc, id?: string) {
     this.doc = doc;
     this.id = id || uuidv4();
@@ -27,11 +31,11 @@ export default class NObject {
     ]);
     this.links = this.getOrInitSubMap('links', [
       ['reply', new Y.Array<string>()],
-      ['replyTo', new Y.Array<string>()]
-    ]);
+     ['replyTo', new Y.Array<string>()]
+   ]);
 
-    this.getOrInitSubMap('content'); // Ensure content map is initialized
-  }
+   this.getOrInitSubMap('content'); // Ensure content map is initialized
+ }
 
   protected getOrInitSubMap(key: string, initialData: [string, any][] = []): Y.Map<any> {
     return (this.root.get(key) instanceof Y.Map ? this.root.get(key) : this.root.set(key, new Y.Map()).get(key)) as Y.Map<any>;
