@@ -38,7 +38,7 @@ export default class Matches {
         // Simplified example - in reality would use more sophisticated NLP
         const topics = new Set(content.toLowerCase()
             .split(/[^a-z]+/)
-            .filter(w => w.length > 4));
+            .filter(w => w.length > 4 && !STOP_WORDS.has(w)));
 
         return {
             topics: Array.from(topics),
@@ -108,5 +108,9 @@ export default class Matches {
         console.log(`Similarity threshold set to ${(this.similarityThreshold * 100).toFixed(1)}%`);
     }
 }
+
+const STOP_WORDS = new Set([
+    'the', 'and', 'is', 'are', 'in', 'on', 'a', 'an', 'to', 'of', 'for', 'with', 'by', 'from', 'at', 'as', 'but', 'or', 'not', 'so', 'if', 'then', 'else', 'when', 'where', 'while', 'until', 'because', 'since', 'though', 'although', 'whether', 'nor', 'once', 'now', 'about', 'above', 'across', 'after', 'against', 'along', 'among', 'around', 'before', 'behind', 'below', 'beneath', 'beside', 'between', 'beyond', 'during', 'except', 'inside', 'into', 'near', 'off', 'onto', 'outside', 'over', 'under', 'underneath', 'upon', 'within', 'without', 'out', 'this', 'that', 'these', 'those', 'my', 'your', 'his', 'her', 'its', 'our', 'their', 'mine', 'yours', 'hers', 'ours', 'theirs', 'me', 'you', 'him', 'us', 'them', 'myself', 'yourself', 'himself', 'herself', 'itself', 'ourselves', 'themselves', 'i', 'he', 'she', 'it', 'we', 'they', 'each', 'every', 'both', 'all', 'any', 'some', 'few', 'many', 'most', 'other', 'another', 'such', 'same', 'different', 'own', 'more', 'less', 'least', 'very', 'quite', 'rather', 'too', 'just', 'only', 'even', 'also', 'well', 'however', 'therefore', 'thus', 'hence', 'thereby', 'nevertheless', 'nonetheless', 'instead', 'meanwhile', 'otherwise', 'elsewhere', 'anywhere', 'everywhere', 'nowhere', 'somewhere', 'whenever', 'wherever', 'however', 'whatever', 'whoever', 'whomever', 'whosever', 'whichever', 'whatever', 'whichever'
+]);
 
 export { PageProperties, MatchResult };
