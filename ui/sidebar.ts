@@ -154,19 +154,7 @@ export default class Sidebar {
             class: 'menubar-button add-page-button',
             title: 'Add New Page'
         }).append($('<i>', { class: 'fas fa-plus' })).on('click', () => { // Using font-awesome icon
-            const db = this.store.getState().db;
-            if (db) {
-                const newObj = db.create();
-                newObj.name = 'Untitled';
-                this.store.addObject(newObj);
-                this.store.setCurrentObject(newObj);
-                this.store.getState().awareness?.setLocalState({
-                    type: 'object-created',
-                    id: newObj.id,
-                    timestamp: Date.now()
-                });
-                this.store.app?.editor?.loadDocument(newObj);
-            }
+            this.app.createNewObject();
         });
     }
 
