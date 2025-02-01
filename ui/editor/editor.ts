@@ -37,37 +37,29 @@ export default class Editor {
     }
 
     public setBlockFormat(format: string): void {
-        if (format === 'heading') {
-            document.execCommand('formatBlock', false, '<h1>'); // Default to H1 for heading
-        } else if (format === 'pre') {
-            document.execCommand('formatBlock', false, '<pre>');
-        } else if (format === 'ordered-list') {
-            document.execCommand('insertOrderedList', false);
-        } else if (format === 'bulleted-list') {
-            document.execCommand('insertUnorderedList', false);
-        } else if (format === 'blockquote') {
-            document.execCommand('formatBlock', false, '<blockquote>');
-        }
-         else if (format.startsWith('<h') && format.endsWith('1>')) {
-            document.execCommand('formatBlock', false, format);
-        }
-         else if (format.startsWith('<h') && format.endsWith('2>')) {
-            document.execCommand('formatBlock', false, format);
-        }
-         else if (format.startsWith('<h') && format.endsWith('3>')) {
-            document.execCommand('formatBlock', false, format);
-        }
-         else if (format.startsWith('<h') && format.endsWith('4>')) {
-            document.execCommand('formatBlock', false, format);
-        }
-         else if (format.startsWith('<h') && format.endsWith('5>')) {
-            document.execCommand('formatBlock', false, format);
-        }
-         else if (format.startsWith('<h') && format.endsWith('6>')) {
-            document.execCommand('formatBlock', false, format);
-        }
-         else {
-            document.execCommand('formatBlock', false, format);
+        switch (format) {
+            case 'heading':
+                document.execCommand('formatBlock', false, '<h1>'); // Default to H1 for heading
+                break;
+            case 'pre':
+                document.execCommand('formatBlock', false, '<pre>');
+                break;
+            case 'ordered-list':
+                document.execCommand('insertOrderedList', false);
+                break;
+            case 'bulleted-list':
+                document.execCommand('insertUnorderedList', false);
+                break;
+            case 'blockquote':
+                document.execCommand('formatBlock', false, '<blockquote>');
+                break;
+            default:
+                if (format.startsWith('<h') && format.endsWith('>')) {
+                    document.execCommand('formatBlock', false, format);
+                } else {
+                    document.execCommand('formatBlock', false, format);
+                }
+                break;
         }
     }
 
