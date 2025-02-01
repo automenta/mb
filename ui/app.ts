@@ -60,7 +60,7 @@ class ThemeManager {
     }
 
         this.views = new ViewManager(this, this.store); // Initialize ViewManager
-        this.sidebar = new Sidebar(this, $('.sidebar')[0]); // Initialize Sidebar and pass ViewManager
+        this.sidebar = new Sidebar(this.views, $('.sidebar')[0]); // Initialize Sidebar and pass ViewManager
         this.views.showView('db-view'); // Show initial view
 
         this.render();

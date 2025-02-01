@@ -107,13 +107,13 @@ export default class Sidebar {
     private readonly matchingView: MatchingView | null;
     private readonly agentsView: AgentsView;
     private currentView: View | null = null; // Track current view
-    app: App; // Add App instance
+    private viewManager: ViewManager;
 
-    constructor(app: App, ele: HTMLElement) {
-        this.app = app; // Store App instance
+    constructor(viewManager: ViewManager, ele: HTMLElement) {
+        this.viewManager = viewManager;
         this.ele = $(ele).addClass('sidebar');
-        this.store = initializeStore(app.db);
-        this.store.app = app;
+        this.store = initializeStore(this.viewManager.app.db); // Access app from viewManager
+        this.store.app = this.viewManager.app; // Access app from viewManager
         this.contextMenu = new PageContextMenu(this.store);
         this.pageList = $('<ul>', { class: 'page-list' });
         const $mainView = $('.main-view');
@@ -211,7 +211,7 @@ export default class Sidebar {
         );
 
         button.on('click', () => {
-            this.app.views.showView(id); // Use ViewManager from App instance to switch view
+            this.viewManager.showView(id); // Use ViewManager directly to switch view
         });
         return button;
     }
