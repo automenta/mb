@@ -13,7 +13,7 @@ export class ToolbarManager {
   private toolbarItems: ToolbarItem[] = [
     { command: 'save', icon: '💾', title: 'Save', action: (editor) => editor.saveDocument() },
     { command: 'privacy', icon: () => (this.editor.isPublic ? '🔓' : '🔒'), title: 'Toggle Privacy', action: (editor) => editor.togglePrivacy() },
-    { command: 'bold', icon: '<b>B</b>', title: 'Bold', action: (editor) => editor.formatText('bold', null) },
+    { command: 'bold', icon: '<b>B</b>', title: 'Bold', action: (editor) => editor.formatText('bold') },
     { command: 'italic', icon: '<i>I</i>', title: 'Italic', action: (editor) => editor.formatText('italic', null) },
     { command: 'underline', icon: '<u>U</u>', title: 'Underline', action: (editor) => editor.formatText('underline', null) },
     { command: 'strikeThrough', icon: '<del>S</del>', title: 'Strikethrough', action: (editor) => editor.formatText('strike', null) },
