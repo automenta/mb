@@ -12,12 +12,13 @@ import MeView from "./me.view";
 import DBView from './db.view';
 import NetView from './net.view';
 import MatchView from './match.view';
+import Sidebar from './sidebar';
 import { SettingsView } from './settings.view';
 import { randomUUID } from 'crypto';
 
 class ThemeManager {
     isDarkMode: boolean;
-    appElement: HTMLElement;
+    appElement: JQuery;
 
     constructor(appElement: HTMLElement) {
         this.appElement = appElement;
@@ -37,18 +38,12 @@ class ThemeManager {
 }
 
     public store: Store;
-    public ele: HTMLElement;
+    public ele: JQuery;
     themes: ThemeManager;
     private views: ViewManager;
     public tags: Tags;
+    private sidebar: Sidebar; // Add Sidebar instance
 
-    constructor(channel: string, rootElement: HTMLElement) {
-        this.channel = channel;
-        this.db = new DB(channel);
-        this.net = new Network(channel, this.db);
-        this.match = new Matching(this.db, this.net);
-
-        this.ele = $(rootElement);
     constructor(channel: string, rootElement: HTMLElement) {
         this.channel = channel;
         this.db = new DB(channel);
@@ -65,8 +60,8 @@ class ThemeManager {
     }
 
         this.views = new ViewManager(this, this.store); // Initialize ViewManager
+        this.sidebar = new Sidebar(this, $('.sidebar')[0]); // Initialize Sidebar and pass ViewManager
         this.views.showView('db-view'); // Show initial view
-
 
         this.render();
         console.log('App initialized', this);
@@ -101,16 +96,16 @@ class ThemeManager {
                 </div>
             </div>
         `);
-        this.setup মেনুNavigation();
+        //this.setup মেনুNavigation(); // No longer needed here, handled by Sidebar
     }
 
-    private setup মেনুNavigation(): void {
-        $('#db-view-link').on('click', () => this.views.showView('db-view'));
-        $('#net-view-link').on('click', () => this.views.showView('net-view'));
-        $('#match-view-link').on('click', () => this.views.showView('match-view'));
-        $('#profile-view-link').on('click', () => this.views.showView('profile-view'));
-        $('#settings-view-link').on('click', () => this.views.showView('settings-view'));
-    }
+    //private setup মেনুNavigation(): void { // No longer needed here, handled by Sidebar
+    //    $('#db-view-link').on('click', () => this.views.showView('db-view'));
+    //    $('#net-view-link').on('click', () => this.views.showView('net-view'));
+    //    $('#match-view-link').on('click', () => this.views.showView('match-view'));
+    //    $('#profile-view-link').on('click', () => this.views.showView('profile-view'));
+    //    $('#settings-view-link').on('click', () => this.views.showView('settings-view'));
+    //}
 
     getAwareness(): Awareness {
         return this.net!.net.awareness;
