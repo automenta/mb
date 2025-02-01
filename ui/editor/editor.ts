@@ -201,6 +201,15 @@ export default class Editor {
         }
     }
 
+    public loadObject(objectId: string): void {
+        const obj = this.config.db.get(objectId);
+        if (obj) {
+            this.loadDocument(obj);
+        } else {
+            console.error('Failed to load object:', objectId);
+        }
+    }
+
     public loadDocument(object: NObject | Y.Map<any>): void {
         this.currentObject = object;
         if (object instanceof Y.Map) {
