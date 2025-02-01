@@ -108,26 +108,9 @@ class Network {
 
     readonly channel: string;
     net!: WebrtcProvider;
-    this
-    net
-    awareness
-    'user'
-    id: this
-    db
-.
-    userID
-.
-    name: 'Anonymous'
-    color: '#'Math
-, {
-    16
-.
     private db: DB;
-.
     private docsShared: Set<string>;
-,
-    private readonly metrics: NetworkMetrics; // Use the NetworkMetrics class
-,
+    private readonly metrics: NetworkMetrics;
     private readonly signalingServers: string[];
 +
 

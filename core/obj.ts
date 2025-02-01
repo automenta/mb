@@ -148,17 +148,71 @@ export default class NObject {
             const keyPair = await crypto.subtle.generateKey(
                 {
                     name: "ECDSA",
-                    namedCurve: "P-256" // or "P-384" or "P-521"
+                    namedCurve: "P-256"
                 },
-                true, // extractable
-                ["sign", "verify"] // key usages
+                true,
+                ["sign", "verify"]
             );
-            // Store public key in metadata (consider encoding it to a string format like base64)
             const publicKeyJwk = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
-            this.setMetadata('publicKey', JSON.stringify(publicKeyJwk)); // Store public key as stringified JWK
-            return keyPair; // Return the key pair (privateKey and publicKey) - IMPORTANT: Handle privateKey securely outside NObject
+            this.meta.set('publicKey', JSON.stringify(publicKeyJwk));
+            return keyPair;
         } catch (error) {
             console.error("Error generating key pair:", error);
+            throw error;
+        }
+    }
+
+    async sign(privateKey: CryptoKey) {
+        try {
+            const text = this.text.toString();
+            const encoder = new TextEncoder();
+            const data = encoder.encode(text);
+            const signature = await crypto.subtle.sign(
+                {
+                    name: "ECDSA",
+                    hash: {name: "SHA-256"}
+                },
+                privateKey,
+                data
+            );
+            this.meta.set('signature', Buffer.from(signature).toString('base64'));
+        } catch (error) {
+            console.error("Error signing object:", error);
+            throw error;
+        }
+    }
+
+    async verifySignature() {
+        try {
+            const publicKeyJwk = JSON.parse(this.meta.get('publicKey'));
+            const publicKey = await crypto.subtle.importKey(
+                "jwk",
+                publicKeyJwk,
+                {
+                    name: "ECDSA",
+                    namedCurve: "P-256"
+                },
+                true,
+                ["verify"]
+            );
+            
+            const signature = Buffer.from(this.meta.get('signature'), 'base64');
+            const text = this.text.toString();
+            const encoder = new TextEncoder();
+            const data = encoder.encode(text);
+            
+            return await crypto.subtle.verify(
+                {
+                    name: "ECDSA",
+                    hash: {name: "SHA-256"}
+                },
+                publicKey,
+                signature,
+                data
+            );
+        } catch (error) {
+            console.error("Error verifying signature:", error);
+            return false;
         }
     }
 
@@ -168,6 +222,14 @@ export default class NObject {
 
     unobserve(fn: (events: Y.YEvent<any>[]) => void) {
         this.root.unobserveDeep(fn);
+    }
+
+    toJSON() {
+        return {
+            metadata: this.meta.toJSON(),
+            content: this.text.toString(),
+            links: this.links.toJSON()
+        };
     }
 
     protected getOrInitSubMap(key: string, initialData: [string, any][] = []): Y.Map<any> {

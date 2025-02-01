@@ -235,5 +235,4 @@ it("should create a new NObject using create() method", async () => {
     expect(retrievedObj).not.toBeNull();
     expect(retrievedObj!.id).toEqual(obj.id);
 });
-})
 
