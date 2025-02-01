@@ -101,6 +101,15 @@ class ThemeManager {
                 </div>
             </div>
         `);
+        this.setup মেনুNavigation();
+    }
+
+    private setup মেনুNavigation(): void {
+        $('#db-view-link').on('click', () => this.views.showView('db-view'));
+        $('#net-view-link').on('click', () => this.views.showView('net-view'));
+        $('#match-view-link').on('click', () => this.views.showView('match-view'));
+        $('#profile-view-link').on('click', () => this.views.showView('profile-view'));
+        $('#settings-view-link').on('click', () => this.views.showView('settings-view'));
     }
 
     getAwareness(): Awareness {
