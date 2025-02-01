@@ -109,53 +109,25 @@ export default class NObject {
   shareWith(userId: string) { this.updateArray(this.sharedWith, userId, true); }
   unshareWith(userId: string) { this.updateArray(this.sharedWith, userId, false); }
 
-   set text(newText: string) {
-       this.doc.transact(() => {
-           const ytext = this.text;
-           ytext.delete(0, ytext.length);
-           ytext.insert(0, newText);
-           this.updateMetadata({});
-           this.generateKeyPair().then(keyPair => { // Regenerate key pair and sign on text change - for demonstration only
-               if (keyPair) {
-                   this.sign(keyPair.privateKey);
-               }
-           });
-       });
-   }
-
-  async generateKeyPair() {
-    try {
-        const keyPair = await crypto.subtle.generateKey(
-            {
-                name: "ECDSA",
-                namedCurve: "P-256" // or "P-384" or "P-521"
-            },
-            true, // extractable
-            ["sign", "verify"] // key usages
-        );
-        // Store public key in metadata (consider encoding it to a string format like base64)
-        const publicKeyJwk = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
-        this.setMetadata('publicKey', JSON.stringify(publicKeyJwk)); // Store public key as stringified JWK
-        return keyPair; // Return the key pair (privateKey and publicKey) - IMPORTANT: Handle privateKey securely outside NObject
-    } catch (error) {
         console.error("Error generating key pair:", error);
     }
-  }
-  observe(fn: (events: Y.YEvent<any>[]) => void) {
-    this.root.observeDeep(fn);
-  }
+}
 
-  unobserve(fn: (events: Y.YEvent<any>[]) => void) {
-    this.root.unobserveDeep(fn);
-  }
+toJSON(): any {
+    const jsonObj: { [key: string]: any } = {};
+    this.root.forEach((value, key) => {
+        if (value instanceof Y.AbstractType) {
+            jsonObj[key] = value.toJSON();
+        } else {
+            jsonObj[key] = value;
+        }
+    });
+    return jsonObj;
+}
 
-  toJSON(): any {
-    return this.root.toJSON();
-  }
-
-  getMetadata(key: string): any {
-      return this.metadata.get(key);
-  }
+getMetadata(key: string): any {
+    return this.metadata.get(key);
+}
 
   setMetadata(key: string, value: any): void {
     this.updateMetadata({ [key]: value });
