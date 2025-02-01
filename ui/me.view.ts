@@ -63,10 +63,10 @@ export default class MeView {
     return validateSocialLink(link);
   }
 
-  private updateUserField(fieldPath: string, value: any) { // Updated updateUserField to be used with tagForm
+  private updateUserField(fieldPath: string, value: any) {
     const user = this.getUser();
     const pathParts = fieldPath.split('.');
-    let current: any = user; // Type cast to any for flexible property access
+    let current: any = user;
 
     for (let i = 0; i < pathParts.length - 1; i++) {
       const part = pathParts[i];
@@ -79,10 +79,14 @@ export default class MeView {
     const field = pathParts[pathParts.length - 1];
 
     if (userTags && typeof userTags === 'object') {
-      const socialTags = (userTags as { properties: { social: { properties: any } } }).properties.social?.properties;
-      const tags = (userTags as { properties: any }).properties[field] || (field === 'social' && socialTags ? socialTags[pathParts[pathParts.length - 2]] : undefined);
-      if (tags) {
-        (current as any)[field] = value; // Type cast to any for flexible property access
+      let tagsConfig = (userTags as { properties: any }).properties[field]; // Direct field config
+      if (!tagsConfig && pathParts.length > 1 && field === 'social') { // Check for nested social properties
+        const socialTags = (userTags as { properties: { social: { properties: any } } }).properties.social?.properties;
+        tagsConfig = socialTags ? socialTags[pathParts[pathParts.length - 2]] : undefined; // Nested social config
+      }
+
+      if (tagsConfig) {
+        (current as any)[field] = value;
         this.awareness().setLocalStateField('user', user);
       }
     }
@@ -110,18 +114,27 @@ export default class MeView {
           )
         ),
 
-        // Placeholder for user name and ID
+        // Editable Name Field
         $('<div/>', { class: 'profile-field' }).append(
-          $('<label/>', { text: 'Name: ' }),
-          $('<span/>', { text: user.name || 'Anonymous' })
+          $('<label/>', { for: 'user-name', text: 'Name: ' }),
+          $('<input/>', {
+            type: 'text',
+            id: 'user-name',
+            value: user.name || 'Anonymous',
+          }).on('input', (e) => {
+            if (e.target instanceof HTMLInputElement) {
+              this.updateUserField('name', e.target.value);
+            }
+          })
         ),
+        // Static User ID Field
         $('<div/>', { class: 'profile-field' }).append(
           $('<label/>', { text: 'ID: ' }),
-          $('<span/>', { text: user.userId || '' })
+          $('<span/>', { text: user.userId || '' }) // ID is not editable
         ),
-        // Render tag form for user profile fields
+        // Editable Bio Field (using tag form for consistency and future expansion)
         (userTags && typeof userTags === 'object' && userTags.properties
-          ? renderTagForm(userTags, user, this.updateUserField.bind(this))
+          ? renderTagForm(userTags, user, this.updateUserField.bind(this), ['bio', 'social']) // Pass fields to render
           : $('<div/>').text('Failed to load user tag form.')
         ),
 
