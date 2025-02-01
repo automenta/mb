@@ -221,7 +221,7 @@ class MatchingView {
             const value = parseFloat(e.currentTarget.value) / 100;
             this.settings.similarityThreshold = value;
             this.ele.find('#similarity-value').text(`${value * 100}%`);
-            this.matching.setSimilarityThreshold(value);
+            this.matching.setSimilarityThreshold(this.settings.similarityThreshold); // Use the stored setting
             this.logActivity({ type: 'config', message: `Threshold: ${value * 100}%`, icon: '🎯' });
         });
         this.ele.on('change', '#auto-adjust-toggle', (e: JQuery.Event) => {
