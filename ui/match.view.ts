@@ -197,7 +197,7 @@ class MatchingView {
     }
 
     bindControls(): void {
-/*         this.ele.on('change', '#processing-toggle', (e: JQuery.Event) => {
+        this.ele.on('change', '#processing-toggle', (e: JQuery.Event) => {
             this.settings.isProcessing = e.currentTarget.checked;
             this.matching[this.settings.isProcessing ? 'startProcessing' : 'stopProcessing']();
             this.logActivity({ type: 'system', message: `Processing ${this.settings.isProcessing ? 'started' : 'stopped'}`, icon: this.settings.isProcessing ? '▶️' : '⏹️' });
@@ -230,7 +230,7 @@ class MatchingView {
             this.ele.find('#capacity-slider').prop('disabled', this.settings.autoAdjustCapacity);
             this.logActivity({ type: 'config', message: `Auto-adjust: ${this.settings.autoAdjustCapacity ? 'on' : 'off'}`, icon: '🔄' });
         });
- */    }
+    }
 
     logActivity(event: ActivityEvent): void {
         const entry = { ...event, timestamp: new Date().toLocaleTimeString(), id: Date.now() };
@@ -344,7 +344,7 @@ class MatchingView {
             //             },
             //             {
             //                 label: 'Worker Capacity',
-            //                 data: [],
+            //                  [],
             //                 borderColor: 'rgba(54, 162, 235, 1)',
             //                 backgroundColor: 'rgba(54, 162, 235, 0.2)',
             //             }
