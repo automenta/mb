@@ -38,10 +38,16 @@ export default class EditorCore {
             spellcheck: true,
             html: content, // Use 'html' to set content, not 'text'
         })
-            .on('input', (e) => this.saveContent(e))
+            .on('input', (e) => this.onContentInput(e)) // Call onContentInput on input
             .on('keydown', e => this.handleFormattingShortcuts(e));
         return this.editor;
     }
+
+    private onContentInput(event: JQuery.ChangeEvent): void {
+        const content = this.editor.html();
+        this.saveContentToDb(content);
+    }
+
 
     private saveContentToDb(content: string) {
         if (!this.ytext) return;
