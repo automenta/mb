@@ -339,15 +339,15 @@ export default class Editor {
     private readonly awareness: AwarenessManager;
     public readonly rootElement: HTMLElement;
     private tagSelector: TagSelector;
-    private _darkMode = false;
+    private darkMode = false;
 
     public currentObject?: NObject | Y.Map<any>;
     public isPublic: boolean;
 
     public toggleDarkMode(): void {
-        this._darkMode = !this._darkMode;
+        this.darkMode = !this.darkMode;
         //this.config.app.toggleDarkMode();
-        this.rootElement.classList.toggle('dark-mode', this._darkMode);
+        this.rootElement.classList.toggle('dark-mode', this.darkMode);
     }
 
     private applyFormat(command: string, value: string | undefined = undefined): void {
