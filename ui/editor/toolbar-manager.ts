@@ -13,12 +13,12 @@ export class ToolbarManager {
   private toolbarItems: ToolbarItem[] = [
     { command: 'save', icon: '💾', title: 'Save', action: (editor) => editor.saveDocument() },
     { command: 'privacy', icon: () => (this.editor.isPublic ? '🔓' : '🔒'), title: 'Toggle Privacy', action: (editor) => editor.togglePrivacy() },
-    { command: 'bold', icon: '<b>B</b>', title: 'Bold', action: (editor) => editor.formatText('bold') },
-    { command: 'italic', icon: '<i>I</i>', title: 'Italic', action: (editor) => editor.formatText('italic') },
-    { command: 'underline', icon: '<u>U</u>', title: 'Underline', action: (editor) => editor.formatText('underline') },
-    { command: 'strikeThrough', icon: '<del>S</del>', title: 'Strikethrough', action: (editor) => editor.formatText('strikeThrough') },
-    { command: 'insertOrderedList', icon: 'list-ol', title: 'Ordered List', action: (editor) => editor.formatText('insertOrderedList') }, // Changed icon to class name
-    { command: 'insertUnorderedList', icon: 'list-ul', title: 'Unordered List', action: (editor) => editor.formatText('insertUnorderedList') }, // Changed icon to class name
+    { command: 'bold', icon: '<b>B</b>', title: 'Bold', action: (editor) => editor.formatText('bold', null) },
+    { command: 'italic', icon: '<i>I</i>', title: 'Italic', action: (editor) => editor.formatText('italic', null) },
+    { command: 'underline', icon: '<u>U</u>', title: 'Underline', action: (editor) => editor.formatText('underline', null) },
+    { command: 'strikeThrough', icon: '<del>S</del>', title: 'Strikethrough', action: (editor) => editor.formatText('strike', null) },
+    { command: 'insertOrderedList', icon: 'list-ol', title: 'Ordered List', action: (editor) => editor.setBlockFormat('ordered-list') },
+    { command: 'insertUnorderedList', icon: 'list-ul', title: 'Unordered List', action: (editor) => editor.setBlockFormat('bulleted-list') },
     { command: 'heading1', icon: 'H1', title: 'Heading 1', action: (editor) => editor.setBlockFormat('<h1>') },
     { command: 'heading2', icon: 'H2', title: 'Heading 2', action: (editor) => editor.setBlockFormat('<h2>') },
     { command: 'heading3', icon: 'H3', title: 'Heading 3', action: (editor) => editor.setBlockFormat('<h3>') },

@@ -33,12 +33,12 @@ export default class Editor {
         document.execCommand(command, false, value);
     }
 
-    public formatText(formatType: string): void {
-        this.applyFormat(formatType);
+    public formatText(format: string, value: any): void {
+        this.editorCore.formatText(format, value);
     }
 
     public setBlockFormat(format: string): void {
-        this.applyFormat('formatBlock', format);
+        this.editorCore.setBlockFormat(format);
     }
 
     constructor(config: EditorConfig) {

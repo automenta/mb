@@ -46,70 +46,20 @@ export default class EditorCore {
             });
     }
 
-    private handleFormattingShortcuts(e: JQuery.KeyDownEvent) {
-        if (this.config.isReadOnly) return; // Early return if read-only
-        switch (e.key.toLowerCase()) {
-            case 'b':
-                e.preventDefault();
-                this.editorInstance.applyFormat('bold');
-                this.triggerUpdate();
-                break;
-            case 'i':
-                e.preventDefault();
-                this.editorInstance.applyFormat('italic');
-                this.triggerUpdate();
-                break;
-            case 'u':
-                e.preventDefault();
-                this.editorInstance.applyFormat('underline');
-                this.triggerUpdate();
-                break;
+    public formatText(format: string, value: any): void {
+        const selection = this.editorInstance.getSelection();
+        if (selection) {
+            this.editorInstance.formatText(selection.index, selection.length, format, value, 'user');
         }
     }
 
-    private saveContent(e: Event) {
-        if (this.config.isReadOnly) return; // Early return if read-only
-        if (!this.ytext) return;
-        const content = this.editor.text();
-        this.updateContent(content, true);
-    }
-
-    getEditorElement(): JQuery {
-        return this.editor;
-    }
-
-    setupEditor(ytext: Y.Text): void {
-        this.ytext = ytext;
-        this.editor = this.renderEditor();
-    }
-    
-
-    loadSnapshot(snapshot: any) {
-        if (snapshot) {
-            this.setContent(snapshot);
+    public setBlockFormat(format: string): void {
+        const selection = this.editorInstance.getSelection();
+        if (selection) {
+            this.editorInstance.formatLine(selection.index, selection.length, format, true, 'user');
         }
     }
 
-    setContent(content: string) {
-        this.loadContent(content);
-    }
-
-    onUpdate(callback: UpdateCallback) {
-        this.updateCallbacks.push(callback);
-    }
-
-    private triggerUpdate() {
-        this.updateCallbacks.forEach(callback => callback());
-    }
-
-    private updateContent(content: string, saveToDb: boolean = false) {
-        if (this.config.isReadOnly) return;
-        this.editor.html(content);
-        this.triggerUpdate();
-        if (saveToDb) {
-            this.saveContentToDb(content);
-        }
-    }
 
 
         private saveContentToDb(content: string) {
