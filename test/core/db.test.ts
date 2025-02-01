@@ -183,4 +183,16 @@ describe("DB", () => {
     expect(consoleSpy).toHaveBeenCalledWith("Invalid name:", undefined);
     expect(reply).toBeNull();
   });
+
+  it("should create a new NObject using create() method", async () => {
+    const obj = db.create();
+    await db.provider.whenSynced;
+
+    expect(obj).toBeInstanceOf(NObject);
+    expect(db.index.has(obj.id)).toBe(true);
+
+    const retrievedObj = db.get(obj.id);
+    expect(retrievedObj).not.toBeNull();
+    expect(retrievedObj!.id).toEqual(obj.id);
+  });
 });
