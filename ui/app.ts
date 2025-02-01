@@ -63,9 +63,6 @@ export default class App {
         this.themes = new ThemeManager(this.ele[0]);
         this.tags = new Tags();
         this.views = new ViewManager(this, this.store);
-    getSelectedObject(): any | null {
-        return this.store.currentObject;
-    }
 
         this.views = new ViewManager(this, this.store);
         this.sidebar = new Sidebar(this.views, this, $('.sidebar')[0]);
@@ -89,40 +86,9 @@ export default class App {
     }
 
 
-    }
-
     public render(): void {
-        $(this.ele).html(`
-            <div class="container">
-                <div class="sidebar">
-                    <div class="logo">Logo</div>
-                    <ul class="menubar">
-                        <li id="db-view-link">Database</li>
-                        <li id="net-view-link">Network</li>
-                        <li id="match-view-link">Matching</li>
-                        <li id="profile-view-link">Profile</li>
-                        <li id="settings-view-link">Settings</li>
-                    </ul>
-                </div>
-                <div class="main-view">
-                    <div id="db-view"></div>
-                    <div id="net-view" style="display: none;"></div>
-                    <div id="match-view" style="display: none;"></div>
-                    <div id="profile-view" style="display: none;"></div>
-                    <div id="settings-view" style="display: none;"></div>
-                </div>
-            </div>
-        `);
-        //this.setup মেনুNavigation(); // No longer needed here, handled by Sidebar
+        $(this.ele).html('<div class="container"><div class="sidebar"></div><div class="main-view"></div></div>');
     }
-
-    //private setup মেনুNavigation(): void { // No longer needed here, handled by Sidebar
-    //    $('#db-view-link').on('click', () => this.views.showView('db-view'));
-    //    $('#net-view-link').on('click', () => this.views.showView('net-view'));
-    //    $('#match-view-link').on('click', () => this.views.showView('match-view'));
-    //    $('#profile-view-link').on('click', () => this.views.showView('profile-view'));
-    //    $('#settings-view-link').on('click', () => this.views.showView('settings-view'));
-    //}
 
     getAwareness(): Awareness {
         return this.net!.net.awareness;
